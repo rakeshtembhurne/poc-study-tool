@@ -65,6 +65,18 @@ ugp-bos/
 └── .env.secrets           # Actual secrets (add to .gitignore)
 ```
 
+### Branching Strategy
+
+We follow the **GitFlow branching strategy**:
+
+- `main` → Production-ready, stable code (protected).  
+- `develop` → Integration branch for features (protected).  
+- `feature/*` → Feature development branches (branched from `develop`).  
+- `release/*` → Optional, for preparing releases.  
+- `hotfix/*` → Optional, for urgent production fixes.  
+
+👉 See [Branching Strategy Documentation](./docs/branching-strategy.md) for full details.
+
 ### Usage Commands
 
 **Development (default):**
