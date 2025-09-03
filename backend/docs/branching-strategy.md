@@ -118,14 +118,4 @@ main ───────●───────────●─────
                   ↑       ↑
             feature/A   feature/B
 ```
-
----
-
-## ✅ Acceptance Criteria
-
-- Branching strategy documented (`branching-strategy.md`).  
-- Branch protection rules applied (`main`, `develop`).  
-- Team informed of workflow.  
-- All merges require code review.  
-
 ---
