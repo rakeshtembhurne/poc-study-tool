@@ -6,8 +6,6 @@ import {
   AppConfig,
   AuthConfig,
   DatabaseConfig,
-  RedisConfig,
-  KafkaConfig,
 } from './interfaces/config.interface';
 
 type PathValue<T, P extends string> = P extends `${infer K}.${infer Rest}`
@@ -64,19 +62,6 @@ export class ConfigService {
     return this.configService.getOrThrow('database');
   }
 
-  /**
-   * Get the complete Redis configuration
-   */
-  getRedisConfig(): RedisConfig {
-    return this.configService.getOrThrow('redis');
-  }
-
-  /**
-   * Get the complete Kafka configuration
-   */
-  getKafkaConfig(): KafkaConfig {
-    return this.configService.getOrThrow('kafka');
-  }
 
   get isDevelopment(): boolean {
     return this.getOrThrow('app.env') === 'development';
