@@ -1,8 +1,8 @@
-# UGP Pyramid Backend
+# Super Memo - Spaced Repetition Study Tool Backend
 
 ## Description
 
-UGP Pyramid Backend app by Pinnacle Technologies Pvt Ltd
+Super Memo Backend - A comprehensive spaced repetition study tool with advanced learning analytics, notification system, and real-time progress tracking.
 
 ## Project setup
 
@@ -56,7 +56,7 @@ This project includes a Docker Compose setup for a complete local development en
 ### Environment File Structure
 
 ```
-ugp-bos/
+study-tool-backend/
 ├── .env                   # Default development (committed to git)
 ├── .env.prod              # Production (committed to git, no secrets)
 ├── .env.staging           # Staging (committed to git, no secrets)
@@ -99,9 +99,9 @@ docker compose --env-file .env --env-file .env.local up -d
 Create `.env.secrets` for actual production secrets:
 ```bash
 # .env.secrets (DO NOT COMMIT THIS FILE)
-POSTGRES_PASSWORD= your_actual_production_password
-CLICKHOUSE_PASSWORD= your_actual_clickhouse_password
-REDIS_PASSWORD= your_actual_redis_password
+POSTGRES_PASSWORD=your_actual_production_password
+CLICKHOUSE_PASSWORD=your_actual_clickhouse_password
+REDIS_PASSWORD=your_actual_redis_password
 JWT_SECRET=your_actual_jwt_secret
 ```
 

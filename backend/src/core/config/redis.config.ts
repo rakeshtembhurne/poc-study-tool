@@ -58,7 +58,7 @@ export default registerAs('redis', () => {
       10,
     ),
     enableOfflineQueue: process.env.REDIS_ENABLE_OFFLINE_QUEUE !== 'false',
-    keyPrefix: process.env.REDIS_KEY_PREFIX || `pyramid:${nodeEnv}:`,
+    keyPrefix: process.env.REDIS_KEY_PREFIX || `studytool:${nodeEnv}:`,
   };
 
   // Validate configuration

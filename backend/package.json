@@ -1,8 +1,8 @@
 {
-  "name": "pyramid-2-backend",
+  "name": "study-tool-backend",
   "private": true,
   "version": "0.1.0",
-  "description": "Backend API service for Pyramid 2.0 - CPaaS platform by Pinnacle Teleservices",
+  "description": "Backend API service for Spaced Repetition Study Tool - Learning platform with advanced features",
   "license": "MIT",
   "scripts": {
     "build": "nest build",

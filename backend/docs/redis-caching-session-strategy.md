@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the caching and session management strategy implemented in the Pyramid 2.0 backend using Redis.
+This document outlines the caching and session management strategy implemented in the Super Memo Study Tool backend using Redis for spaced repetition learning optimization.
 
 ## Architecture
 
@@ -21,15 +21,19 @@ src/core/redis/
 
 To prevent key collisions and organize data efficiently, we use a hierarchical key naming convention:
 
-- **Cache Keys**: `pyramid:{env}:cache:{feature}:{identifier}`
-- **Session Keys**: `pyramid:{env}:session:{sessionId}`
-- **User Session Sets**: `pyramid:{env}:user:sessions:{userId}`
+- **Cache Keys**: `studytool:{env}:cache:{feature}:{identifier}`
+- **Session Keys**: `studytool:{env}:session:{sessionId}`
+- **User Session Sets**: `studytool:{env}:user:sessions:{userId}`
+- **Study Session Keys**: `studytool:{env}:study:sessions:{userId}:{sessionId}`
+- **Learning Progress**: `studytool:{env}:progress:{userId}:{cardId}`
 
 Example:
 ```
-pyramid:production:cache:user:profile:12345
-pyramid:production:session:abc-def-ghi
-pyramid:production:user:sessions:user123
+studytool:production:cache:user:profile:12345
+studytool:production:study:sessions:user123:session456
+studytool:production:progress:user123:card789
+studytool:production:session:abc-def-ghi
+studytool:production:user:sessions:user123
 ```
 
 ## Caching Strategy

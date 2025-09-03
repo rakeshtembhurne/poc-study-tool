@@ -3,21 +3,21 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('kafka', () => {
   const config = {
     brokers: process.env.KAFKA_BROKERS?.split(',') || ['localhost:9092'],
-    clientId: process.env.KAFKA_CLIENT_ID || 'pyramid-backend',
-    groupId: process.env.KAFKA_GROUP_ID || 'pyramid-group',
+    clientId: process.env.KAFKA_CLIENT_ID || 'study-tool-backend',
+    groupId: process.env.KAFKA_GROUP_ID || 'study-tool-group',
     connectionTimeout: parseInt(
       process.env.KAFKA_CONNECTION_TIMEOUT || '3000',
       10,
     ),
     retries: parseInt(process.env.KAFKA_RETRIES || '5', 10),
     topics: {
-      sms: process.env.KAFKA_SMS_TOPIC || 'sms-topic',
-      whatsapp: process.env.KAFKA_WHATSAPP_TOPIC || 'whatsapp-topic',
-      email: process.env.KAFKA_EMAIL_TOPIC || 'email-topic',
-      voice: process.env.KAFKA_VOICE_TOPIC || 'voice-topic',
-      rcs: process.env.KAFKA_RCS_TOPIC || 'rcs-topic',
-      messageSent: process.env.KAFKA_MESSAGE_SENT_TOPIC || 'message.sent',
-      messageFailed: process.env.KAFKA_MESSAGE_FAILED_TOPIC || 'message.failed',
+      reminder: process.env.KAFKA_REMINDER_TOPIC || 'reminder-topic',
+      notification: process.env.KAFKA_NOTIFICATION_TOPIC || 'notification-topic',
+      progress: process.env.KAFKA_PROGRESS_TOPIC || 'progress-topic',
+      studySession: process.env.KAFKA_SESSION_TOPIC || 'study-session-topic',
+      analytics: process.env.KAFKA_ANALYTICS_TOPIC || 'analytics-topic',
+      studyCompleted: process.env.KAFKA_STUDY_COMPLETED_TOPIC || 'study.session.completed',
+      reminderFailed: process.env.KAFKA_REMINDER_FAILED_TOPIC || 'reminder.failed',
     },
   };
 
