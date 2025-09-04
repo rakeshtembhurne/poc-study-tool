@@ -1,10 +1,10 @@
-# Spaced Repetition Study Tool
+# Space Rep
 
 A modern flashcard application using spaced repetition algorithms (SM-2 and SM-15) to optimize learning and retention.
 
 ## Overview
 
-This application helps users learn and retain information efficiently through scientifically-proven spaced repetition techniques. Users can create decks of flashcards, import content from files, use AI to generate cards, and review them at optimal intervals.
+Space Rep helps users learn and retain information efficiently through scientifically-proven spaced repetition techniques. Users can create decks of flashcards, import content from files, and review them at optimal intervals.
 
 ## Tech Stack
 
@@ -14,11 +14,11 @@ This application helps users learn and retain information efficiently through sc
 - **PostgreSQL** database with Prisma ORM
 - **JWT** authentication
 - **Docker** for containerization
-- **OpenRouter API** for AI integration
+- **OpenRouter API** for AI integration (optional)
 
 ### Frontend
 
-- **Next.js** with TypeScript (static export)
+- **Next.js** with TypeScript
 - **React Context** for state management
 - **fetch** for API communication
 - **Tailwind CSS** with shadcn for styling
@@ -106,10 +106,10 @@ This application helps users learn and retain information efficiently through sc
 
 ### Prerequisites
 
-- Node.js (v18+)
+- Node.js (v22+)
 - PostgreSQL
-- Docker & Docker Compose
-- OpenRouter API key (for AI features)
+- Docker & Docker Compose (optional)
+- OpenRouter API key (optional, for AI features)
 
 ### Installation
 
@@ -147,10 +147,14 @@ npm run dev
 ### Backend (.env)
 
 ```
-DATABASE_URL=postgresql://user:password@localhost:5432/study_tool
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
-OPENROUTER_API_KEY=your_api_key
+DATABASE_URL=postgresql://postgres:password@localhost:5432/study_tool
+DIRECT_DATABASE_URL=postgresql://postgres:password@localhost:5432/study_tool
+JWT_SECRET=your_jwt_secret_here
+JWT_REFRESH_SECRET=your_refresh_secret_here
+OPENROUTER_API_KEY=your_api_key_here
+MODULES_AI_ENABLED=true
+MODULES_FILE_PROCESSING_ENABLED=true
+MODULES_ANALYTICS_ENABLED=true
 ```
 
 ### Frontend (.env.local)

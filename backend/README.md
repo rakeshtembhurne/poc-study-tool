@@ -1,161 +1,168 @@
-# UGP Pyramid Backend
+# Space Rep Backend
 
 ## Description
 
-UGP Pyramid Backend app by Pinnacle Technologies Pvt Ltd
+Space Rep Backend - A spaced repetition study tool backend built with NestJS, PostgreSQL, and modern development practices.
 
-## Project setup
+## Tech Stack
+
+- **NestJS** with TypeScript
+- **PostgreSQL** database with Prisma ORM
+- **JWT** authentication (configured but not implemented)
+- **Docker** for PostgreSQL development database
+- **Performance monitoring** and metrics collection
+- **Global exception handling** with structured logging
+
+## Project Setup
 
 ```bash
 npm install
 ```
 
-## Docker-based Development
+## Docker Development Setup
 
-This project includes a Docker Compose setup for a complete local development environment.
+This project uses Docker Compose to run PostgreSQL locally.
 
 ### Prerequisites
 
 - Docker
 - Docker Compose
+- Node.js v22+
 
 ### Setup
 
-1.  Create a `.env` file by copying the example:
-    ```bash
-    cp .env.example .env
-    ```
-2.  Review and adjust the variables in the `.env` file if needed.
+1. Create a `.env` file by copying the example:
+   ```bash
+   cp .env.example .env
+   ```
 
-### Running the environment
+2. Start PostgreSQL:
+   ```bash
+   docker compose up -d
+   ```
 
--   **For development (including debug tools):**
-    ```bash
-    docker compose up -d
-    ```
-    This will start all services, including Kafka-UI.
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-    - Kafka UI will be available at http://localhost:8086
+4. Generate Prisma client:
+   ```bash
+   npx prisma generate
+   ```
 
--   **For production-like environment (without debug tools):**
-    ```bash
-    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-    ```
+### Managing Docker Services
 
-### Managing services
+- **Start services:**
+  ```bash
+  docker compose up -d
+  ```
 
--   **To stop the services:**
-    ```bash
-    docker compose down
-    ```
--   **To view logs:**
-    ```bash
-    docker compose logs -f <service_name>
-    ```
+- **Stop services:**
+  ```bash
+  docker compose down
+  ```
 
-### Environment File Structure
+- **View logs:**
+  ```bash
+  docker compose logs postgres
+  ```
 
-```
-ugp-bos/
-├── .env                   # Default development (committed to git)
-├── .env.prod              # Production (committed to git, no secrets)
-├── .env.staging           # Staging (committed to git, no secrets)
-├── .env.test              # Testing (committed to git)
-├── .env.local             # Local overrides (add to .gitignore)
-└── .env.secrets           # Actual secrets (add to .gitignore)
-```
+- **Clean restart (removes data):**
+  ```bash
+  docker compose down -v
+  docker compose up -d
+  ```
 
-### Usage Commands
+## Environment Variables
 
-**Development (default):**
-```bash
-docker compose up -d
-# or explicitly
-docker compose --env-file .env up -d
-```
-
-**Production:**
-```bash
-docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
-```
-
-**Staging:**
-```bash
-docker compose --env-file .env.staging up -d
-```
-
-**Testing:**
-```bash
-docker compose --env-file .env.test up -d
-```
-
-**Local with overrides:**
-```bash
-docker compose --env-file .env --env-file .env.local up -d
-```
-
-### Security Best Practices
-
-Create `.env.secrets` for actual production secrets:
-```bash
-# .env.secrets (DO NOT COMMIT THIS FILE)
-POSTGRES_PASSWORD= your_actual_production_password
-CLICKHOUSE_PASSWORD= your_actual_clickhouse_password
-REDIS_PASSWORD= your_actual_redis_password
-JWT_SECRET=your_actual_jwt_secret
-```
-
-Update your `.gitignore`:
-```gitignore
-.env.local
-.env.secrets
-.env.*.local
-```
-
-### Environment-Specific Features
-
--   **Development**: UI tools enabled, debug logging, simple passwords
--   **Production**: Strong passwords, resource limits, minimal logging
--   **Staging**: Production-like with UI tools for testing
--   **Testing**: Fast startup, cleanup enabled, external services disabled
--   **Local**: Port overrides for personal development
-
-### Loading Multiple Environment Files
+The `.env.example` file contains all required environment variables:
 
 ```bash
-# Load base + environment + secrets
-docker compose --env-file .env --env-file .env.staging --env-file .env.secrets up -d
+# Application
+NODE_ENV=development
+PORT=3000
+APP_NAME=Space Rep
+
+# Database
+DATABASE_URL=postgresql://postgres:password@localhost:5432/study_tool
+DIRECT_DATABASE_URL=postgresql://postgres:password@localhost:5432/study_tool
+
+# Authentication
+JWT_SECRET=your_super_secret_jwt_key_here_minimum_32_characters
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+
+# Security
+BCRYPT_ROUNDS=12
 ```
 
-This setup provides a complete environment management strategy for different deployment scenarios while maintaining security and flexibility.
-
-## Compile and run the project
+## Running the Application
 
 ```bash
-# development
-$ npm run start
+# Development mode
+npm run start:dev
 
-# watch mode
-$ npm run start:dev
+# Production mode
+npm run start:prod
 
-# production mode
-$ npm run start:prod
+# Debug mode
+npm run start:debug
 ```
 
-## Run tests
+## Project Structure
+
+```
+src/
+├── app.module.ts              # Main application module
+├── main.ts                    # Application bootstrap
+├── core/
+│   ├── common/
+│   │   ├── decorators/        # Custom decorators
+│   │   ├── filters/           # Exception filters
+│   │   ├── services/          # Core services (logger)
+│   │   └── types/             # Type guards and utilities
+│   ├── config/                # Configuration management
+│   │   ├── interfaces/        # Config type definitions
+│   │   ├── *.config.ts        # Environment configs
+│   │   └── config.service.ts  # Type-safe config service
+│   └── performance/           # Performance monitoring
+│       ├── performance.service.ts
+│       ├── performance.interceptor.ts
+│       └── metrics.controller.ts
+└── prisma/
+    ├── prisma.module.ts       # Prisma module
+    └── prisma.service.ts      # Prisma service
+```
+
+## Available Scripts
 
 ```bash
-# unit tests
-$ npm run test
+# Development
+npm run start:dev              # Start with file watching
+npm run start:debug            # Start with debugging
 
-# e2e tests
-$ npm run test:e2e
+# Build and Production
+npm run build                  # Build for production
+npm run start:prod             # Start production build
 
-# test coverage
-$ npm run test:cov
+# Code Quality
+npm run lint                   # Run ESLint
+npm run format                 # Format with Prettier
+npm run type-check             # TypeScript type checking
+
+# Testing
+npm run test                   # Run unit tests
+npm run test:watch             # Run tests in watch mode
+npm run test:cov               # Run tests with coverage
+npm run test:e2e               # Run end-to-end tests
+npm run test:performance       # Run performance analysis
+
+# Database
+npx prisma generate            # Generate Prisma client
+npx prisma migrate dev         # Run database migrations
+npx prisma studio             # Open Prisma Studio
 ```
-
-## Versions
 
 ## Code Quality and Standards
 
@@ -163,71 +170,54 @@ This project enforces code quality and consistency using ESLint, Prettier, Jest,
 
 ### ESLint and Prettier
 
-ESLint is configured with the AirBnb style guide to ensure consistent code style and identify potential issues. Prettier is integrated to automatically format code, ensuring a uniform appearance across the codebase.
-
-- **Configuration:**
-  - ESLint extends `airbnb-base` and `airbnb-typescript/base`.
-  - Prettier is integrated via `plugin:prettier/recommended`.
+- **Configuration:** TypeScript ESLint with Prettier integration
 - **Usage:**
-  - To lint and fix issues: `npm run lint`
-  - To format code: `npm run format`
+  - Lint and fix: `npm run lint`
+  - Format code: `npm run format`
 
-### Jest
+### Jest Testing
 
-Jest is used for testing with a strict coverage threshold to maintain high code quality.
+Jest is configured with strict coverage thresholds:
 
-- **Coverage Thresholds (80% for each):**
-  - Branches
-  - Functions
-  - Lines
-  - Statements
-- **Usage:**
-  - To run all tests: `npm run test`
-  - To run tests with coverage: `npm run test:cov`
+- **Coverage Requirements:** 80% for branches, functions, lines, and statements
+- **Commands:**
+  - Run tests: `npm run test`
+  - Coverage report: `npm run test:cov`
+  - Watch mode: `npm run test:watch`
 
-### Husky
+### Husky Git Hooks
 
-Husky is configured to enforce commit standards and run checks before commits.
+- **`pre-commit`:** Runs ESLint and tests on staged files
+- **`commit-msg`:** Enforces conventional commit format
+- **Setup:** Automatically configured via `npm install`
 
-- **`pre-commit` Hook:** This hook automatically runs ESLint and Jest tests on your staged files before you commit. This ensures that only code adhering to our quality standards and passing all tests is committed, preventing common issues from entering the codebase.
+## Features Implemented
 
-- **`commit-msg` Hook:** This hook enforces our commit message guidelines, which are based on the Conventional Commits specification and integrate with our JIRA workflow. Adhering to these rules is crucial for maintaining a clear, searchable, and automatically generatable change log.
+### Core Infrastructure
+- ✅ NestJS application setup with TypeScript
+- ✅ Global exception handling with structured error responses
+- ✅ Environment-based configuration management
+- ✅ PostgreSQL integration with Prisma ORM
+- ✅ Performance monitoring and metrics collection
+- ✅ Comprehensive logging service
+- ✅ Docker development environment
 
-  **Commit Message Structure and Rules:**
-  Commit messages must follow the pattern: `[JIRA-TICKET]: <type>(<scope>): <subject>`
+### Authentication (Configured)
+- ✅ JWT configuration setup
+- ✅ Password policy configuration
+- ⏳ User registration/login (not implemented)
+- ⏳ JWT tokens and refresh logic (not implemented)
 
-  **Examples:**
+### Database
+- ✅ Prisma ORM setup
+- ✅ PostgreSQL connection configuration
+- ⏳ Database schema design (not implemented)
+- ⏳ Migrations (not implemented)
 
-  ```
-  feat(auth): Add new user authentication module #UPF-456
+## Next Steps
 
-  This commit introduces a new user authentication module with JWT support.
-  ```
-
-  ```
-  fix(login): Correct typo in login page #UPF-456
-
-  Fixed a minor typo in the error message displayed on the login page.
-  ```
-
-  ```
-  fix(signup): correct typo in signup page 
-
-  Not Allowed as the Its should be capital at start and jira story code should be mention at the end of the commit message. ❌
-  ```
-
-  **Key Rules Enforced:**
-  - **Jira issue key:** Every commit message *must* include a Jira story code (e.g., `[UPF-123]` or `UPF-123`) in the subject. This links commits directly to tasks and issues.
-  - **Type:** The commit type must not be empty. Use one of the following types:
-    - `feat`: A new feature
-    - `fix`: A bug fix
-    - `docs`: Documentation only changes
-    - `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc.)
-    - `refactor`: A code change that neither fixes a bug nor adds a feature
-    - `test`: Adding missing tests or correcting existing tests
-    - `chore`: Build process or auxiliary tool changes
-  - **Scope (Optional):** Provides context for the change (e.g., `auth`, `user-profile`, `database`).
-  - **Subject:** A concise, imperative description of the change, starting with a lowercase letter and no period at the end. The subject must not be empty.
-  - **Body (Optional):** Provides additional context about the change, if necessary. Each line should not exceed 100 characters.
-  - **Header Length:** The header (first line) should not exceed 72 characters.
-- **Setup:** Husky hooks are automatically set up when `npm install` is run (via the `prepare` script in `package.json`).
+1. **Database Schema:** Define User, Deck, Card, and Review models in Prisma
+2. **Authentication Module:** Implement JWT-based auth with registration/login
+3. **Spaced Repetition Logic:** Implement SM-2/SM-15 algorithms
+4. **API Endpoints:** Create REST APIs for deck and card management
+5. **Frontend Integration:** Connect with Next.js frontend

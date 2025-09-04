@@ -19,12 +19,8 @@ export interface AppConfig {
 }
 
 export interface ModuleConfig {
-  sms: boolean;
-  whatsapp: boolean;
-  email: boolean;
-  voice: boolean;
-  rcs: boolean;
-  campaigns: boolean;
+  ai: boolean;
+  fileProcessing: boolean;
   analytics: boolean;
 }
 
@@ -58,68 +54,16 @@ export interface PasswordPolicyConfig {
 }
 
 export interface DatabaseConfig {
-  postgres: PostgresConfig;
-  clickhouse: ClickhouseConfig;
-}
-
-export interface PostgresConfig {
-  host: string;
-  port: number;
-  username: string;
-  password: string;
-  database: string;
-  synchronize: boolean;
-  logging: boolean;
+  url: string;
+  directUrl?: string;
   maxConnections: number;
   ssl: boolean;
-}
-
-export interface ClickhouseConfig {
-  host: string;
-  port: number;
-  database: string;
-  username: string;
-  password: string;
-}
-
-export interface RedisConfig {
-  host: string;
-  port: number;
-  password?: string;
-  db: number;
-  cacheTtl: number;
-  sessionTimeout: number;
-  maxRetriesPerRequest: number;
-  maxSessionsPerUser: number;
-  enableOfflineQueue: boolean;
-  keyPrefix: string;
-}
-
-export interface KafkaConfig {
-  brokers: string[];
-  clientId: string;
-  groupId: string;
-  connectionTimeout: number;
-  retries: number;
-  topics: KafkaTopics;
-}
-
-export interface KafkaTopics {
-  sms: string;
-  whatsapp: string;
-  email: string;
-  voice: string;
-  rcs: string;
-  messageSent: string;
-  messageFailed: string;
 }
 
 export interface Config {
   app: AppConfig;
   auth: AuthConfig;
   database: DatabaseConfig;
-  redis: RedisConfig;
-  kafka: KafkaConfig;
 }
 
 // Type-safe configuration keys
@@ -127,8 +71,6 @@ export type ConfigKey = keyof Config;
 export type AppConfigKey = keyof AppConfig;
 export type AuthConfigKey = keyof AuthConfig;
 export type DatabaseConfigKey = keyof DatabaseConfig;
-export type RedisConfigKey = keyof RedisConfig;
-export type KafkaConfigKey = keyof KafkaConfig;
 
 // Utility type for nested config paths
 export type ConfigPath =
@@ -140,8 +82,4 @@ export type ConfigPath =
   | `auth.bcrypt.${keyof BcryptConfig}`
   | `auth.apiKey.${keyof ApiKeyConfig}`
   | `auth.passwordPolicy.${keyof PasswordPolicyConfig}`
-  | `database.postgres.${keyof PostgresConfig}`
-  | `database.clickhouse.${keyof ClickhouseConfig}`
-  | `redis.${keyof RedisConfig}`
-  | `kafka.${keyof KafkaConfig}`
-  | `kafka.topics.${keyof KafkaTopics}`;
+  | `database.${keyof DatabaseConfig}`;
