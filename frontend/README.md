@@ -40,5 +40,9 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 Copy `.env.example` files into `.env`:
 
-```bash
-cp frontend/.env.example frontend/.env
+- **From the project root** (run this if you are in the main folder):
+  ```bash
+  cp frontend/.env.example frontend/.env # Copies frontend env file
+
+  cp .env.example .env      # run this if you are in respective folder
+ 

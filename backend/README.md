@@ -223,9 +223,14 @@ Jest is configured with strict coverage thresholds:
 5. **Frontend Integration:** Connect with Next.js frontend
 
 
+
 ### Setup Environment Variables
 
 Copy `.env.example` files into `.env`:
 
-```bash
-cp backend/.env.example backend/.env
+- **From the project root** (run this if you are in the main folder):
+  ```bash
+  cp backend/.env.example backend/.env   # Copies backend env file
+
+  cp .env.example .env      # run this if you are in respective folder
+ 
