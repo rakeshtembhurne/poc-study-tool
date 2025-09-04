@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+yarn.lock
+package-lock.json
+
+# Prisma
+prisma
+
+# Logs
+logs
+
+# Environment variables
+.env.development.local
+.env.development
+.env.production.local
+.env.production
+.env
+.env.example
+
+# IDE
+.idea
+.vscode
+
+# Build
+build
+
+# Other
+.DS_Store
+Thumbs.db

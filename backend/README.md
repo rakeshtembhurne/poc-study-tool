@@ -32,16 +32,19 @@ This project uses Docker Compose to run PostgreSQL locally.
 ### Setup
 
 1. Create a `.env` file by copying the example:
+
    ```bash
    cp .env.example .env
    ```
 
 2. Start PostgreSQL:
+
    ```bash
    docker compose up -d
    ```
 
 3. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -54,16 +57,19 @@ This project uses Docker Compose to run PostgreSQL locally.
 ### Managing Docker Services
 
 - **Start services:**
+
   ```bash
   docker compose up -d
   ```
 
 - **Stop services:**
+
   ```bash
   docker compose down
   ```
 
 - **View logs:**
+
   ```bash
   docker compose logs postgres
   ```
@@ -194,6 +200,7 @@ Jest is configured with strict coverage thresholds:
 ## Features Implemented
 
 ### Core Infrastructure
+
 - ✅ NestJS application setup with TypeScript
 - ✅ Global exception handling with structured error responses
 - ✅ Environment-based configuration management
@@ -203,16 +210,27 @@ Jest is configured with strict coverage thresholds:
 - ✅ Docker development environment
 
 ### Authentication (Configured)
+
 - ✅ JWT configuration setup
 - ✅ Password policy configuration
 - ⏳ User registration/login (not implemented)
 - ⏳ JWT tokens and refresh logic (not implemented)
 
 ### Database
+
 - ✅ Prisma ORM setup
 - ✅ PostgreSQL connection configuration
 - ⏳ Database schema design (not implemented)
 - ⏳ Migrations (not implemented)
+
+### Database Schema
+
+- [**Database Design Documentation**](./documentation/database/DatabaseDesignDocumentation.md) - Complete Prisma schema file ready to use
+- Users
+- Cards
+- Reviews
+- OFMatrix
+- UserStatistics
 
 ## Next Steps
 
