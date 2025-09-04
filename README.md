@@ -163,6 +163,15 @@ MODULES_ANALYTICS_ENABLED=true
 NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
+
+### Setup Environment Variables
+
+Copy `.env.example` files into `.env`:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+
 ## Contributing
 
 This project follows a multi-developer workflow. Please:
