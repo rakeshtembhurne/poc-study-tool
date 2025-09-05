@@ -163,6 +163,15 @@ MODULES_ANALYTICS_ENABLED=true
 NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
+
+### Setup Environment Variables
+
+Copy `.env.example` files into `.env`:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+
 ## Branching Strategy
 
 We follow a simple **Git workflow** for this project.
