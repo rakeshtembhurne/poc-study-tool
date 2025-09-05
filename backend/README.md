@@ -175,6 +175,8 @@ This project enforces code quality and consistency using ESLint, Prettier, Jest,
   - Lint and fix: `npm run lint`
   - Format code: `npm run format`
 
+### ESLint now includes Airbnb style guide and unused-imports plugin for better code consistency.
+
 ### Jest Testing
 
 Jest is configured with strict coverage thresholds:
@@ -222,8 +224,6 @@ Jest is configured with strict coverage thresholds:
 4. **API Endpoints:** Create REST APIs for deck and card management
 5. **Frontend Integration:** Connect with Next.js frontend
 
-
-
 ### Setup Environment Variables
 
 Copy `.env.example` files into `.env`:
@@ -233,4 +233,3 @@ Copy `.env.example` files into `.env`:
   cp backend/.env.example backend/.env   # Copies backend env file
 
   cp .env.example .env      # run this if you are in respective folder
- 
