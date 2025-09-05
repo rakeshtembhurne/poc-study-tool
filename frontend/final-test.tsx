@@ -1,6 +1,6 @@
 // Final test with React component and formatting issues - TESTING HUSKY PRE-COMMIT HOOKS
-// Testing commitlint validation
-import React from 'react';
+// Testing commitlint validation - ROUND 2
+import React from "react"
 
 // Missing semicolons, inconsistent spacing, mixed quotes
 interface Props {
