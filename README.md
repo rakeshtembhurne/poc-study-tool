@@ -171,6 +171,7 @@ Copy `.env.example` files into `.env`:
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+```
 
 ## Branching Strategy
 

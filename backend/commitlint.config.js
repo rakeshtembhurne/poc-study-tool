@@ -16,7 +16,7 @@ module.exports = {
     ],
     'references-empty': [2, 'never'],
     'type-empty': [2, 'never'],
-    'scope-empty': [2, 'never'], 
+    'scope-empty': [1, 'never'], 
     'subject-empty': [2, 'never'],
     'subject-min-length': [2, 'always', 5],
     'subject-max-length': [2, 'always', 75],
