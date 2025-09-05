@@ -1,11 +1,219 @@
+// prisma/schema.prisma
+
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl  = env("DIRECT_DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
 }
 
+model User {
+  id                    Int             @id @default(autoincrement())
+  email                 String          @unique
+  password              String // Hashed password
+  createdAt             DateTime        @default(now()) @map("created_at")
+  updatedAt             DateTime        @updatedAt @map("updated_at")
+  // SM-15 Algorithm Configuration
+  // Stores user-specific algorithm parameters and preferences
+  sm15Parameters        Json            @default("{}") @map("sm15_parameters") // Personalized algorithm settings
+  preferences           Json            @default("{}") // UI preferences, study goals, notification settings
+  // Performance Summary Statistics
+  // These fields provide quick access to user performance without complex queries
+  totalReviews          Int             @default(0) @map("total_reviews")
+  currentStreak         Int             @default(0) @map("current_streak")
+  longestStreak         Int             @default(0) @map("longest_streak")
+  lastReviewDate        DateTime?       @map("last_review_date")
+  totalStudyTimeMinutes Int             @default(0) @map("total_study_time_minutes")
+  // Relationships - Enable comprehensive data queries
+  cards                 Card[] // All flashcards owned by this user
+  reviews               Review[] // Complete review history for analytics
+  ofMatrixEntries       OFMatrix[] // Personalized optimal factors matrix
+  statistics            UserStatistic[] // Daily/periodic performance metrics
+
+  @@map("users")
+}
+
+model Card {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  frontContent String   @map("front_content") // Question/prompt text
+  backContent  String   @map("back_content") // Answer/explanation text
+  label        String? // Category for organization (e.g., "Spanish", "Math")
+  createdAt    DateTime @default(now()) @map("created_at")
+  // === SM-15 ALGORITHM CRITICAL FIELDS ===
+  // These fields are the heart of the spaced repetition system
+
+  aFactor Float @default(2.5) @map("a_factor")
+  // A-Factor (Absolute Difficulty): Replaces E-Factor from earlier algorithms
+  // Range: 1.1-2.5. Higher = harder card = shorter intervals
+  // Updated after each review based on user performance
+  // Critical for personalizing difficulty assessment
+
+  repetitionCount Int @default(0) @map("repetition_count")
+  // Number of times this card has been reviewed
+  // Used as row index in OF Matrix lookups: OF[repetition_count, a_factor_category]
+  // Enables different interval growth patterns for new vs mature cards
+
+  lastReviewedAt DateTime? @map("last_reviewed_at")
+  // Timestamp of most recent review
+  // Used to calculate elapsed time for forgetting curve analysis
+  // Essential for measuring actual vs predicted memory decay
+
+  nextReviewDate DateTime @default(now()) @map("next_review_date")
+  // When this card should be shown next
+  // Core scheduling field - drives the entire review queue
+  // Calculated by SM-15 algorithm: previous_date + interval_days
+
+  intervalDays Int @default(1) @map("interval_days")
+  // Current interval between reviews (in days)
+  // Key output of SM-15 calculation: I(n) = I(n-1) × OF[n, AF]
+  // Grows with successful reviews, resets on failures
+
+  lapsesCount Int @default(0) @map("lapses_count")
+  // Number of times user failed this card (grade 1 or 2)
+  // Used in first interval calculation: I(1) = OF[1, L+1]
+  // Tracks learning difficulty for this specific item
+
+  // === METADATA AND TRACKING ===
+  reviewHistory Json @default("[]") @map("review_history")
+  // Complete history of grades and intervals for analysis
+  // Used for algorithm refinement and user progress visualization
+
+  sourceType String @default("manual") @map("source_type")
+  // How card was created: "manual", "ai_generated", "imported"
+  // Enables source-based performance analysis
+
+  ofMatrixUpdates Json     @default("{}") @map("of_matrix_updates")
+  // Tracks how this card influenced the OF Matrix
+  // Used for debugging algorithm performance
+  // Relationships
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviews         Review[] // Complete review history for this card
+
+  // Indexes for Performance
+  @@index([userId, nextReviewDate]) // Critical for due cards queries
+  @@index([userId, label]) // Enables fast label filtering
+  @@index([userId, aFactor]) // For difficulty-based queries
+  @@index([userId, repetitionCount]) // For learning progress analysis
+  @@map("cards")
+}
+
+model Review {
+  id             Int      @id @default(autoincrement())
+  cardId         Int      @map("card_id")
+  userId         Int      @map("user_id")
+  reviewDate     DateTime @default(now()) @map("review_date")
+  grade          Int // 1-5 scale: 1=Failed, 2=Hard, 3=Good, 4=Easy, 5=Perfect
+  responseTimeMs Int?     @map("response_time_ms") // Time to recall answer (milliseconds)
+  // === SM-15 ALGORITHM TRACKING ===
+  // These fields capture the algorithm's decision-making process
+
+  previousInterval Int? @map("previous_interval")
+  // Interval before this review
+  // Used to analyze interval effectiveness
+
+  newInterval Int @map("new_interval")
+  // Interval calculated after this review
+  // Shows algorithm's confidence adjustment
+
+  aFactorBefore Float? @map("a_factor_before")
+  // A-Factor before this review
+  // Tracks difficulty perception changes
+
+  aFactorAfter Float @map("a_factor_after")
+  // A-Factor after this review
+  // Shows how performance influenced difficulty rating
+
+  optimalFactorUsed Float? @map("optimal_factor_used")
+  // OF Matrix value used in interval calculation
+  // Links review to specific matrix optimization
+  // Relationships
+  card              Card   @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  user              User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Note: Grade validation (1-5) should be handled at application level
+  // Prisma doesn't support CHECK constraints in schema definition
+
+  // Indexes for Analytics
+  @@index([cardId, reviewDate]) // Card performance over time
+  @@index([userId, reviewDate(sort: Desc)]) // User activity timeline
+  @@map("reviews")
+}
+
+model OFMatrix {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @map("user_id")
+  repetitionNumber   Int      @map("repetition_number") // Row in OF Matrix (1, 2, 3, ...)
+  difficultyCategory Int      @map("difficulty_category") // Column in OF Matrix (A-Factor range)
+  optimalFactor      Float    @map("optimal_factor") // The actual OF value
+  usageCount         Int      @default(0) @map("usage_count") // How often this entry was used
+  lastUpdated        DateTime @default(now()) @map("last_updated")
+  // === OF MATRIX EXPLANATION ===
+  // The OF Matrix is a 2D lookup table: OF[repetition_number][difficulty_category]
+  // - repetitionNumber: 1st review, 2nd review, 3rd review, etc.
+  // - difficultyCategory: Discretized A-Factor ranges (easy to hard cards)
+  // - optimalFactor: Multiplier for interval calculation
+  // 
+  // Example: Card with A-Factor 2.0 on 3rd review
+  // difficultyCategory = Math.floor((2.0 - 1.1) / 0.1) = 9
+  // Query: WHERE repetition_number = 3 AND difficulty_category = 9
+  // Result: optimalFactor = 2.15 (for example)
+  // New interval = old_interval * 2.15
+  // Relationships
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Unique constraint prevents duplicate matrix entries
+  @@unique([userId, repetitionNumber, difficultyCategory])
+  @@index([userId, repetitionNumber, difficultyCategory]) // Fast OF lookups
+  @@map("of_matrix")
+}
+
+model UserStatistic {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  date             DateTime @db.Date // YYYY-MM-DD format for easy date queries
+  createdAt        DateTime @default(now()) @map("created_at")
+  // === DAILY LEARNING METRICS ===
+  reviewsCompleted Int      @default(0) @map("reviews_completed")
+  // Total reviews done this day - tracks study consistency
+
+  newCardsLearned Int @default(0) @map("new_cards_learned")
+  // First-time reviews - tracks learning velocity
+
+  studyTimeMinutes Int @default(0) @map("study_time_minutes")
+  // Active study time - measures engagement
+
+  averageResponseTimeMs Int   @default(0) @map("average_response_time_ms")
+  // Cognitive load indicator - faster = better retention
+  // === PERFORMANCE ANALYSIS ===
+  accuracyRate          Float @default(0.0) @map("accuracy_rate")
+  // Percentage of reviews graded 3+ (0.0 to 1.0)
+  // Key metric for SM-15 algorithm effectiveness
+
+  retentionRate Float @default(0.0) @map("retention_rate")
+  // Percentage of due cards actually reviewed
+  // Measures user adherence to schedule
+
+  cardsMastered Int @default(0) @map("cards_mastered")
+  // Cards with intervals >30 days - long-term retention success
+
+  cardsStruggling Int  @default(0) @map("cards_struggling")
+  // Cards with multiple recent lapses - need attention
+  // === GRADE DISTRIBUTION TRACKING ===
+  // Essential for algorithm calibration and user feedback
+  grade1Count     Int  @default(0) @map("grade_1_count") // Complete failures
+  grade2Count     Int  @default(0) @map("grade_2_count") // Difficult recalls
+  grade3Count     Int  @default(0) @map("grade_3_count") // Moderate recalls
+  grade4Count     Int  @default(0) @map("grade_4_count") // Easy recalls
+  grade5Count     Int  @default(0) @map("grade_5_count") // Perfect recalls
+  // Relationships
+  user            User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Unique constraint prevents duplicate daily records
+  @@unique([userId, date])
+  @@index([userId, date]) // Fast date range queries for charts
+  @@map("user_statistics")
+}
