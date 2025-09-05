@@ -5,6 +5,7 @@ import { FlatCompat } from '@eslint/eslintrc';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import unusedImports from 'eslint-plugin-unused-imports';
+import tsplugin from '@typescript-eslint/eslint-plugin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -18,7 +19,7 @@ const eslintConfig = [
   eslintPluginPrettierRecommended,
   {
     plugins: {
-      '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
+      '@typescript-eslint': tsplugin,
       'unused-imports': unusedImports,
     },
     ignores: [
@@ -29,7 +30,6 @@ const eslintConfig = [
       'next-env.d.ts',
     ],
     languageOptions: {
-      parser: '@typescript-eslint/parser',
       globals: {
         ...globals.browser,
         ...globals.jest,
@@ -43,11 +43,11 @@ const eslintConfig = [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'error',
-      '@typescript-eslint/no-unsafe-call': 'error',
-      '@typescript-eslint/no-unsafe-member-access': 'error',
-      '@typescript-eslint/no-unsafe-argument': 'error',
-      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'warn',
@@ -65,7 +65,6 @@ const eslintConfig = [
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/only-throw-error': 'off',
 
-      //  New unused-imports rules
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',

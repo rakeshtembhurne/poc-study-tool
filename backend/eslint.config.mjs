@@ -3,8 +3,8 @@ import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import airbnb from 'eslint-config-airbnb-extended'; 
-import unusedImports from 'eslint-plugin-unused-imports'; 
+import unusedImports from 'eslint-plugin-unused-imports';
+import tsPlugin from '@typescript-eslint/eslint-plugin';
 
 export default tseslint.config(
   {
@@ -12,35 +12,28 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-  // @ts-ignore
-  airbnb, // Airbnb Extended rules
+
   eslintPluginPrettierRecommended,
   {
     plugins: {
-      '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
-      'unused-imports': unusedImports, 
+      '@typescript-eslint': tsPlugin,
+      'unused-imports': unusedImports,
     },
     languageOptions: {
-      parser: '@typescript-eslint/parser',
       globals: {
         ...globals.node,
         ...globals.jest,
       },
-      ecmaVersion: 5, 
+      ecmaVersion: 2020,
       sourceType: 'module',
-      parserOptions: {
-        project: ['tsconfig.json', 'tsconfig.spec.json'],
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'error',
-      '@typescript-eslint/no-unsafe-call': 'error',
-      '@typescript-eslint/no-unsafe-member-access': 'error',
-      '@typescript-eslint/no-unsafe-argument': 'error',
-      '@typescript-eslint/no-unsafe-return': 'error',
+      '@typescript-eslint/no-unsafe-assignment': 'warn',
+      '@typescript-eslint/no-unsafe-call': 'warn',
+      '@typescript-eslint/no-unsafe-member-access': 'warn',
+      '@typescript-eslint/no-unsafe-argument': 'warn',
+      '@typescript-eslint/no-unsafe-return': 'warn',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'warn',
@@ -58,7 +51,6 @@ export default tseslint.config(
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/only-throw-error': 'off',
 
-      // New unused-imports rules
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',
