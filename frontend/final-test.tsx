@@ -1,5 +1,5 @@
 // Final test with React component and formatting issues - TESTING HUSKY PRE-COMMIT HOOKS
-// Testing commitlint validation - ROUND 2
+// Testing commitlint validation - FINAL TEST
 import React from "react"
 
 // Missing semicolons, inconsistent spacing, mixed quotes
