@@ -46,3 +46,16 @@ Copy `.env.example` files into `.env`:
 
   cp .env.example .env      # run this if you are in respective folder
  
+
+ ### ESLint and Prettier
+
+- **Configuration:** TypeScript ESLint with Prettier integration
+- **Usage:**
+  - Lint and fix: `npm run lint`
+  - Format code: `npm run format`
+
+### Husky Git Hooks
+
+- **`pre-commit`:** Runs ESLint and tests on staged files
+- **`commit-msg`:** Enforces conventional commit format
+- **Setup:** Automatically configured via `npm install`
