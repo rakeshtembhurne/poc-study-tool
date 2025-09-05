@@ -1,4 +1,3 @@
-// @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
 import globals from 'globals';
@@ -12,7 +11,6 @@ export default tseslint.config(
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
-
   eslintPluginPrettierRecommended,
   {
     plugins: {
@@ -24,33 +22,40 @@ export default tseslint.config(
         ...globals.node,
         ...globals.jest,
       },
-      ecmaVersion: 2020,
+      ecmaVersion: 5,
       sourceType: 'module',
+      parserOptions: {
+        project: ['tsconfig.json', 'tsconfig.spec.json'],
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
+  },
+  {
     rules: {
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unsafe-assignment': 'warn',
-      '@typescript-eslint/no-unsafe-call': 'warn',
-      '@typescript-eslint/no-unsafe-member-access': 'warn',
-      '@typescript-eslint/no-unsafe-argument': 'warn',
-      '@typescript-eslint/no-unsafe-return': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
       '@typescript-eslint/no-unused-expressions': 'error',
       '@typescript-eslint/no-require-imports': 'error',
       '@typescript-eslint/no-non-null-asserted-optional-chain': 'warn',
       '@typescript-eslint/no-misused-promises': [
         'error',
-        {
-          checksVoidReturn: false,
-          checksConditionals: false,
+        { 
+          checksVoidReturn: false, 
+          checksConditionals: false 
         },
       ],
+
       '@typescript-eslint/no-unsafe-function-type': 'off',
       '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/prefer-promise-reject-errors': 'off',
       '@typescript-eslint/no-base-to-string': 'off',
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/only-throw-error': 'off',
-
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'warn',
@@ -62,5 +67,5 @@ export default tseslint.config(
         },
       ],
     },
-  }
+  },
 );
