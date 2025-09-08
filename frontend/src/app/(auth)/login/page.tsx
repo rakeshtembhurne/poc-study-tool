@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { apiUtils } from '@/lib/axios-config';
+import { redirectAfterLogin } from '@/lib/redirect-utils';
 
 // Validation schema
 const loginSchema = yup.object({
@@ -62,8 +63,10 @@ export default function LoginPage() {
               result.refreshToken // Optional refresh token
             );
             
-            // Redirect to dashboard or home page after successful login
-            // window.location.href = '/dashboard';
+            // Redirect to intended page or dashboard after successful login
+            setTimeout(() => {
+              redirectAfterLogin('/dashboard');
+            }, 1000); // Small delay to show success message
           } catch (error) {
             console.error('Failed to store authentication token:', error);
             setSubmitMessage('Login successful but failed to save session. Please try again.');
