@@ -1,0 +1,134 @@
+{
+  "development": [
+    {
+      "userEmail": "admin@example.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 5,
+      "optimalFactor": 1.0,
+      "usageCount": 2
+    },
+    {
+      "userEmail": "admin@example.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 8,
+      "optimalFactor": 1.1,
+      "usageCount": 3
+    },
+    {
+      "userEmail": "admin@example.com",
+      "repetitionNumber": 2,
+      "difficultyCategory": 5,
+      "optimalFactor": 1.8,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "admin@example.com",
+      "repetitionNumber": 2,
+      "difficultyCategory": 8,
+      "optimalFactor": 2.0,
+      "usageCount": 2
+    },
+    {
+      "userEmail": "admin@example.com",
+      "repetitionNumber": 3,
+      "difficultyCategory": 8,
+      "optimalFactor": 2.2,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "user1@example.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 2,
+      "optimalFactor": 1.0,
+      "usageCount": 4
+    },
+    {
+      "userEmail": "user1@example.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 14,
+      "optimalFactor": 1.2,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "user1@example.com",
+      "repetitionNumber": 2,
+      "difficultyCategory": 2,
+      "optimalFactor": 1.0,
+      "usageCount": 3
+    },
+    {
+      "userEmail": "user1@example.com",
+      "repetitionNumber": 2,
+      "difficultyCategory": 14,
+      "optimalFactor": 2.5,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "user1@example.com",
+      "repetitionNumber": 3,
+      "difficultyCategory": 2,
+      "optimalFactor": 1.5,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "user1@example.com",
+      "repetitionNumber": 4,
+      "difficultyCategory": 2,
+      "optimalFactor": 2.8,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "user1@example.com",
+      "repetitionNumber": 5,
+      "difficultyCategory": 2,
+      "optimalFactor": 2.4,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "user2@example.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 11,
+      "optimalFactor": 1.3,
+      "usageCount": 1
+    },
+    {
+      "userEmail": "demo@example.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 9,
+      "optimalFactor": 1.1,
+      "usageCount": 1
+    }
+  ],
+  "test": [
+    {
+      "userEmail": "test@example.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 10,
+      "optimalFactor": 1.1,
+      "usageCount": 1
+    }
+  ],
+  "production": [
+    {
+      "userEmail": "system@company.com",
+      "repetitionNumber": 1,
+      "difficultyCategory": 10,
+      "optimalFactor": 1.0,
+      "usageCount": 0
+    },
+    {
+      "userEmail": "system@company.com",
+      "repetitionNumber": 2,
+      "difficultyCategory": 10,
+      "optimalFactor": 1.5,
+      "usageCount": 0
+    },
+    {
+      "userEmail": "system@company.com",
+      "repetitionNumber": 3,
+      "difficultyCategory": 10,
+      "optimalFactor": 2.0,
+      "usageCount": 0
+    }
+  ]
+}
