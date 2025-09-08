@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 // Validation schema
 const signupSchema = yup.object({
@@ -36,6 +37,7 @@ type SignupFormData = yup.InferType<typeof signupSchema>;
 export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const { login } = useAuth();
 
   const {
     register,
@@ -67,13 +69,40 @@ export default function SignupPage() {
 
       if (result.success) {
         setSubmitMessage(result.message || 'Account created successfully!');
-        reset();
+
+        // Auto-login user after successful signup if token is provided
+        if (result.token) {
+          try {
+            login(
+              result.token,
+              result.user || { id: '', name: data.name, email: data.email }, // Use user data from backend or form data
+              result.expiresIn, // Token expiration in seconds from backend
+              result.refreshToken // Optional refresh token
+            );
+
+            // Redirect to dashboard or home page after successful signup and login
+            // window.location.href = '/dashboard';
+          } catch (error) {
+            console.error('Failed to store authentication token:', error);
+            setSubmitMessage(
+              'Account created successfully but failed to save session. Please log in manually.'
+            );
+            return;
+          }
+        } else {
+          // If no token provided, just show success message (user needs to login manually)
+          reset();
+        }
       } else {
-        setSubmitMessage(result.message || 'Failed to create account. Please try again.');
+        setSubmitMessage(
+          result.message || 'Failed to create account. Please try again.'
+        );
       }
     } catch (error) {
       console.error('Signup error:', error);
-      setSubmitMessage('Network error. Please check your connection and try again.');
+      setSubmitMessage(
+        'Network error. Please check your connection and try again.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -97,7 +126,9 @@ export default function SignupPage() {
               className={errors.name ? 'error' : ''}
               placeholder="Enter your full name"
             />
-            {errors.name && <span className="error-message">{errors.name.message}</span>}
+            {errors.name && (
+              <span className="error-message">{errors.name.message}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -109,7 +140,9 @@ export default function SignupPage() {
               className={errors.email ? 'error' : ''}
               placeholder="Enter your email address"
             />
-            {errors.email && <span className="error-message">{errors.email.message}</span>}
+            {errors.email && (
+              <span className="error-message">{errors.email.message}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -121,7 +154,9 @@ export default function SignupPage() {
               className={errors.password ? 'error' : ''}
               placeholder="Create a strong password"
             />
-            {errors.password && <span className="error-message">{errors.password.message}</span>}
+            {errors.password && (
+              <span className="error-message">{errors.password.message}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -134,16 +169,24 @@ export default function SignupPage() {
               placeholder="Confirm your password"
             />
             {errors.confirmPassword && (
-              <span className="error-message">{errors.confirmPassword.message}</span>
+              <span className="error-message">
+                {errors.confirmPassword.message}
+              </span>
             )}
           </div>
 
-          <button type="submit" disabled={isSubmitting} className="submit-button">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="submit-button"
+          >
             {isSubmitting ? 'Creating Account...' : 'Create Account'}
           </button>
 
           {submitMessage && (
-            <div className={`submit-message ${submitMessage.includes('successfully') ? 'success' : 'error'}`}>
+            <div
+              className={`submit-message ${submitMessage.includes('successfully') ? 'success' : 'error'}`}
+            >
               {submitMessage}
             </div>
           )}
@@ -167,7 +210,9 @@ export default function SignupPage() {
           align-items: center;
           justify-content: center;
           padding: 20px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          font-family:
+            -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+            Ubuntu, Cantarell, sans-serif;
         }
 
         .signup-card {

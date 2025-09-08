@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 
 // Validation schema
 const loginSchema = yup.object({
@@ -23,11 +24,13 @@ type LoginFormData = yup.InferType<typeof loginSchema>;
 export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const { login } = useAuth();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     reset,
   } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema),
@@ -53,12 +56,25 @@ export default function LoginPage() {
 
       if (result.success) {
         setSubmitMessage(result.message || 'Login successful!');
-        // Store token in localStorage or handle authentication state
+        
+        // Use AuthContext login method with secure token storage
         if (result.token) {
-          localStorage.setItem('authToken', result.token);
+          try {
+            login(
+              result.token,
+              result.user || { id: '', name: '', email: data.email }, // Use user data from backend or fallback
+              result.expiresIn, // Token expiration in seconds from backend
+              result.refreshToken // Optional refresh token
+            );
+            
+            // Redirect to dashboard or home page after successful login
+            // window.location.href = '/dashboard';
+          } catch (error) {
+            console.error('Failed to store authentication token:', error);
+            setSubmitMessage('Login successful but failed to save session. Please try again.');
+            return;
+          }
         }
-        // You can redirect to dashboard or home page here
-        // window.location.href = '/dashboard';
       } else {
         setSubmitMessage(result.message || 'Login failed. Please try again.');
       }
