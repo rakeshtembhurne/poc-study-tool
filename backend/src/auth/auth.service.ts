@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 
+=======
+>>>>>>> 02a37d7 (feat(auth): improve security, add duplicate email handling and functional tests (#16))
 import { Injectable, UnauthorizedException,BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
