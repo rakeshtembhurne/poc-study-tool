@@ -7,7 +7,7 @@ Space Rep Backend - A spaced repetition study tool backend built with NestJS, Po
 ## Tech Stack
 
 - **NestJS** with TypeScript
-- **PostgreSQL** database with Prisma ORM
+- **PostgreSQL** database with Prisma ORM ([Database Documentation](./documentation/database/database-docs.md))
 - **JWT** authentication (configured but not implemented)
 - **Docker** for PostgreSQL development database
 - **Performance monitoring** and metrics collection
@@ -57,6 +57,26 @@ This project uses Docker Compose to run PostgreSQL locally.
   ```bash
   docker compose up -d
   ```
+### Environment File Structure
+
+```
+ugp-bos/
+├── .env                   # Default development (committed to git)
+├── .env.prod              # Production (committed to git, no secrets)
+├── .env.staging           # Staging (committed to git, no secrets)
+├── .env.test              # Testing (committed to git)
+├── .env.local             # Local overrides (add to .gitignore)
+└── .env.secrets           # Actual secrets (add to .gitignore)
+```
+
+### Usage Commands
+
+**Development (default):**
+```bash
+docker compose up -d
+# or explicitly
+docker compose --env-file .env up -d
+```
 
 - **Stop services:**
   ```bash
@@ -68,11 +88,10 @@ This project uses Docker Compose to run PostgreSQL locally.
   docker compose logs postgres
   ```
 
-- **Clean restart (removes data):**
-  ```bash
-  docker compose down -v
-  docker compose up -d
-  ```
+**Testing:**
+```bash
+docker compose --env-file .env.test up -d
+```
 
 ## Environment Variables
 
