@@ -5,7 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 
 export class TestHelpers {
   static async createTestingModule(
-    metadata: ModuleMetadata,
+    metadata: ModuleMetadata
   ): Promise<TestingModule> {
     const testMetadata: ModuleMetadata = {
       ...metadata,

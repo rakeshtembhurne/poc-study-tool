@@ -1,4 +1,9 @@
-import { HttpException, HttpStatus, ArgumentsHost, Logger } from '@nestjs/common';
+import {
+  HttpException,
+  HttpStatus,
+  ArgumentsHost,
+  Logger,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { GlobalExceptionFilter } from './global-exception.filter';
 import { TestHelpers } from '../../../../test/utils/test-helpers';
@@ -23,7 +28,7 @@ describe('GlobalExceptionFilter', () => {
     jest.spyOn(Logger.prototype, 'error').mockImplementation(() => {});
     jest.spyOn(Logger.prototype, 'warn').mockImplementation(() => {});
     jest.spyOn(Logger.prototype, 'log').mockImplementation(() => {});
-    
+
     filter = new GlobalExceptionFilter();
     mockResponse = TestHelpers.createMockResponse() as unknown as Response;
     mockRequest = TestHelpers.createMockRequest() as unknown as Request;
@@ -65,7 +70,7 @@ describe('GlobalExceptionFilter', () => {
   it('should handle HttpException with object response', () => {
     const exception = new HttpException(
       { message: ['Field is required'], error: 'Bad Request' },
-      HttpStatus.BAD_REQUEST,
+      HttpStatus.BAD_REQUEST
     );
 
     filter.catch(exception, mockHost);

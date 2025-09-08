@@ -2,7 +2,9 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('database', () => {
   const config = {
-    url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/study_tool',
+    url:
+      process.env.DATABASE_URL ||
+      'postgresql://postgres:password@localhost:5432/study_tool',
     directUrl: process.env.DIRECT_DATABASE_URL,
     maxConnections: parseInt(process.env.DB_MAX_CONNECTIONS || '100', 10),
     ssl: process.env.DB_SSL === 'true',

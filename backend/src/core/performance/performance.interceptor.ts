@@ -41,7 +41,7 @@ export class PerformanceInterceptor implements NestInterceptor {
             error: true,
           });
         },
-      }),
+      })
     );
   }
 }

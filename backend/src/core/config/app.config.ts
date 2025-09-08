@@ -10,7 +10,7 @@ export default registerAs('app', () => ({
     'http://localhost:3001',
   ],
 
-  // Module feature flags  
+  // Module feature flags
   modules: {
     ai: false,
     fileProcessing: false,
