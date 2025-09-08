@@ -61,7 +61,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
   private createErrorResponse(
     exception: unknown,
-    request: CustomRequest,
+    request: CustomRequest
   ): ErrorResponse {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal server error';
@@ -101,7 +101,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 
   private parseHttpExceptionResponse(
-    response: string | object,
+    response: string | object
   ): HttpExceptionResponse {
     if (isString(response)) {
       return { message: response };
@@ -140,7 +140,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private logError(
     exception: unknown,
     errorResponse: ErrorResponse,
-    request: CustomRequest,
+    request: CustomRequest
   ): void {
     const logContext = {
       statusCode: errorResponse.statusCode,
@@ -158,7 +158,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       this.logger.error(
         `[${errorResponse.statusCode}] ${errorResponse.error}: ${messageStr}`,
         exception instanceof Error ? exception.stack : undefined,
-        JSON.stringify(logContext),
+        JSON.stringify(logContext)
       );
     } else if (errorResponse.statusCode >= 400) {
       const messageStr = Array.isArray(errorResponse.message)
@@ -166,7 +166,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         : errorResponse.message;
       this.logger.warn(
         `[${errorResponse.statusCode}] ${errorResponse.error}: ${messageStr}`,
-        JSON.stringify(logContext),
+        JSON.stringify(logContext)
       );
     }
   }

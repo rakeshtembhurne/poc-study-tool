@@ -16,7 +16,7 @@ describe('AppController (e2e)', () => {
 
   beforeAll(async () => {
     mockRedisClient = TestHelpers.mockRedisClient();
-    
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
@@ -36,7 +36,7 @@ describe('AppController (e2e)', () => {
       helmet({
         contentSecurityPolicy: false,
         crossOriginEmbedderPolicy: false,
-      }),
+      })
     );
 
     app.enableCors({
@@ -49,7 +49,7 @@ describe('AppController (e2e)', () => {
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
-      }),
+      })
     );
 
     app.useGlobalFilters(new GlobalExceptionFilter());
@@ -84,7 +84,7 @@ describe('AppController (e2e)', () => {
   describe('Security headers', () => {
     it('should include security headers', async () => {
       const response = await request(
-        app.getHttpServer() as Parameters<typeof request>[0],
+        app.getHttpServer() as Parameters<typeof request>[0]
       )
         .get('/api/v1')
         .expect(200);

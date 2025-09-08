@@ -45,7 +45,7 @@ export function IsStrongPassword(
     minNumbers?: number;
     minSymbols?: number;
   },
-  validationOptions?: ValidationOptions,
+  validationOptions?: ValidationOptions
 ) {
   return function (object: object, propertyName: string) {
     registerDecorator({
@@ -90,7 +90,7 @@ export function IsStrongPassword(
  */
 export function IsEnum<T extends Record<string, unknown>>(
   enumType: T,
-  validationOptions?: ValidationOptions,
+  validationOptions?: ValidationOptions
 ) {
   return function (object: object, propertyName: string) {
     registerDecorator({
@@ -200,7 +200,7 @@ export function ArrayUnique(validationOptions?: ValidationOptions) {
  */
 export function Matches(
   pattern: RegExp,
-  validationOptions?: ValidationOptions,
+  validationOptions?: ValidationOptions
 ) {
   return function (object: object, propertyName: string) {
     registerDecorator({

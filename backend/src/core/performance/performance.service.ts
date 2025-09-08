@@ -35,7 +35,7 @@ export class PerformanceService {
       enableTracing: boolean;
       slowQueryThreshold: number;
       sampleRate: number;
-    },
+    }
   ) {}
 
   startTimer(): {
@@ -54,7 +54,7 @@ export class PerformanceService {
   async measureAsync<T>(
     name: string,
     operation: () => Promise<T>,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): Promise<T> {
     const start = performance.now();
     try {
@@ -72,7 +72,7 @@ export class PerformanceService {
   measure<T>(
     name: string,
     operation: () => T,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ): T {
     const start = performance.now();
     try {
@@ -90,7 +90,7 @@ export class PerformanceService {
   private recordMetric(
     name: string,
     duration: number,
-    metadata?: Record<string, unknown>,
+    metadata?: Record<string, unknown>
   ) {
     // Skip if metrics disabled
     if (!this.options.enableMetrics) return;
@@ -102,7 +102,7 @@ export class PerformanceService {
     if (duration > this.options.slowQueryThreshold) {
       console.warn(
         `Slow operation detected: ${name} took ${duration.toFixed(2)}ms`,
-        metadata,
+        metadata
       );
     }
 

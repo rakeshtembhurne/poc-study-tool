@@ -62,7 +62,6 @@ export class ConfigService {
     return this.configService.getOrThrow('database');
   }
 
-
   get isDevelopment(): boolean {
     return this.getOrThrow('app.env') === 'development';
   }
