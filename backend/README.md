@@ -7,7 +7,7 @@ Space Rep Backend - A spaced repetition study tool backend built with NestJS, Po
 ## Tech Stack
 
 - **NestJS** with TypeScript
-- **PostgreSQL** database with Prisma ORM
+- **PostgreSQL** database with Prisma ORM ([Database Documentation](./documentation/database/database-docs.md))
 - **JWT** authentication (configured but not implemented)
 - **Docker** for PostgreSQL development database
 - **Performance monitoring** and metrics collection
