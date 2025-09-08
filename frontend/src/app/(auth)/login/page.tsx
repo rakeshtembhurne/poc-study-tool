@@ -7,12 +7,7 @@ import * as yup from 'yup';
 import Link from 'next/link';
 
 // Validation schema
-const signupSchema = yup.object({
-  name: yup
-    .string()
-    .required('Name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters'),
+const loginSchema = yup.object({
   email: yup
     .string()
     .required('Email is required')
@@ -20,20 +15,12 @@ const signupSchema = yup.object({
   password: yup
     .string()
     .required('Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .matches(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-      'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-    ),
-  confirmPassword: yup
-    .string()
-    .required('Please confirm your password')
-    .oneOf([yup.ref('password')], 'Passwords must match'),
+    .min(1, 'Password is required'),
 });
 
-type SignupFormData = yup.InferType<typeof signupSchema>;
+type LoginFormData = yup.InferType<typeof loginSchema>;
 
-export default function SignupPage() {
+export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
 
@@ -42,22 +29,21 @@ export default function SignupPage() {
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<SignupFormData>({
-    resolver: yupResolver(signupSchema),
+  } = useForm<LoginFormData>({
+    resolver: yupResolver(loginSchema),
   });
 
-  const onSubmit = async (data: SignupFormData) => {
+  const onSubmit = async (data: LoginFormData) => {
     setIsSubmitting(true);
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/auth/signup', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: data.name,
           email: data.email,
           password: data.password,
         }),
@@ -66,13 +52,18 @@ export default function SignupPage() {
       const result = await response.json();
 
       if (result.success) {
-        setSubmitMessage(result.message || 'Account created successfully!');
-        reset();
+        setSubmitMessage(result.message || 'Login successful!');
+        // Store token in localStorage or handle authentication state
+        if (result.token) {
+          localStorage.setItem('authToken', result.token);
+        }
+        // You can redirect to dashboard or home page here
+        // window.location.href = '/dashboard';
       } else {
-        setSubmitMessage(result.message || 'Failed to create account. Please try again.');
+        setSubmitMessage(result.message || 'Login failed. Please try again.');
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('Login error:', error);
       setSubmitMessage('Network error. Please check your connection and try again.');
     } finally {
       setIsSubmitting(false);
@@ -80,26 +71,14 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="signup-container">
-      <div className="signup-card">
-        <div className="signup-header">
-          <h1>Create Account</h1>
-          <p>Join us today and start your journey</p>
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-header">
+          <h1>Welcome Back</h1>
+          <p>Sign in to your account</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="signup-form">
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input
-              id="name"
-              type="text"
-              {...register('name')}
-              className={errors.name ? 'error' : ''}
-              placeholder="Enter your full name"
-            />
-            {errors.name && <span className="error-message">{errors.name.message}</span>}
-          </div>
-
+        <form onSubmit={handleSubmit(onSubmit)} className="login-form">
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <input
@@ -119,48 +98,44 @@ export default function SignupPage() {
               type="password"
               {...register('password')}
               className={errors.password ? 'error' : ''}
-              placeholder="Create a strong password"
+              placeholder="Enter your password"
             />
             {errors.password && <span className="error-message">{errors.password.message}</span>}
           </div>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              {...register('confirmPassword')}
-              className={errors.confirmPassword ? 'error' : ''}
-              placeholder="Confirm your password"
-            />
-            {errors.confirmPassword && (
-              <span className="error-message">{errors.confirmPassword.message}</span>
-            )}
+          <div className="form-options">
+            <label className="remember-me">
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
+            <a href="/forgot-password" className="forgot-password">
+              Forgot password?
+            </a>
           </div>
 
           <button type="submit" disabled={isSubmitting} className="submit-button">
-            {isSubmitting ? 'Creating Account...' : 'Create Account'}
+            {isSubmitting ? 'Signing In...' : 'Sign In'}
           </button>
 
           {submitMessage && (
-            <div className={`submit-message ${submitMessage.includes('successfully') ? 'success' : 'error'}`}>
+            <div className={`submit-message ${submitMessage.includes('successful') ? 'success' : 'error'}`}>
               {submitMessage}
             </div>
           )}
         </form>
 
-        <div className="signup-footer">
+        <div className="login-footer">
           <p>
-            Already have an account?{' '}
-            <Link href="/login" className="login-link">
-              Sign in here
+            Don&apos;t have an account?{' '}
+            <Link href="/signup" className="signup-link">
+              Create one here
             </Link>
           </p>
         </div>
       </div>
 
       <style jsx>{`
-        .signup-container {
+        .login-container {
           min-height: 100vh;
           background: #0a0a0a;
           display: flex;
@@ -170,34 +145,34 @@ export default function SignupPage() {
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         }
 
-        .signup-card {
+        .login-card {
           background: #1a1a1a;
           border: 1px solid #333;
           border-radius: 12px;
           padding: 40px;
           width: 100%;
-          max-width: 450px;
+          max-width: 400px;
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
         }
 
-        .signup-header {
+        .login-header {
           text-align: center;
           margin-bottom: 32px;
         }
 
-        .signup-header h1 {
+        .login-header h1 {
           color: #ffffff;
           font-size: 28px;
           font-weight: 600;
           margin-bottom: 8px;
         }
 
-        .signup-header p {
+        .login-header p {
           color: #888;
           font-size: 16px;
         }
 
-        .signup-form {
+        .login-form {
           display: flex;
           flex-direction: column;
           gap: 20px;
@@ -245,6 +220,41 @@ export default function SignupPage() {
           margin-top: 4px;
         }
 
+        .form-options {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin: 8px 0;
+        }
+
+        .remember-me {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #888;
+          font-size: 14px;
+          cursor: pointer;
+        }
+
+        .remember-me input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          accent-color: #ffffff;
+        }
+
+        .forgot-password {
+          color: #ffffff;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+          transition: color 0.2s ease;
+        }
+
+        .forgot-password:hover {
+          color: #f0f0f0;
+          text-decoration: underline;
+        }
+
         .submit-button {
           background: #ffffff;
           color: #000000;
@@ -290,38 +300,44 @@ export default function SignupPage() {
           border: 1px solid rgba(239, 68, 68, 0.2);
         }
 
-        .signup-footer {
+        .login-footer {
           text-align: center;
           margin-top: 32px;
           padding-top: 24px;
           border-top: 1px solid #333;
         }
 
-        .signup-footer p {
+        .login-footer p {
           color: #888;
           font-size: 14px;
         }
 
-        .login-link {
+        .signup-link {
           color: #ffffff;
           text-decoration: none;
           font-weight: 500;
           transition: color 0.2s ease;
         }
 
-        .login-link:hover {
+        .signup-link:hover {
           color: #f0f0f0;
           text-decoration: underline;
         }
 
         @media (max-width: 480px) {
-          .signup-card {
+          .login-card {
             padding: 24px;
             margin: 10px;
           }
 
-          .signup-header h1 {
+          .login-header h1 {
             font-size: 24px;
+          }
+
+          .form-options {
+            flex-direction: column;
+            gap: 12px;
+            align-items: flex-start;
           }
         }
       `}</style>
