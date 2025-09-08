@@ -192,7 +192,7 @@ WITH NO DATA;
 ```sql
 -- Cards table
 @@index([userId, nextReviewDate]) -- Due cards queries
-@@index([userId, label])         -- Label filtering
+@@index([userId, deck])          -- Deck filtering
 
 -- Reviews table
 @@index([cardId, reviewDate])    -- Card performance

@@ -42,7 +42,7 @@ model Card {
   userId       Int      @map("user_id")
   frontContent String   @map("front_content") // Question/prompt text
   backContent  String   @map("back_content") // Answer/explanation text
-  label        String? // Category for organization (e.g., "Spanish", "Math")
+  deck         String? // Deck for organization (e.g., "Spanish", "Math")
   createdAt    DateTime @default(now()) @map("created_at")
   // === SM-15 ALGORITHM CRITICAL FIELDS ===
   // These fields are the heart of the spaced repetition system
@@ -96,7 +96,7 @@ model Card {
 
   // Indexes for Performance
   @@index([userId, nextReviewDate]) // Critical for due cards queries
-  @@index([userId, label]) // Enables fast label filtering
+  @@index([userId, deck]) // Enables fast deck filtering
   @@index([userId, aFactor]) // For difficulty-based queries
   @@index([userId, repetitionCount]) // For learning progress analysis
   @@map("cards")
