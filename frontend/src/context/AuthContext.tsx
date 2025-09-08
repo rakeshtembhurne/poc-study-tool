@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import authStorage from "@/lib/auth-storage";
+import { AxiosRequestConfig } from "axios";
 
 type User = {
   id: string;
@@ -147,22 +148,19 @@ export const useAuthenticatedFetch = () => {
   const { logout } = useAuth();
 
   return async (url: string, options: RequestInit = {}) => {
-    const authHeader = authStorage.getAuthHeader();
+    const { apiUtils } = await import('@/lib/axios-config');
     
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        ...(authHeader && { Authorization: authHeader }),
-      },
-    });
-
-    // Handle token expiration
-    if (response.status === 401) {
-      logout();
-      throw new Error('Authentication expired. Please log in again.');
+    try {
+      // Use axios for the request
+      const response = await apiUtils.get(url, options as AxiosRequestConfig);
+      return response;
+    } catch (error: any) {
+      // Handle token expiration (already handled by axios interceptor)
+      if (error.response?.status === 401) {
+        logout();
+        throw new Error('Authentication expired. Please log in again.');
+      }
+      throw error;
     }
-
-    return response;
   };
 };

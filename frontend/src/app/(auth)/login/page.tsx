@@ -6,6 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { apiUtils } from '@/lib/axios-config';
 
 // Validation schema
 const loginSchema = yup.object({
@@ -41,18 +42,12 @@ export default function LoginPage() {
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
+      const response = await apiUtils.post('/api/auth/login', {
+        email: data.email,
+        password: data.password,
       });
 
-      const result = await response.json();
+      const result: any = response.data;
 
       if (result.success) {
         setSubmitMessage(result.message || 'Login successful!');
@@ -78,9 +73,19 @@ export default function LoginPage() {
       } else {
         setSubmitMessage(result.message || 'Login failed. Please try again.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      setSubmitMessage('Network error. Please check your connection and try again.');
+      
+      // Handle axios error responses
+      if (error.response?.data?.message) {
+        setSubmitMessage(error.response.data.message);
+      } else if (error.code === 'ECONNABORTED') {
+        setSubmitMessage('Request timeout. Please try again.');
+      } else if (error.message === 'Network Error') {
+        setSubmitMessage('Network error. Please check your connection and try again.');
+      } else {
+        setSubmitMessage('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
