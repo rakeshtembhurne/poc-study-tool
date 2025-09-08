@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+### Setup Environment Variables
+
+Copy `.env.example` files into `.env`:
+
+- **From the project root** (run this if you are in the main folder):
+  ```bash
+  cp frontend/.env.example frontend/.env # Copies frontend env file
+
+  cp .env.example .env      # run this if you are in respective folder
+ 

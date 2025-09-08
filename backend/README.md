@@ -239,3 +239,19 @@ Jest is configured with strict coverage thresholds:
 3. **Spaced Repetition Logic:** Implement SM-2/SM-15 algorithms
 4. **API Endpoints:** Create REST APIs for deck and card management
 5. **Frontend Integration:** Connect with Next.js frontend
+<<<<<<< HEAD
+=======
+
+
+
+### Setup Environment Variables
+
+Copy `.env.example` files into `.env`:
+
+- **From the project root** (run this if you are in the main folder):
+  ```bash
+  cp backend/.env.example backend/.env   # Copies backend env file
+
+  cp .env.example .env      # run this if you are in respective folder
+ 
+>>>>>>> upstream/develop
