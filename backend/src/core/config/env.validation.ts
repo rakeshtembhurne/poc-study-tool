@@ -117,7 +117,7 @@ export class EnvironmentVariables {
   // Kafka Configuration
   @Transform(
     ({ value }) =>
-      (value as string | undefined)?.split(',') || ['localhost:9092'],
+      (value as string | undefined)?.split(',') || ['localhost:9092']
   )
   KAFKA_BROKERS: string[] = ['localhost:9092'];
 
