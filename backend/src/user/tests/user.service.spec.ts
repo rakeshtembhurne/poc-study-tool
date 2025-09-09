@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from '../user.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { AuthService } from '../../auth/auth.service'; // <-- import AuthService
 import { CreateUserDto } from '../dto/create-user.dto';
-import { Controller } from '@nestjs/common';
 import { UpdateUserDto } from '../dto/update-user.dto';
 
 describe('UserService', () => {
   let service: UserService;
-  let prisma: PrismaService; // <-- Declare prisma here
+  let prisma: PrismaService;
+  let authService: AuthService;
 
   const mockUser = {
     id: 1,
@@ -28,36 +29,50 @@ describe('UserService', () => {
     statistics: [],
   };
 
+  const mockAuthService = {
+    hashPassword: jest.fn().mockResolvedValue('hashedPassword'),
+    verifyPassword: jest.fn().mockResolvedValue(true),
+    generateToken: jest.fn().mockResolvedValue('mocked-jwt-token'),
+    verifyToken: jest.fn().mockResolvedValue({ sub: 1, email: 'test@example.com' }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UserService, PrismaService],
+      providers: [
+        UserService,
+        PrismaService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService, // <-- provide mock
+        },
+      ],
     }).compile();
 
     service = module.get<UserService>(UserService);
-    prisma = module.get<PrismaService>(PrismaService); // <-- Assign prisma here
+    prisma = module.get<PrismaService>(PrismaService);
+    authService = module.get<AuthService>(AuthService);
   });
 
   it('should be defined', () => {
-    expect(Controller).toBeDefined();
+    expect(service).toBeDefined();
   });
 
   describe('create()', () => {
     it('should create a user', async () => {
-      const dto: CreateUserDto = {
-        email: 'test@example.com',
-        password: 'hashedPassword',
-      };
+      const dto: CreateUserDto = { email: 'test@example.com', password: 'password123' };
 
-      jest.spyOn(prisma.user, 'create').mockResolvedValueOnce(mockUser); // prisma is defined
+      jest.spyOn(prisma.user, 'create').mockResolvedValueOnce(mockUser);
 
       const result = await service.create(dto);
+
+      expect(mockAuthService.hashPassword).toHaveBeenCalledWith(dto.password);
       expect(result).toEqual(mockUser);
     });
   });
+
   describe('findAll()', () => {
     it('should return an array of users', async () => {
       jest.spyOn(prisma.user, 'findMany').mockResolvedValueOnce([mockUser]);
-
       const result = await service.findAll();
       expect(result).toEqual([mockUser]);
     });
@@ -66,7 +81,6 @@ describe('UserService', () => {
   describe('findOne()', () => {
     it('should return a user by id', async () => {
       jest.spyOn(prisma.user, 'findUnique').mockResolvedValueOnce(mockUser);
-
       const result = await service.findOne(1);
       expect(result).toEqual(mockUser);
     });
@@ -74,14 +88,8 @@ describe('UserService', () => {
 
   describe('update()', () => {
     it('should update a user by id', async () => {
-      const updateDto: UpdateUserDto = {
-        email: 'updated@example.com',
-      };
-
-      const updatedUser = {
-        ...mockUser,
-        email: updateDto.email ?? mockUser.email,
-      };
+      const updateDto: UpdateUserDto = { email: 'updated@example.com' };
+      const updatedUser = { ...mockUser, email: updateDto.email ?? mockUser.email };
 
       jest.spyOn(prisma.user, 'update').mockResolvedValueOnce(updatedUser);
 
@@ -92,11 +100,9 @@ describe('UserService', () => {
 
   describe('remove()', () => {
     it('should delete a user by id', async () => {
-      jest.spyOn(prisma.user, 'delete').mockResolvedValueOnce(mockUser); // ✅ properly mocked
-
+      jest.spyOn(prisma.user, 'delete').mockResolvedValueOnce(mockUser);
       const result = await service.remove(1);
-
-      expect(result).toEqual(mockUser); // ✅ passes if mock is correct
+      expect(result).toEqual(mockUser);
     });
   });
 });
