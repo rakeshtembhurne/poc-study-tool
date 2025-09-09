@@ -1,22 +1,30 @@
-import { Module, BadRequestException } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { PrismaService } from '../prisma/prisma.service';
-
-if (!process.env.JWT_SECRET) {
-  throw new Error('JWT_SECRET is not defined');
-}
+import { ConfigService } from '../core/config/config.service';
+import { AuthService } from '../auth/auth.service';
+import { AuthController } from '../auth/auth.controller';
+import { PrismaModule } from '../prisma/prisma.module';
+import { ConfigModule } from '../core/config/config.module';
 
 @Module({
   imports: [
-    JwtModule.register({
-      secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: process.env.JWT_ACCESS_EXPIRY || '1h' },
+    PrismaModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => {
+        const jwtConfig = configService.getJwtConfig();
+        return {
+          secret: jwtConfig.secret,
+          signOptions: {
+            expiresIn: jwtConfig.accessExpiry,
+          },
+        };
+      },
+      inject: [ConfigService],
     }),
   ],
+  providers: [AuthService],
   controllers: [AuthController],
-  providers: [AuthService, PrismaService],
   exports: [AuthService],
 })
 export class AuthModule {}

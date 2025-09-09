@@ -1,13 +1,3 @@
-// These imports are kept for future validation use
-// import { Type } from 'class-transformer';
-// import {
-//   IsBoolean,
-//   IsInt,
-//   IsOptional,
-//   IsString,
-//   ValidateNested,
-// } from 'class-validator';
-
 export interface AppConfig {
   env: string;
   port: number;
@@ -22,13 +12,6 @@ export interface ModuleConfig {
   ai: boolean;
   fileProcessing: boolean;
   analytics: boolean;
-}
-
-export interface AuthConfig {
-  jwt: JwtConfig;
-  bcrypt: BcryptConfig;
-  apiKey: ApiKeyConfig;
-  passwordPolicy: PasswordPolicyConfig;
 }
 
 export interface JwtConfig {
@@ -51,6 +34,13 @@ export interface PasswordPolicyConfig {
   requireLowercase: boolean;
   requireNumbers: boolean;
   requireSpecialChars: boolean;
+}
+
+export interface AuthConfig {
+  jwt: JwtConfig;
+  bcrypt: BcryptConfig;
+  apiKey: ApiKeyConfig;
+  passwordPolicy: PasswordPolicyConfig;
 }
 
 export interface DatabaseConfig {

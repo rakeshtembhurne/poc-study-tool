@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { PrismaClient } from '../../generated/prisma';
+import { PrismaClient } from '@prisma/client';
 import { loadTemplateData, logSeedingProgress } from './data-loader';
 
 interface UserData {
