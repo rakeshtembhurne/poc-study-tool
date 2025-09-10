@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger(AuthController.name);
+private readonly logger = new Logger(AuthController.name);
 
   constructor(private readonly authService: AuthService) {}
 
