@@ -6,8 +6,10 @@ import { ConfigModule } from './core/config/config.module';
 import { AuthModule } from './auth/auth.module';
 import { CardModule } from './card/card.module';
 
+import { UserModule } from './user/user.module';
+
 @Module({
-  imports: [ConfigModule, PrismaModule, AuthModule, CardModule],
+  imports: [ConfigModule, PrismaModule, AuthModule, UserModule,CardModule],
   controllers: [AppController],
   providers: [AppService],
 })
