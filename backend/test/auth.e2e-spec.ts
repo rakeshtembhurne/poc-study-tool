@@ -5,6 +5,8 @@ import { AppModule } from '../src/app.module';
 
 describe('Auth Module (e2e)', () => {
   let app: INestApplication;
+  let userId: string;
+  let refreshToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -78,7 +80,12 @@ describe('Auth Module (e2e)', () => {
         .send(user)
         .expect(201);
 
-      expect(res.body).toHaveProperty('accessToken'); // match camelCase from AuthService
+      expect(res.body).toHaveProperty('accessToken');
+      expect(res.body).toHaveProperty('refreshToken');
+      expect(res.body).toHaveProperty('userId');
+
+      userId = res.body.userId;
+      refreshToken = res.body.refreshToken;
     });
 
     it('should login another registered user (201)', async () => {
@@ -107,6 +114,44 @@ describe('Auth Module (e2e)', () => {
       await request(app.getHttpServer())
         .post('/auth/login')
         .send(user)
+        .expect(400);
+    });
+  });
+
+  describe('POST /auth/refresh', () => {
+    it('should return new tokens with valid refresh token (201)', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({
+          userId,
+          refreshToken,
+        })
+        .expect(201);
+
+      expect(res.body).toHaveProperty('accessToken');
+      expect(res.body).toHaveProperty('refreshToken');
+
+      // update refreshToken for chaining
+      refreshToken = res.body.refreshToken;
+    });
+
+    it('should fail with invalid refresh token (401)', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({
+          userId,
+          refreshToken: 'invalid-token',
+        })
+        .expect(401);
+    });
+
+    it('should fail with invalid userId (400)', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .send({
+          userId: 'not-a-number',
+          refreshToken,
+        })
         .expect(400);
     });
   });

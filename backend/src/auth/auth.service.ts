@@ -1,36 +1,30 @@
-<<<<<<< HEAD
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 
-=======
->>>>>>> 02a37d7 (feat(auth): improve security, add duplicate email handling and functional tests (#16))
-import { Injectable, UnauthorizedException,BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
-import {
-  Logger,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Logger, InternalServerErrorException } from '@nestjs/common';
 
 interface JwtPayload {
   sub: string;
   email: string;
 }
 
-
-
-
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
- constructor(
+  constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService
   ) {}
-
 
   async register(dto: RegisterDto) {
     const hashedPassword = await this.hashPassword(dto.password);
@@ -56,15 +50,28 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException('Invalid credentials');
 
-    const isPasswordValid = await this.verifyPassword(dto.password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+    const isPasswordValid = await this.verifyPassword(
+      dto.password,
+      user.password
+    );
+    if (!isPasswordValid)
+      throw new UnauthorizedException('Invalid credentials');
 
-    const token = await this.generateToken(user.id, user.email);
+    const accessToken = await this.generateToken(user.id, user.email);
+    const refreshToken = await this.generateRefreshToken(user.id);
+
+    const hashedRefreshToken = await this.hashPassword(refreshToken);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { hashedRefreshToken },
+    });
+
     return {
       message: 'Login successful',
       userId: user.id,
       email: user.email,
-      accessToken: token,
+      accessToken,
+      refreshToken,
     };
   }
 
@@ -112,5 +119,50 @@ export class AuthService {
       throw new InternalServerErrorException('Error verifying token');
     }
   }
-}
 
+  async generateRefreshToken(userId: string | number): Promise<string> {
+    try {
+      const payload: JwtPayload = { sub: String(userId), email: '' };
+      return this.jwtService.sign(payload, {
+        expiresIn: '7d',
+      });
+    } catch (error) {
+      this.logger.error(
+        `Error generating refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+      throw new InternalServerErrorException('Error generating refresh token');
+    }
+  }
+
+  async refreshTokens(userId: string, refreshToken: string) {
+    const userIdNum = parseInt(userId, 10);
+    if (isNaN(userIdNum)) {
+      throw new BadRequestException('Invalid userId');
+    }
+    const user = await this.prisma.user.findUnique({
+      where: { id: userIdNum },
+    });
+    if (!user || !user.hashedRefreshToken)
+      throw new UnauthorizedException('Access Denied');
+
+    const isValid = await this.verifyPassword(
+      refreshToken,
+      user.hashedRefreshToken
+    );
+    if (!isValid) throw new UnauthorizedException('Invalid refresh token');
+
+    const newAccessToken = await this.generateToken(user.id, user.email);
+    const newRefreshToken = await this.generateRefreshToken(user.id);
+    const hashedNewRefreshToken = await this.hashPassword(newRefreshToken);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { hashedRefreshToken: hashedNewRefreshToken },
+    });
+
+    return {
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    };
+  }
+}

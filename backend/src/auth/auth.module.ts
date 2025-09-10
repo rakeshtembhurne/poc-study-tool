@@ -1,4 +1,4 @@
-import { Module, BadRequestException } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '../core/config/config.service';
 import { AuthService } from '../auth/auth.service';
