@@ -35,19 +35,19 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-
 ### Setup Environment Variables
 
 Copy `.env.example` files into `.env`:
 
 - **From the project root** (run this if you are in the main folder):
+
   ```bash
   cp frontend/.env.example frontend/.env # Copies frontend env file
 
   cp .env.example .env      # run this if you are in respective folder
- 
+  ```
 
- ## Code Quality and Standards
+## Code Quality and Standards
 
 This project enforces code quality and consistency using ESLint, Prettier, and Husky.
 
@@ -65,7 +65,7 @@ This project enforces code quality and consistency using ESLint, Prettier, and H
 ### ESLint Configuration Features
 
 - **Next.js Integration**: Includes `next/core-web-vitals` and `next/typescript` configs
-- **TypeScript Support**: Full TypeScript ESLint rules with type-aware linting  
+- **TypeScript Support**: Full TypeScript ESLint rules with type-aware linting
 - **Prettier Integration**: Automatic code formatting with ESLint
 - **Unused Imports**: Automatic removal of unused imports and variables
 - **Custom Rules**: Tailored rules for React/Next.js best practices
@@ -73,12 +73,14 @@ This project enforces code quality and consistency using ESLint, Prettier, and H
 ### Why Different ESLint Configurations?
 
 **Frontend (Next.js)**: Uses Next.js optimized rules with `eslint-config-next` which includes:
+
 - React-specific rules optimized for Next.js applications
 - Performance optimizations for client-side React code
 - Next.js specific patterns (Image, Link, etc.)
 - Web Vitals and SEO optimization rules
 
 **Backend (NestJS)**: Uses `eslint-config-airbnb-extended` which includes:
+
 - Node.js server-side best practices
 - More strict code organization rules suitable for backend APIs
 - Enhanced security patterns for server applications
@@ -91,3 +93,40 @@ This separation allows each codebase to follow patterns most appropriate for its
 - **`pre-commit`:** Runs ESLint and tests on staged files
 - **`commit-msg`:** Enforces conventional commit format
 - **Setup:** Automatically configured via `npm install`
+
+## UI Components (shadcn/ui)
+
+This project is configured with [shadcn/ui](https://ui.shadcn.com/) for consistent, accessible UI components built on top of Radix UI and Tailwind CSS.
+
+### Configuration
+
+The project includes a `components.json` configuration file with the following setup:
+
+- **Style**: New York variant
+- **TypeScript**: Enabled with RSC support
+- **Tailwind**: Configured with CSS variables and neutral base color
+- **Icon Library**: Lucide React
+- **Component Path**: `@/components/ui`
+
+### Installing Components
+
+To add new shadcn/ui components to your project:
+
+#### 1. Install the shadcn/ui CLI (if not already installed)
+
+```bash
+npx shadcn@latest init
+```
+
+#### 2. Add Individual Components
+
+```bash
+# Add a button component
+npx shadcn@latest add button
+
+# Add a card component
+npx shadcn@latest add card
+
+# Add multiple components at once
+npx shadcn@latest add button card input label
+```
