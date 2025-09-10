@@ -1,1 +1,12 @@
-npx lint-staged
+#!/usr/bin/env sh
+
+# Get the root directory (where .git is located)
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# Run backend lint-staged
+echo "Running backend lint-staged..."
+cd "$ROOT_DIR/backend" && npx lint-staged
+
+# Run frontend lint-staged
+echo "Running frontend lint-staged..."
+cd "$ROOT_DIR/frontend" && npx lint-staged
