@@ -133,6 +133,9 @@ cp .env.example .env
 cd backend
 npx prisma migrate dev
 
+# Configure git hooks (required for development)
+git config core.hooksPath backend/.husky
+
 # Start development servers
 # Backend
 npm run start:dev
@@ -140,6 +143,15 @@ npm run start:dev
 # Frontend (new terminal)
 cd frontend
 npm run dev
+```
+
+### Git Hooks Setup
+
+This project uses a unified husky setup located in `backend/.husky` that handles commit validation and pre-commit linting for both backend and frontend code. The git hooks configuration ensures that regardless of where you commit from (root, backend, or frontend directory), the same validation rules apply.
+
+**Required configuration:**
+```bash
+git config core.hooksPath backend/.husky
 ```
 
 ## Environment Variables
