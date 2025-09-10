@@ -118,10 +118,10 @@ describe('Auth Module (e2e)', () => {
     });
   });
 
-  describe('POST /auth/refresh', () => {
+  describe('POST /auth/refresh-token', () => {
     it('should return new tokens with valid refresh token (201)', async () => {
       const res = await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/auth/refresh-token')
         .send({
           userId,
           refreshToken,
@@ -137,7 +137,7 @@ describe('Auth Module (e2e)', () => {
 
     it('should fail with invalid refresh token (401)', async () => {
       await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/auth/refresh-token')
         .send({
           userId,
           refreshToken: 'invalid-token',
@@ -147,12 +147,25 @@ describe('Auth Module (e2e)', () => {
 
     it('should fail with invalid userId (400)', async () => {
       await request(app.getHttpServer())
-        .post('/auth/refresh')
+        .post('/auth/refresh-token')
         .send({
           userId: 'not-a-number',
           refreshToken,
         })
         .expect(400);
+    });
+  });
+
+  describe('POST /auth/reset-password', () => {
+    it('should generate reset token and log it', async () => {
+      const email = 'user1@example.com';
+
+      const res = await request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({ email })
+        .expect(201);
+
+      expect(res.body).toHaveProperty('message');
     });
   });
 });

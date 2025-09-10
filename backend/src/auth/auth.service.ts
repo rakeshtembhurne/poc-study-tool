@@ -29,13 +29,33 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const hashedPassword = await this.hashPassword(dto.password);
     try {
+      // 1. Create the user
       const user = await this.prisma.user.create({
         data: {
           email: dto.email,
           password: hashedPassword,
         },
       });
-      return { message: 'User registered successfully', userId: user.id };
+
+      // 2. Generate access and refresh tokens
+      const accessToken = await this.generateToken(user.id, user.email);
+      const refreshToken = await this.generateRefreshToken(user.id);
+      const hashedRefreshToken = await this.hashPassword(refreshToken);
+
+      // 3. Save hashed refresh token in DB
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { hashedRefreshToken },
+      });
+
+      // 4. Return response with tokens
+      return {
+        message: 'User registered successfully',
+        userId: user.id,
+        email: user.email,
+        accessToken,
+        refreshToken,
+      };
     } catch (error: any) {
       if (error.code === 'P2002') {
         throw new BadRequestException('Email already exists');
@@ -164,5 +184,26 @@ export class AuthService {
       accessToken: newAccessToken,
       refreshToken: newRefreshToken,
     };
+  }
+
+  async resetPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      this.logger.warn(
+        `Password reset requested for non-existent email: ${email}`
+      );
+      return { message: 'If this email exists, a reset link has been sent.' };
+    }
+
+    // Generate a temporary reset token (JWT or random string)
+    const resetToken = this.jwtService.sign(
+      { sub: user.id, email },
+      { expiresIn: '15m' }
+    );
+
+    // Console log instead of sending email
+    this.logger.log(`Password reset token for ${email}: ${resetToken}`);
+
+    return { message: 'If this email exists, a reset link has been sent.' };
   }
 }
