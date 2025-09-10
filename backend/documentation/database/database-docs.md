@@ -142,6 +142,16 @@ WITH NO DATA;
   - `nextReviewDate`: When to show card next
   - `repetitionCount`: Number of reviews, used for OF Matrix lookups
   - `lapsesCount`: Failure tracking for interval calculations
+  - `deck`: A string field for associating the card with a deck by its title.
+
+### Deck
+- Represents a user-created collection of cards, like a folder or a tag.
+- **Critical Fields**:
+  - `title`: The name of the deck.
+  - `description`: An optional description for the deck.
+  - `isPublic`: Controls if the deck can be seen by other users.
+  - `userId`: The ID of the user who owns the deck.
+  - `cardId`: The ID of a card associated with the deck, possibly as a "cover" or representative card.
 
 ### Review
 - Individual review sessions and algorithm decisions
@@ -173,6 +183,17 @@ WITH NO DATA;
 - Each user owns their private collection of flashcards
 - Cascade delete: removing user removes all their cards
 - No card sharing between users
+
+### User (1) → Decks (Many)
+- Each user can create and manage their own decks.
+- Decks are private to the user unless marked as public.
+- Cascade delete is not explicitly defined in the Prisma schema for `Deck`, but should be handled by the application logic.
+
+### Deck and Card Relationship
+- The `Deck` model is  linked to `Card` with a direct database foreign key relation in Prisma.
+- A card can be associated with a deck in two ways:
+  1. The `Card` model has a `deck` field of type `String`, which can hold the title of a deck. This allows for a flexible, string-based association.
+  2. The `Deck` model has a `cardId` field, which can be used to link a deck to a specific "cover" or representative card.
 
 ### Card (1) → Reviews (Many)
 - Each card has a complete review history
@@ -432,6 +453,33 @@ ORDER BY idx_scan DESC;
 SELECT relname, n_live_tup, n_dead_tup, 
        last_vacuum, last_analyze
 FROM pg_stat_all_tables
+WHERE schemaname = 'public';
+```
+
+### High Availability Setup
+- Primary/Standby replication using WAL
+- Connection pooling with PgBouncer
+- Regular VACUUM and maintenance windows
+- Monitoring with pg_stat_statementsND query NOT LIKE '%pg_stat_activity%';
+
+-- Index usage
+SELECT schemaname, tablename, indexname, idx_scan, idx_tup_read
+FROM pg_stat_all_indexes
+WHERE schemaname = 'public'
+ORDER BY idx_scan DESC;
+
+-- Table statistics
+SELECT relname, n_live_tup, n_dead_tup, 
+       last_vacuum, last_analyze
+FROM pg_stat_all_tables
+WHERE schemaname = 'public';
+```
+
+### High Availability Setup
+- Primary/Standby replication using WAL
+- Connection pooling with PgBouncer
+- Regular VACUUM and maintenance windows
+- Monitoring with pg_stat_statementsROM pg_stat_all_tables
 WHERE schemaname = 'public';
 ```
 

@@ -32,6 +32,7 @@ model User {
   reviews               Review[] // Complete review history for analytics
   ofMatrixEntries       OFMatrix[] // Personalized optimal factors matrix
   statistics            UserStatistic[] // Daily/periodic performance metrics
+  Deck                  Deck[]
 
   @@map("users")
 }
@@ -41,7 +42,7 @@ model Card {
   userId       Int      @map("user_id")
   frontContent String   @map("front_content") // Question/prompt text
   backContent  String   @map("back_content") // Answer/explanation text
-  deck         String? // Deck for organization (e.g., "Spanish", "Math")
+  deckId        Int      @map("deckId")
   createdAt    DateTime @default(now()) @map("created_at")
   // === SM-15 ALGORITHM CRITICAL FIELDS ===
   // These fields are the heart of the spaced repetition system
@@ -92,6 +93,8 @@ model Card {
   // Relationships
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews         Review[] // Complete review history for this card
+  Deck            Deck?    @relation(fields: [deckId], references: [id])
+  deckId          Int?
 
   // Indexes for Performance
   @@index([userId, nextReviewDate]) // Critical for due cards queries
@@ -215,4 +218,15 @@ model UserStatistic {
   @@unique([userId, date])
   @@index([userId, date]) // Fast date range queries for charts
   @@map("user_statistics")
+}
+
+model Deck {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  isPublic    Boolean  @default(false)
+  userId       Int      @map("user_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("decks")
 }
