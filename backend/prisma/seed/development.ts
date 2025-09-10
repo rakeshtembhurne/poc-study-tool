@@ -310,7 +310,7 @@ export async function seedDevelopment(prisma: PrismaClient) {
           grade5Count: statData.grade5Count,
         },
       });
-    } catch (error) {
+    } catch {
       Logger.warn(`User statistic creation failed:`);
     }
   }

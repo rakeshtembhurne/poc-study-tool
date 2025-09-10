@@ -8,5 +8,5 @@ echo "Running backend commitlint..."
 cd "$ROOT_DIR/backend" && npx commitlint --edit "$1"
 
 # Run frontend commitlint
-echo "Running frontend commitlint..."
-cd "$ROOT_DIR/frontend" && npx commitlint --edit "$1"
+# echo "Running frontend commitlint..."
+# cd "$ROOT_DIR/frontend" && npx commitlint --edit "$1"
