@@ -1,15 +1,20 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import axios, { AxiosProgressEvent } from 'axios';
 
 export default function FileUpload() {
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [progress, setProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewContent, setPreviewContent] = useState<string | null>(null); // 👈 preview content
+
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const allowedTypes = ['application/pdf', 'text/plain'];
-  const maxSize = 10 * 1024 * 1024; // 10 MB in bytes
+  const maxSize = 10 * 1024 * 1024; // 10 MB
 
   const validateFile = (selectedFile: File) => {
     if (!allowedTypes.includes(selectedFile.type)) {
@@ -29,6 +34,7 @@ export default function FileUpload() {
       if (validationError) {
         setError(validationError);
         setFile(null);
+        setPreviewContent(null);
       } else {
         setError(null);
         setFile(selectedFile);
@@ -47,6 +53,7 @@ export default function FileUpload() {
       if (validationError) {
         setError(validationError);
         setFile(null);
+        setPreviewContent(null);
       } else {
         setError(null);
         setFile(droppedFile);
@@ -75,25 +82,35 @@ export default function FileUpload() {
       return;
     }
 
+    setProgress(0);
+    setError(null);
+    setIsUploading(true);
+    setPreviewContent(null);
+
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const res = await fetch('http://localhost:8000/upload', {
-        method: 'POST',
-        body: formData,
+      const res = await axios.post('http://localhost:8000/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress: (progressEvent: AxiosProgressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round(
+              (progressEvent.loaded! * 100) / progressEvent.total
+            );
+            setProgress(percent);
+          }
+        },
       });
-
-      if (!res.ok) throw new Error('Upload failed');
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const data = await res.json();
-      console.log('Upload success:', data);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      alert(`File uploaded successfully: ${data.filename}`);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
+      setPreviewContent(res.data.content || 'No content extracted');
+      setFile(null);
+      setProgress(0);
     } catch (err) {
       console.error('Upload error:', err);
-      setError('Upload failed!');
+      setError('Upload failed. Please check your connection and try again.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -127,7 +144,45 @@ export default function FileUpload() {
         )}
       </div>
 
-      {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
+      {error && (
+        <div style={{ marginBottom: '1rem' }}>
+          <p style={{ color: 'red' }}>{error}</p>
+          <button
+            onClick={handleUpload}
+            disabled={!file || isUploading}
+            style={{ marginTop: '0.5rem' }}
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {progress > 0 && (
+        <div style={{ margin: '1rem 0' }}>
+          <div
+            style={{
+              height: '20px',
+              width: '100%',
+              backgroundColor: '#eee',
+              borderRadius: '8px',
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${progress}%`,
+                backgroundColor: '#4caf50',
+                textAlign: 'center',
+                color: '#fff',
+                transition: 'width 0.3s ease',
+              }}
+            >
+              {progress}%
+            </div>
+          </div>
+        </div>
+      )}
 
       <input
         type="file"
@@ -137,11 +192,35 @@ export default function FileUpload() {
         accept=".pdf,.txt"
       />
 
-      <button onClick={openFilePicker} style={{ marginRight: '1rem' }}>
+      <button
+        onClick={openFilePicker}
+        style={{ marginRight: '1rem' }}
+        disabled={isUploading}
+      >
         Choose File
       </button>
 
-      <button onClick={handleUpload}>Upload</button>
+      <button onClick={handleUpload} disabled={!file || isUploading}>
+        Upload
+      </button>
+
+      {previewContent && (
+        <div
+          style={{
+            marginTop: '1.5rem',
+            padding: '1rem',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            backgroundColor: '#fafafa',
+            maxHeight: '300px',
+            overflowY: 'auto',
+            whiteSpace: 'pre-wrap', // preserve formatting
+          }}
+        >
+          <h4>Content Preview:</h4>
+          <p>{previewContent}</p>
+        </div>
+      )}
     </div>
   );
 }
