@@ -3,10 +3,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import authStorage from "@/lib/auth-storage";
 import { AxiosRequestConfig } from "axios";
+import apiClient from "@/lib/api-client";
 
 type User = {
   id: string;
-  name: string;
   email: string;
 } | null;
 
@@ -17,7 +17,7 @@ type AuthContextType = {
   isLoading: boolean;
   login: (token: string, userData: User, expiresIn?: number, refreshToken?: string) => void;
   logout: () => void;
-  refreshAuth: () => void;
+  refreshAuth: () => Promise<boolean>;
   isTokenExpiringSoon: (minutes?: number) => boolean;
   getAuthHeader: () => string | null;
 };
@@ -36,9 +36,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const storedToken = authStorage.getToken();
         if (storedToken) {
           setToken(storedToken);
-          // In a real app, you might want to validate the token with the backend
-          // and fetch user data. For now, we'll just mark as authenticated.
-          setUser({ id: '', name: '', email: '' }); // Placeholder user data
+          // Try to get user data from localStorage
+          const userStr = localStorage.getItem('user');
+          if (userStr) {
+            const userData = JSON.parse(userStr);
+            setUser(userData);
+          } else {
+            setUser({ id: '', email: '' }); // Placeholder user data
+          }
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
@@ -55,9 +60,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!token) return;
 
-    const checkTokenExpiration = () => {
+    const checkTokenExpiration = async () => {
       if (!authStorage.isTokenValid()) {
-        logout();
+        // Try to refresh token before logging out
+        const refreshed = await refreshAuth();
+        if (!refreshed) {
+          logout();
+        }
       }
     };
 
@@ -73,7 +82,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     expiresIn?: number, 
     refreshToken?: string
   ) => {
+    console.log("Login successful!");
     const success = authStorage.setToken(newToken, expiresIn, refreshToken);
+    localStorage.setItem('user', JSON.stringify({ id: userData?.id || '', email: userData?.email || '' }));
     
     if (success) {
       setToken(newToken);
@@ -85,16 +96,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     authStorage.clearAll();
+    localStorage.removeItem('user');
     setToken(null);
     setUser(null);
   };
 
-  const refreshAuth = () => {
-    const currentToken = authStorage.getToken();
-    if (currentToken) {
-      setToken(currentToken);
-    } else {
-      logout();
+  const refreshAuth = async (): Promise<boolean> => {
+    try {
+      const refreshToken = authStorage.getRefreshToken();
+      const userStr = localStorage.getItem('user');
+      
+      if (!refreshToken || !userStr) {
+        return false;
+      }
+
+      const userData = JSON.parse(userStr);
+      const response = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userData.id,
+          refreshToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const success = authStorage.setToken(
+          data.accessToken,
+          data.expiresIn,
+          data.refreshToken
+        );
+        
+        if (success) {
+          setToken(data.accessToken);
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return false;
     }
   };
 
@@ -148,11 +194,9 @@ export const useAuthenticatedFetch = () => {
   const { logout } = useAuth();
 
   return async (url: string, options: RequestInit = {}) => {
-    const { apiUtils } = await import('@/lib/axios-config');
-    
     try {
       // Use axios for the request
-      const response = await apiUtils.get(url, options as AxiosRequestConfig);
+      const response = await apiClient.get(url, options as AxiosRequestConfig);
       return response;
     } catch (error: any) {
       // Handle token expiration (already handled by axios interceptor)

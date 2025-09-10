@@ -6,6 +6,10 @@ import { AuthController } from '../auth/auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '../core/config/config.module';
 
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined');
+}
+
 @Module({
   imports: [
     PrismaModule,
