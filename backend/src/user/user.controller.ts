@@ -8,17 +8,19 @@ import {
   Delete,
   HttpStatus,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from '@/user/user.service';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 
 @Controller('users')
-// @UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard)
 export class UserController {
   private readonly logger = new Logger(UserController.name);
 
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post()
   async create(@Body() dto: CreateUserDto) {
