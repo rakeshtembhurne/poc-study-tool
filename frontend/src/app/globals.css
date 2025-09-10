@@ -1,10 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -117,6 +113,24 @@ These serve as the fallback; there is no separate default.css file. */
 }
 
 @layer utilities {
+  /* Custom utility classes */
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   [data-theme-preset]:not([data-theme-preset='default']) .shadow-2xs {
     box-shadow: var(--shadow-2xs);
   }
@@ -151,12 +165,24 @@ These serve as the fallback; there is no separate default.css file. */
 }
 
 @layer base {
+  /* Custom base styles that override Tailwind's base */
+  html {
+    scroll-behavior: smooth;
+  }
+
   * {
     @apply border-border outline-ring/50;
   }
 
   body {
     @apply bg-background text-foreground overscroll-none;
+  }
+}
+
+@layer components {
+  /* Reusable component styles */
+  .btn-primary {
+    @apply bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded;
   }
 }
 
