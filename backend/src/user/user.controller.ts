@@ -20,7 +20,7 @@ import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 export class UserController {
   private readonly logger = new Logger(UserController.name);
 
-  constructor(private readonly userService: UserService) { }
+  constructor(private readonly userService: UserService) {}
 
   @Post()
   async create(@Body() dto: CreateUserDto) {
