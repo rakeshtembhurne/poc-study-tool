@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserService } from '../user.service';
-import { PrismaService } from '../../prisma/prisma.service';
-import { AuthService } from '../../auth/auth.service'; // <-- import AuthService
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UpdateUserDto } from '../dto/update-user.dto';
+import { UserService } from '@/user/user.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { AuthService } from '@/auth/auth.service';
+import { CreateUserDto } from '@/user/dto/create-user.dto';
+import { UpdateUserDto } from '@/user/dto/update-user.dto';
 
 describe('UserService', () => {
   let service: UserService;
@@ -33,7 +33,9 @@ describe('UserService', () => {
     hashPassword: jest.fn().mockResolvedValue('hashedPassword'),
     verifyPassword: jest.fn().mockResolvedValue(true),
     generateToken: jest.fn().mockResolvedValue('mocked-jwt-token'),
-    verifyToken: jest.fn().mockResolvedValue({ sub: 1, email: 'test@example.com' }),
+    verifyToken: jest
+      .fn()
+      .mockResolvedValue({ sub: 1, email: 'test@example.com' }),
   };
 
   beforeEach(async () => {
@@ -59,7 +61,10 @@ describe('UserService', () => {
 
   describe('create()', () => {
     it('should create a user', async () => {
-      const dto: CreateUserDto = { email: 'test@example.com', password: 'password123' };
+      const dto: CreateUserDto = {
+        email: 'test@example.com',
+        password: 'password123',
+      };
 
       jest.spyOn(prisma.user, 'create').mockResolvedValueOnce(mockUser);
 
@@ -89,7 +94,10 @@ describe('UserService', () => {
   describe('update()', () => {
     it('should update a user by id', async () => {
       const updateDto: UpdateUserDto = { email: 'updated@example.com' };
-      const updatedUser = { ...mockUser, email: updateDto.email ?? mockUser.email };
+      const updatedUser = {
+        ...mockUser,
+        email: updateDto.email ?? mockUser.email,
+      };
 
       jest.spyOn(prisma.user, 'update').mockResolvedValueOnce(updatedUser);
 
