@@ -44,7 +44,7 @@ export class OptimizedLoggerService implements NestLoggerService {
       const logDir = process.env.LOG_DIR || 'logs';
       const logFile = join(
         logDir,
-        `app-${new Date().toISOString().split('T')[0]}.log`,
+        `app-${new Date().toISOString().split('T')[0]}.log`
       );
 
       this.writeStream = createWriteStream(logFile, { flags: 'a' });
@@ -55,7 +55,7 @@ export class OptimizedLoggerService implements NestLoggerService {
       // Set up periodic flush
       this.flushInterval = setInterval(
         () => this.flush(),
-        this.flushIntervalMs,
+        this.flushIntervalMs
       );
     }
   }
@@ -121,7 +121,7 @@ export class OptimizedLoggerService implements NestLoggerService {
     level: string,
     message: unknown,
     context?: string,
-    trace?: string,
+    trace?: string
   ) {
     const entry: LogEntry = {
       timestamp: Date.now(),

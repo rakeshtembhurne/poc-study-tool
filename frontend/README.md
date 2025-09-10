@@ -47,12 +47,44 @@ Copy `.env.example` files into `.env`:
   cp .env.example .env      # run this if you are in respective folder
  
 
- ### ESLint and Prettier
+ ## Code Quality and Standards
 
-- **Configuration:** TypeScript ESLint with Prettier integration
+This project enforces code quality and consistency using ESLint, Prettier, and Husky.
+
+### ESLint and Prettier
+
+- **Configuration:** TypeScript ESLint with Prettier integration and Next.js optimizations
 - **Usage:**
   - Lint and fix: `npm run lint`
+  - Lint check (read-only): `npm run lint:check`
   - Format code: `npm run format`
+  - Format check (read-only): `npm run format:check`
+  - Type checking: `npm run type-check`
+  - Config validation: `npm run config:validate`
+
+### ESLint Configuration Features
+
+- **Next.js Integration**: Includes `next/core-web-vitals` and `next/typescript` configs
+- **TypeScript Support**: Full TypeScript ESLint rules with type-aware linting  
+- **Prettier Integration**: Automatic code formatting with ESLint
+- **Unused Imports**: Automatic removal of unused imports and variables
+- **Custom Rules**: Tailored rules for React/Next.js best practices
+
+### Why Different ESLint Configurations?
+
+**Frontend (Next.js)**: Uses Next.js optimized rules with `eslint-config-next` which includes:
+- React-specific rules optimized for Next.js applications
+- Performance optimizations for client-side React code
+- Next.js specific patterns (Image, Link, etc.)
+- Web Vitals and SEO optimization rules
+
+**Backend (NestJS)**: Uses `eslint-config-airbnb-extended` which includes:
+- Node.js server-side best practices
+- More strict code organization rules suitable for backend APIs
+- Enhanced security patterns for server applications
+- Comprehensive TypeScript enterprise patterns
+
+This separation allows each codebase to follow patterns most appropriate for its runtime environment and framework requirements.
 
 ### Husky Git Hooks
 

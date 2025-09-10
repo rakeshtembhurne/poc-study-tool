@@ -133,6 +133,9 @@ cp .env.example .env
 cd backend
 npx prisma migrate dev
 
+# Configure git hooks (required for development)
+git config core.hooksPath backend/.husky
+
 # Start development servers
 # Backend
 npm run start:dev
@@ -140,6 +143,15 @@ npm run start:dev
 # Frontend (new terminal)
 cd frontend
 npm run dev
+```
+
+### Git Hooks Setup
+
+This project uses a unified husky setup located in `backend/.husky` that handles commit validation and pre-commit linting for both backend and frontend code. The git hooks configuration ensures that regardless of where you commit from (root, backend, or frontend directory), the same validation rules apply.
+
+**Required configuration:**
+```bash
+git config core.hooksPath backend/.husky
 ```
 
 ## Environment Variables
@@ -171,6 +183,70 @@ Copy `.env.example` files into `.env`:
 ```bash
 cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
+```
+
+## Branching Strategy
+
+We follow a simple **Git workflow** for this project.
+
+### Branches
+
+-  **main** → Stable, production-ready code (protected).
+-  **develop** → Integration branch for all features.
+-  **feature/** → For new features or issues (e.g., `feature/login-auth`).
+
+### Contribution Workflow
+
+1.  **Fork** the repository.
+2. Create a feature branch from `develop`:
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/<feature-name>
+```
+
+3. Commit & push changes to **your fork**.
+4. Open a **Pull Request** from your fork’s `feature/*` → main repo’s `develop`.
+5. After review & approval, it will be merged.
+
+### Rules
+- Do **not** commit directly to `main` or `develop`.
+- Always create a PR for merging.
+- Keep branch names meaningful (linked to issue/feature).
+
+## Commit Message Guidelines
+Follow a clear and consistent commit message style to make project history easy to read and understand.
+
+### Commit Format
+```
+type(scope): subject (#issue-number)
+```
+- **type** → Type of change (feat, fix, docs, etc.)  
+- **scope** → Area of code affected (auth, ui, api, etc.)  
+- **subject** → Short description of the change (5–75 characters, lowercase, no sentence-case or PascalCase)  
+- **references** → Issue or ticket number (required, e.g., `#123`)  
+
+### Rules Enforced
+- Maximum header length: 200 characters  
+- Subject length: 5–75 characters  
+- Type, scope, subject, and references **cannot be empty**  
+- Subject **cannot** be sentence-case, start-case, PascalCase, or UPPERCASE  
+
+### Examples
+
+#### ✅ Correct
+```
+feat(auth): add login validation (#123)
+```
+#### ❌ Incorrect
+```
+Fix: Login Bug
+```
+- Type not lowercase  
+- Scope missing  
+- Subject wrong case  
+- References missing  
 
 ## Contributing
 
@@ -184,4 +260,3 @@ This project follows a multi-developer workflow. Please:
 ## License
 
 Private
-

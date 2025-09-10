@@ -7,7 +7,8 @@ Space Rep Backend - A spaced repetition study tool backend built with NestJS, Po
 ## Tech Stack
 
 - **NestJS** with TypeScript
-- **PostgreSQL** database with Prisma ORM
+- **PostgreSQL** database with Prisma ORM ([Database Documentation](./documentation/database/database-docs.md))
+- **Database Seeding** system with realistic test data ([Seeding Guide](./documentation/database/database-seeding-guide.md))
 - **JWT** authentication (configured but not implemented)
 - **Docker** for PostgreSQL development database
 - **Performance monitoring** and metrics collection
@@ -57,6 +58,26 @@ This project uses Docker Compose to run PostgreSQL locally.
   ```bash
   docker compose up -d
   ```
+### Environment File Structure
+
+```
+ugp-bos/
+├── .env                   # Default development (committed to git)
+├── .env.prod              # Production (committed to git, no secrets)
+├── .env.staging           # Staging (committed to git, no secrets)
+├── .env.test              # Testing (committed to git)
+├── .env.local             # Local overrides (add to .gitignore)
+└── .env.secrets           # Actual secrets (add to .gitignore)
+```
+
+### Usage Commands
+
+**Development (default):**
+```bash
+docker compose up -d
+# or explicitly
+docker compose --env-file .env up -d
+```
 
 - **Stop services:**
   ```bash
@@ -68,11 +89,10 @@ This project uses Docker Compose to run PostgreSQL locally.
   docker compose logs postgres
   ```
 
-- **Clean restart (removes data):**
-  ```bash
-  docker compose down -v
-  docker compose up -d
-  ```
+**Testing:**
+```bash
+docker compose --env-file .env.test up -d
+```
 
 ## Environment Variables
 
@@ -147,8 +167,10 @@ npm run build                  # Build for production
 npm run start:prod             # Start production build
 
 # Code Quality
-npm run lint                   # Run ESLint
+npm run lint                   # Run ESLint with fixes
+npm run lint:check             # Run ESLint without fixes (read-only)
 npm run format                 # Format with Prettier
+npm run format:check           # Check formatting without fixes (read-only)
 npm run type-check             # TypeScript type checking
 
 # Testing
@@ -162,6 +184,10 @@ npm run test:performance       # Run performance analysis
 npx prisma generate            # Generate Prisma client
 npx prisma migrate dev         # Run database migrations
 npx prisma studio             # Open Prisma Studio
+
+# Database Seeding (Populate with test data)
+npm run db:seed               # Seed with realistic sample data
+npm run db:reset              # Reset database (DANGER: deletes all data)
 ```
 
 ## Code Quality and Standards
@@ -174,6 +200,16 @@ This project enforces code quality and consistency using ESLint, Prettier, Jest,
 - **Usage:**
   - Lint and fix: `npm run lint`
   - Format code: `npm run format`
+
+### ESLint Configuration
+
+**Backend ESLint Setup**: Uses `eslint-config-airbnb-extended` for enterprise-grade Node.js development:
+- **Airbnb Style Guide**: Industry-standard JavaScript/TypeScript patterns
+- **Server-Side Optimizations**: Rules tailored for backend API development  
+- **Security Focus**: Enhanced patterns for secure server applications
+- **Unused Imports Plugin**: Automatic cleanup of unused imports and variables
+
+**Why Different from Frontend?**: The backend uses more strict enterprise rules suitable for server-side applications, while the frontend uses Next.js optimized rules for client-side React development. This ensures each codebase follows patterns most appropriate for its runtime environment.
 
 ### ESLint now includes Airbnb style guide and unused-imports plugin for better code consistency.
 
@@ -213,8 +249,9 @@ Jest is configured with strict coverage thresholds:
 ### Database
 - ✅ Prisma ORM setup
 - ✅ PostgreSQL connection configuration
-- ⏳ Database schema design (not implemented)
-- ⏳ Migrations (not implemented)
+- ✅ Complete database schema with SM-15 algorithm support
+- ✅ Database migrations system
+- ✅ Comprehensive seeding system with realistic test data
 
 ## Next Steps
 

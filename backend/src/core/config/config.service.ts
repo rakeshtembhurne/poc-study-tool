@@ -4,9 +4,9 @@ import {
   Config,
   ConfigPath,
   AppConfig,
-  AuthConfig,
   DatabaseConfig,
 } from './interfaces/config.interface';
+import { AuthConfig, JwtConfig } from './interfaces/auth.config';
 
 type PathValue<T, P extends string> = P extends `${infer K}.${infer Rest}`
   ? K extends keyof T
@@ -21,6 +21,11 @@ type PathValue<T, P extends string> = P extends `${infer K}.${infer Rest}`
 @Injectable()
 export class ConfigService {
   constructor(private configService: NestConfigService) {}
+
+  getJwtConfig(): JwtConfig {
+    const auth = this.getOrThrow('auth');
+    return auth.jwt;
+  }
 
   /**
    * Get a configuration value with type safety
@@ -61,7 +66,6 @@ export class ConfigService {
   getDatabaseConfig(): DatabaseConfig {
     return this.configService.getOrThrow('database');
   }
-
 
   get isDevelopment(): boolean {
     return this.getOrThrow('app.env') === 'development';

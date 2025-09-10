@@ -21,7 +21,7 @@ class PerformanceAnalyzer {
   async measureOperation(
     name: string,
     operation: () => Promise<void>,
-    iterations: number = 1000,
+    iterations: number = 1000
   ): Promise<PerformanceMetric> {
     const times: number[] = [];
     const initialMemory = process.memoryUsage().heapUsed;
@@ -110,7 +110,7 @@ async function runPerformanceAnalysis() {
     const moduleEnd = performance.now();
 
     console.log(
-      `Module initialization: ${(moduleEnd - moduleStart).toFixed(2)}ms\n`,
+      `Module initialization: ${(moduleEnd - moduleStart).toFixed(2)}ms\n`
     );
 
     redisService = app.get(RedisService);
@@ -147,7 +147,7 @@ async function runPerformanceAnalysis() {
       await redisService.setSession(
         `session-${Math.random()}`,
         sessionData,
-        3600,
+        3600
       );
     });
 
@@ -164,7 +164,7 @@ async function runPerformanceAnalysis() {
         configService.get('app.port');
         return Promise.resolve();
       },
-      10000,
+      10000
     );
 
     await analyzer.measureOperation(
@@ -173,7 +173,7 @@ async function runPerformanceAnalysis() {
         configService.getOrThrow('app.port');
         return Promise.resolve();
       },
-      10000,
+      10000
     );
 
     // Generate report
@@ -194,13 +194,13 @@ async function runPerformanceAnalysis() {
     console.log(`\nMemory Usage:`);
     console.log(`- RSS: ${(memUsage.rss / 1024 / 1024).toFixed(2)} MB`);
     console.log(
-      `- Heap Total: ${(memUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`,
+      `- Heap Total: ${(memUsage.heapTotal / 1024 / 1024).toFixed(2)} MB`
     );
     console.log(
-      `- Heap Used: ${(memUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`,
+      `- Heap Used: ${(memUsage.heapUsed / 1024 / 1024).toFixed(2)} MB`
     );
     console.log(
-      `- External: ${(memUsage.external / 1024 / 1024).toFixed(2)} MB`,
+      `- External: ${(memUsage.external / 1024 / 1024).toFixed(2)} MB`
     );
   } catch (error) {
     console.error('Performance analysis failed:', error);
