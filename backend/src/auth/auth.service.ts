@@ -1,17 +1,8 @@
-
-import { Injectable, UnauthorizedException,BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import * as bcrypt from 'bcrypt';
-import { JwtService } from '@nestjs/jwt';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
-
 import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
-
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -25,14 +16,11 @@ interface JwtPayload {
   email: string;
 }
 
-
-
-
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
- constructor(
+  constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService
   ) {}
@@ -130,9 +118,7 @@ export class AuthService {
   }
 
   async generateToken(userId: string | number, email: string): Promise<string> {
-  async generateToken(userId: string | number, email: string): Promise<string> {
     try {
-      const payload: JwtPayload = { sub: String(userId), email }; // convert to string
       const payload: JwtPayload = { sub: String(userId), email }; // convert to string
       return this.jwtService.sign(payload);
     } catch (error) {
