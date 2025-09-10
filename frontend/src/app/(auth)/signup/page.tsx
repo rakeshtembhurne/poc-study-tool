@@ -6,15 +6,10 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { apiUtils } from '@/lib/axios-config';
+import { useRouter } from 'next/navigation';
 
 // Validation schema
 const signupSchema = yup.object({
-  name: yup
-    .string()
-    .required('Name is required')
-    .min(2, 'Name must be at least 2 characters')
-    .max(50, 'Name must not exceed 50 characters'),
   email: yup
     .string()
     .required('Email is required')
@@ -39,6 +34,7 @@ export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
   const { login } = useAuth();
+  const router = useRouter();
 
   const {
     register,
@@ -54,29 +50,37 @@ export default function SignupPage() {
     setSubmitMessage('');
 
     try {
-      const response = await apiUtils.post('/api/auth/signup', {
-        name: data.name,
-        email: data.email,
-        password: data.password,
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email,  
+          password: data.password,
+        }),
       });
 
-      const result: any = response.data;
+      const result: any = await response.json();
+      console.log('\n\n\nresult:', result);
+      const resultData = result.data;
+      console.log('Signup response:', resultData);
 
       if (result.success) {
-        setSubmitMessage(result.message || 'Account created successfully!');
+        setSubmitMessage(resultData.message || 'Account created successfully!');
 
         // Auto-login user after successful signup if token is provided
-        if (result.token) {
+        if (resultData.accessToken) {
           try {
             login(
-              result.token,
-              result.user || { id: '', name: data.name, email: data.email }, // Use user data from backend or form data
-              result.expiresIn, // Token expiration in seconds from backend
-              result.refreshToken // Optional refresh token
+              resultData.accessToken,
+              { id: resultData.userId, email: data.email }, // Use user data from backend or form data
+              resultData.expiresIn, // Token expiration in seconds from backend
+              resultData.refreshToken // Optional refresh token
             );
 
             // Redirect to dashboard or home page after successful signup and login
-            // window.location.href = '/dashboard';
+            router.push('/dashboard');
           } catch (error) {
             console.error('Failed to store authentication token:', error);
             setSubmitMessage(
@@ -94,18 +98,10 @@ export default function SignupPage() {
         );
       }
     } catch (error: any) {
-      console.error('Signup error:', error);
+      console.error('Signup error:', error.message);
       
       // Handle axios error responses
-      if (error.response?.data?.message) {
-        setSubmitMessage(error.response.data.message);
-      } else if (error.code === 'ECONNABORTED') {
-        setSubmitMessage('Request timeout. Please try again.');
-      } else if (error.message === 'Network Error') {
-        setSubmitMessage('Network error. Please check your connection and try again.');
-      } else {
-        setSubmitMessage('An unexpected error occurred. Please try again.');
-      }
+      setSubmitMessage(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -120,20 +116,6 @@ export default function SignupPage() {
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="signup-form">
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input
-              id="name"
-              type="text"
-              {...register('name')}
-              className={errors.name ? 'error' : ''}
-              placeholder="Enter your full name"
-            />
-            {errors.name && (
-              <span className="error-message">{errors.name.message}</span>
-            )}
-          </div>
-
           <div className="form-group">
             <label htmlFor="email">Email Address</label>
             <input

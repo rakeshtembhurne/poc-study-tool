@@ -1,35 +1,32 @@
-import { SignupRequestBody } from '@/interfaces/auth.interface';
 import apiClient from '@/lib/api-client';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const body: SignupRequestBody = await request.json();
-    console.log('signup body: ', body);
+    const body = await request.json();
+    const { userId, refreshToken } = body;
+
     // Validate required fields
-    if (!body.email || !body.password) {
+    if (!userId || !refreshToken) {
       return NextResponse.json(
-        { success: false, message: 'Email and password are required' },
+        { success: false, message: 'UserId and refreshToken are required' },
         { status: 400 }
       );
     }
 
     // Call backend API
-    const backendResponse = await apiClient.post(`/api/v1/auth/signup`, {
-      email: body.email,
-      password: body.password,
+    const backendResponse = await apiClient.post(`/api/v1/auth/refresh-token`, {
+      userId,
+      refreshToken,
     });
-    console.log('backendResponse: ', backendResponse);
     console.log('backendResponse Data: ', backendResponse.data);
-
-    const backendData = backendResponse.data;
 
     if (backendResponse.status !== 201) {
       return NextResponse.json(
         {
           success: false,
-          message: backendData.message || 'Signup failed',
-          error: backendData.error,
+          message: backendResponse.data.message || 'Token refresh failed',
+          error: backendResponse.data.error,
         },
         { status: backendResponse.status }
       );
@@ -38,11 +35,14 @@ export async function POST(request: NextRequest) {
     // Return success response
     return NextResponse.json({
       success: true,
-      message: backendData.message || 'Account created successfully',
-      data: backendData || 'No Data',
+      message: backendResponse.data.message || 'Tokens refreshed successfully',
+      accessToken: backendResponse.data.accessToken,
+      refreshToken: backendResponse.data.refreshToken,
+      expiresIn: 3600 // 1 hour default, adjust based on your JWT config
     });
+
   } catch (error: any) {
-    console.error('SignUp API error:', {
+    console.error('Refresh token API error:', {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,

@@ -6,7 +6,6 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { apiUtils } from '@/lib/axios-config';
 import { redirectAfterLogin } from '@/lib/redirect-utils';
 
 // Validation schema
@@ -43,33 +42,39 @@ export default function LoginPage() {
     setSubmitMessage('');
 
     try {
-      const response = await apiUtils.post('/api/auth/login', {
-        email: data.email,
-        password: data.password,
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
       });
 
-      const result: any = response.data;
+      const result = await response.json();
+      console.log('Login response:', result);
+      const resultData = result.data;
+      console.log('Login response:', resultData);
 
       if (result.success) {
-        setSubmitMessage(result.message || 'Login successful!');
-        
+        console.log('Login successful!');
+        setSubmitMessage(resultData.message || 'Login successful!');
+
         // Use AuthContext login method with secure token storage
-        if (result.token) {
+        if (resultData.accessToken) {
           try {
             login(
-              result.token,
-              result.user || { id: '', name: '', email: data.email }, // Use user data from backend or fallback
-              result.expiresIn, // Token expiration in seconds from backend
-              result.refreshToken // Optional refresh token
+              resultData.accessToken,
+              { id: resultData.userId, email: data.email }, // Use user data from backend or fallback
+              resultData.expiresIn, // Token expiration in seconds from backend
+              resultData.refreshToken // Optional refresh token
             );
-            
             // Redirect to intended page or dashboard after successful login
-            setTimeout(() => {
-              redirectAfterLogin('/dashboard');
-            }, 1000); // Small delay to show success message
+            redirectAfterLogin('/dashboard');
           } catch (error) {
             console.error('Failed to store authentication token:', error);
-            setSubmitMessage('Login successful but failed to save session. Please try again.');
+            setSubmitMessage(
+              'Login successful but failed to save session. Please try again.'
+            );
             return;
           }
         }
@@ -77,18 +82,9 @@ export default function LoginPage() {
         setSubmitMessage(result.message || 'Login failed. Please try again.');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      
+      console.error('Login error:', error.message);
       // Handle axios error responses
-      if (error.response?.data?.message) {
-        setSubmitMessage(error.response.data.message);
-      } else if (error.code === 'ECONNABORTED') {
-        setSubmitMessage('Request timeout. Please try again.');
-      } else if (error.message === 'Network Error') {
-        setSubmitMessage('Network error. Please check your connection and try again.');
-      } else {
-        setSubmitMessage('An unexpected error occurred. Please try again.');
-      }
+      setSubmitMessage(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +108,9 @@ export default function LoginPage() {
               className={errors.email ? 'error' : ''}
               placeholder="Enter your email address"
             />
-            {errors.email && <span className="error-message">{errors.email.message}</span>}
+            {errors.email && (
+              <span className="error-message">{errors.email.message}</span>
+            )}
           </div>
 
           <div className="form-group">
@@ -124,7 +122,9 @@ export default function LoginPage() {
               className={errors.password ? 'error' : ''}
               placeholder="Enter your password"
             />
-            {errors.password && <span className="error-message">{errors.password.message}</span>}
+            {errors.password && (
+              <span className="error-message">{errors.password.message}</span>
+            )}
           </div>
 
           <div className="form-options">
@@ -137,12 +137,18 @@ export default function LoginPage() {
             </a>
           </div>
 
-          <button type="submit" disabled={isSubmitting} className="submit-button">
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="submit-button"
+          >
             {isSubmitting ? 'Signing In...' : 'Sign In'}
           </button>
 
           {submitMessage && (
-            <div className={`submit-message ${submitMessage.includes('successful') ? 'success' : 'error'}`}>
+            <div
+              className={`submit-message ${submitMessage.includes('successful') ? 'success' : 'error'}`}
+            >
               {submitMessage}
             </div>
           )}
@@ -166,7 +172,9 @@ export default function LoginPage() {
           align-items: center;
           justify-content: center;
           padding: 20px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          font-family:
+            -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+            Ubuntu, Cantarell, sans-serif;
         }
 
         .login-card {
@@ -260,7 +268,7 @@ export default function LoginPage() {
           cursor: pointer;
         }
 
-        .remember-me input[type="checkbox"] {
+        .remember-me input[type='checkbox'] {
           width: 16px;
           height: 16px;
           accent-color: #ffffff;

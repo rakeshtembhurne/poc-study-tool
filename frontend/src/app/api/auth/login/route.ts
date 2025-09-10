@@ -1,26 +1,11 @@
+import apiClient from '@/lib/api-client';
 import { NextRequest, NextResponse } from 'next/server';
-
-interface LoginRequestBody {
-  email: string;
-  password: string;
-}
-
-interface BackendLoginResponse {
-  success: boolean;
-  message: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  token?: string;
-  error?: string;
-}
+import { LoginRequestBody } from '@/interfaces/auth.interface';
 
 export async function POST(request: NextRequest) {
   try {
     const body: LoginRequestBody = await request.json();
-    
+
     // Validate required fields
     if (!body.email || !body.password) {
       return NextResponse.json(
@@ -29,29 +14,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get backend URL from environment variables
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
-    
     // Call backend API
-    const backendResponse = await fetch(`${backendUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: body.email,
-        password: body.password,
-      }),
+    const backendResponse = await apiClient.post(`/api/v1/auth/login`, {
+      email: body.email,
+      password: body.password,
     });
+    console.log('backendResponse Data: ', backendResponse.data);
 
-    const backendData: BackendLoginResponse = await backendResponse.json();
-
-    if (!backendResponse.ok) {
+    if (backendResponse.status !== 201) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: backendData.message || 'Login failed',
-          error: backendData.error 
+        {
+          success: false,
+          message: backendResponse.data.message || 'Login failed',
+          error: backendResponse.data.error,
         },
         { status: backendResponse.status }
       );
@@ -60,33 +35,44 @@ export async function POST(request: NextRequest) {
     // Return success response
     return NextResponse.json({
       success: true,
-      message: backendData.message || 'Login successful',
-      user: backendData.user,
-      token: backendData.token,
+      message: backendResponse.data.message || 'Login successful',
+      data: backendResponse.data || 'No Data',
+    });
+  } catch (error: any) {
+    console.error('Login API error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status,
+      stack: error.stack,
     });
 
-  } catch (error) {
-    console.error('Login API error:', error);
-    
-    // Handle network errors or backend unavailable
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    if (error.response?.data?.message) {
       return NextResponse.json(
-        { 
-          success: false, 
-          message: 'Unable to connect to authentication service. Please try again later.',
-          error: 'Backend service unavailable'
+        {
+          success: false,
+          message: error.response.data.message,
+          error: error.response.data.error,
         },
-        { status: 503 }
+        { status: error.response?.status }
       );
-    }
-
-    return NextResponse.json(
-      { 
-        success: false, 
+    } else if (error.code === 'ECONNABORTED') {
+      return NextResponse.json({
+        success: false,
+        message: 'Request timeout. Please try again.',
+        error: 'Request timeout. Please try again.',
+      });
+    } else if (error.message === 'Network Error') {
+      return NextResponse.json({
+        success: false,
+        message: 'Network error. Please check your connection and try again.',
+        error: 'Network error. Please check your connection and try again.',
+      });
+    } else {
+      return NextResponse.json({
+        success: false,
         message: 'An unexpected error occurred. Please try again.',
-        error: 'Internal server error'
-      },
-      { status: 500 }
-    );
+        error: 'An unexpected error occurred. Please try again.',
+      });
+    }
   }
 }
