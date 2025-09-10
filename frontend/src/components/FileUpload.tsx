@@ -4,12 +4,35 @@ import { useRef, useState } from 'react';
 
 export default function FileUpload() {
   const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const allowedTypes = ['application/pdf', 'text/plain'];
+  const maxSize = 10 * 1024 * 1024; // 10 MB in bytes
+
+  const validateFile = (selectedFile: File) => {
+    if (!allowedTypes.includes(selectedFile.type)) {
+      return 'Only .pdf and .txt files are allowed.';
+    }
+    if (selectedFile.size > maxSize) {
+      return 'File size must be less than 10 MB.';
+    }
+    return null;
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files?.length) {
-      setFile(event.target.files[0]);
+      const selectedFile = event.target.files[0];
+      const validationError = validateFile(selectedFile);
+
+      if (validationError) {
+        setError(validationError);
+        setFile(null);
+      } else {
+        setError(null);
+        setFile(selectedFile);
+      }
     }
   };
 
@@ -18,7 +41,17 @@ export default function FileUpload() {
     setIsDragging(false);
 
     if (event.dataTransfer.files?.length) {
-      setFile(event.dataTransfer.files[0]);
+      const droppedFile = event.dataTransfer.files[0];
+      const validationError = validateFile(droppedFile);
+
+      if (validationError) {
+        setError(validationError);
+        setFile(null);
+      } else {
+        setError(null);
+        setFile(droppedFile);
+      }
+
       event.dataTransfer.clearData();
     }
   };
@@ -38,7 +71,7 @@ export default function FileUpload() {
 
   const handleUpload = async () => {
     if (!file) {
-      alert('Please select a file first!');
+      setError('Please select a valid file first!');
       return;
     }
 
@@ -53,12 +86,14 @@ export default function FileUpload() {
 
       if (!res.ok) throw new Error('Upload failed');
 
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const data = await res.json();
       console.log('Upload success:', data);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       alert(`File uploaded successfully: ${data.filename}`);
     } catch (err) {
       console.error('Upload error:', err);
-      alert('Upload failed!');
+      setError('Upload failed!');
     }
   };
 
@@ -67,34 +102,39 @@ export default function FileUpload() {
       style={{ padding: '1rem', border: '1px solid #ccc', borderRadius: '8px' }}
     >
       <h3>Upload a File</h3>
+
       <div
         onClick={openFilePicker}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         style={{
-          border: '2px solid #888',
+          border: '2px dashed #888',
           borderRadius: '8px',
           padding: '2rem',
           textAlign: 'center',
           backgroundColor: isDragging ? '#f0f8ff' : '#fafafa',
           cursor: 'pointer',
           marginBottom: '1rem',
-          color: '#000000ff',
+          color: '#000',
+          margin: '1rem',
         }}
       >
         {file ? (
           <p>Selected File: {file.name}</p>
         ) : (
-          <p>Drag & Drop a file here, or click below to choose</p>
+          <p>Drag & Drop a file (max 10MB), or click below to choose</p>
         )}
       </div>
+
+      {error && <p style={{ color: 'red', marginBottom: '1rem' }}>{error}</p>}
 
       <input
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
         onChange={handleFileChange}
+        accept=".pdf,.txt"
       />
 
       <button onClick={openFilePicker} style={{ marginRight: '1rem' }}>
