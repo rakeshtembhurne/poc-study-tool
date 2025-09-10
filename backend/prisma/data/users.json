@@ -1,0 +1,32 @@
+{
+    "development": [
+      {
+        "email": "admin@example.com",
+        "password": "hashed_admin_password_123"
+      },
+      {
+        "email": "user1@example.com",
+        "password": "hashed_user1_password_123"
+      },
+      {
+        "email": "user2@example.com",
+        "password": "hashed_user2_password_123"
+      },
+      {
+        "email": "demo@example.com",
+        "password": "hashed_demo_password_123"
+      }
+    ],
+    "test": [
+      {
+        "email": "test@example.com",
+        "password": "hashed_test_password_123"
+      }
+    ],
+    "production": [
+      {
+        "email": "system@company.com",
+        "password": "hashed_system_password_123"
+      }
+    ]
+  }

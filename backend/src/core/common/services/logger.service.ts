@@ -11,14 +11,14 @@ export class LoggerService implements NestLoggerService {
   log(message: any, context?: string) {
     const timestamp = new Date().toISOString();
     console.log(
-      `[${timestamp}] [${context || this.context || 'Application'}] ${message}`,
+      `[${timestamp}] [${context || this.context || 'Application'}] ${message}`
     );
   }
 
   error(message: any, trace?: string, context?: string) {
     const timestamp = new Date().toISOString();
     console.error(
-      `[${timestamp}] [${context || this.context || 'Application'}] ERROR: ${message}`,
+      `[${timestamp}] [${context || this.context || 'Application'}] ERROR: ${message}`
     );
     if (trace) {
       console.error(trace);
@@ -28,7 +28,7 @@ export class LoggerService implements NestLoggerService {
   warn(message: any, context?: string) {
     const timestamp = new Date().toISOString();
     console.warn(
-      `[${timestamp}] [${context || this.context || 'Application'}] WARN: ${message}`,
+      `[${timestamp}] [${context || this.context || 'Application'}] WARN: ${message}`
     );
   }
 
@@ -36,7 +36,7 @@ export class LoggerService implements NestLoggerService {
     if (process.env.NODE_ENV !== 'production') {
       const timestamp = new Date().toISOString();
       console.debug(
-        `[${timestamp}] [${context || this.context || 'Application'}] DEBUG: ${message}`,
+        `[${timestamp}] [${context || this.context || 'Application'}] DEBUG: ${message}`
       );
     }
   }
@@ -45,7 +45,7 @@ export class LoggerService implements NestLoggerService {
     if (process.env.NODE_ENV !== 'production') {
       const timestamp = new Date().toISOString();
       console.log(
-        `[${timestamp}] [${context || this.context || 'Application'}] VERBOSE: ${message}`,
+        `[${timestamp}] [${context || this.context || 'Application'}] VERBOSE: ${message}`
       );
     }
   }

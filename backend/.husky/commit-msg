@@ -1,1 +1,12 @@
-cd "$(dirname "$0")/.." && npx commitlint --edit "$1"
+#!/usr/bin/env sh
+
+# Get the root directory (where .git is located)
+ROOT_DIR=$(git rev-parse --show-toplevel)
+
+# Run backend commitlint
+echo "Running backend commitlint..."
+cd "$ROOT_DIR/backend" && npx commitlint --edit "$1"
+
+# Run frontend commitlint
+echo "Running frontend commitlint..."
+cd "$ROOT_DIR/frontend" && npx commitlint --edit "$1"

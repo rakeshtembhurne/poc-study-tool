@@ -62,7 +62,7 @@ export function isPromise<T = unknown>(value: unknown): value is Promise<T> {
 
 export function hasProperty<K extends PropertyKey>(
   obj: unknown,
-  prop: K,
+  prop: K
 ): obj is Record<K, unknown> {
   return isObject(obj) && prop in obj;
 }
@@ -91,7 +91,7 @@ export function isValidUrl(value: string): boolean {
  */
 export function assertDefined<T>(
   value: T | null | undefined,
-  message?: string,
+  message?: string
 ): asserts value is T {
   if (isNullOrUndefined(value)) {
     throw new Error(message || 'Value is null or undefined');
@@ -105,7 +105,7 @@ export function assertDefined<T>(
 export function assertType<T>(
   value: unknown,
   typeGuard: (value: unknown) => value is T,
-  message?: string,
+  message?: string
 ): asserts value is T {
   if (!typeGuard(value)) {
     throw new Error(message || 'Type assertion failed');

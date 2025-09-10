@@ -16,7 +16,7 @@ async function bootstrap() {
     });
 
     const configService = app.get(ConfigService);
-    const port = configService.get<number>('app.port') || 3000;
+    const port = configService.get<number>('app.port') || 8000;
     const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';
     const corsOrigins = configService.get<string[]>('app.corsOrigins') || ['*'];
 
@@ -26,7 +26,7 @@ async function bootstrap() {
         contentSecurityPolicy:
           process.env.NODE_ENV === 'production' ? undefined : false,
         crossOriginEmbedderPolicy: false,
-      }),
+      })
     );
 
     // CORS configuration
@@ -56,7 +56,7 @@ async function bootstrap() {
           target: false,
           value: false,
         },
-      }),
+      })
     );
 
     // Global exception filter
@@ -70,12 +70,12 @@ async function bootstrap() {
 
     await app.listen(port);
     logger.log(
-      `Application is running on: http://localhost:${port}/${apiPrefix}`,
+      `Application is running on: http://localhost:${port}/${apiPrefix}`
     );
   } catch (error) {
     logger.error(
       'Failed to start the application',
-      error instanceof Error ? error.stack : String(error),
+      error instanceof Error ? error.stack : String(error)
     );
     process.exit(1);
   }

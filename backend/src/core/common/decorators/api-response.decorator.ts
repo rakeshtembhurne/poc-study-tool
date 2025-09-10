@@ -54,7 +54,7 @@ export class ErrorResponseWrapper {
 type DecoratorFunction = <TFunction extends (...args: unknown[]) => unknown, Y>(
   target: TFunction | object,
   propertyKey?: string | symbol,
-  descriptor?: TypedPropertyDescriptor<Y>,
+  descriptor?: TypedPropertyDescriptor<Y>
 ) => void;
 
 /**
@@ -62,7 +62,7 @@ type DecoratorFunction = <TFunction extends (...args: unknown[]) => unknown, Y>(
  */
 export function ApiSuccessResponse<T>(
   statusCode: number,
-  options: ApiResponseOptions<T>,
+  options: ApiResponseOptions<T>
 ): DecoratorFunction {
   return applyDecorators(
     ApiResponse({
@@ -93,7 +93,7 @@ export function ApiSuccessResponse<T>(
         },
       },
     }),
-    ...(options.type ? [ApiExtraModels(ApiResponseWrapper, options.type)] : []),
+    ...(options.type ? [ApiExtraModels(ApiResponseWrapper, options.type)] : [])
   ) as DecoratorFunction;
 }
 
@@ -105,7 +105,7 @@ export function ApiPaginatedResponse<T>(
     page?: number;
     limit?: number;
     total?: number;
-  },
+  }
 ): DecoratorFunction {
   return applyDecorators(
     ApiResponse({
@@ -140,7 +140,7 @@ export function ApiPaginatedResponse<T>(
     }),
     ...(options.type
       ? [ApiExtraModels(PaginatedResponseWrapper, options.type)]
-      : []),
+      : [])
   ) as DecoratorFunction;
 }
 
@@ -150,7 +150,7 @@ export function ApiPaginatedResponse<T>(
 export function ApiErrorResponse(
   statusCode: number,
   description: string,
-  message?: string | string[],
+  message?: string | string[]
 ): DecoratorFunction {
   return applyDecorators(
     ApiResponse({
@@ -169,7 +169,7 @@ export function ApiErrorResponse(
         },
       },
     }),
-    ApiExtraModels(ErrorResponseWrapper),
+    ApiExtraModels(ErrorResponseWrapper)
   ) as DecoratorFunction;
 }
 
@@ -185,8 +185,8 @@ export function ApiCommonResponses(): DecoratorFunction {
     ApiErrorResponse(
       500,
       'Internal Server Error',
-      'An unexpected error occurred',
-    ),
+      'An unexpected error occurred'
+    )
   ) as DecoratorFunction;
 }
 
@@ -200,7 +200,7 @@ export function createApiResponse<T>(
     description?: string;
     isArray?: boolean;
     example?: T | T[];
-  },
+  }
 ): DecoratorFunction {
   return ApiSuccessResponse(statusCode, {
     type,

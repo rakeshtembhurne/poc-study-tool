@@ -1,11 +1,26 @@
+# Dependency folders
 node_modules
+
+# Next.js build output
 .next
 out
+
+# Build / dist folders
 build
 dist
-*.min.js
-*.min.css
+
+# Test coverage
+coverage
+
+# Package manager lock files
 package-lock.json
-yarn.lock
-.env*
-next-env.d.ts
+
+# Environment files
+.env
+.env.* 
+
+# Logs
+*.log
+
+# Git keep files
+.gitkeep

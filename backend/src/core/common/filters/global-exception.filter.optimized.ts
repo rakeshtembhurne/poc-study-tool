@@ -66,7 +66,7 @@ export class OptimizedGlobalExceptionFilter implements ExceptionFilter {
       status,
       message,
       error,
-      request,
+      request
     );
 
     // Log error conditionally
@@ -119,7 +119,7 @@ export class OptimizedGlobalExceptionFilter implements ExceptionFilter {
     status: number,
     message: string | string[],
     error: string,
-    request: Request,
+    request: Request
   ): ErrorResponse {
     // Check cache for common errors
     const cacheKey = `${status}-${error}-${request.method}-${request.path}`;
@@ -171,7 +171,7 @@ export class OptimizedGlobalExceptionFilter implements ExceptionFilter {
         // Always log 5xx errors
         this.logger.error(
           logMessage,
-          shouldLogStack ? exception.stack : undefined,
+          shouldLogStack ? exception.stack : undefined
         );
       } else if (status >= 400 && this.isDevelopment) {
         // Log 4xx errors in development
@@ -211,7 +211,7 @@ export class OptimizedGlobalExceptionFilter implements ExceptionFilter {
     this.metrics.total++;
     this.metrics.byStatus.set(
       status,
-      (this.metrics.byStatus.get(status) || 0) + 1,
+      (this.metrics.byStatus.get(status) || 0) + 1
     );
 
     // Only track top paths to avoid memory issues
