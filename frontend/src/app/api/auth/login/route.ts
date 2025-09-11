@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       email: body.email,
       password: body.password,
     });
-    console.log('backendResponse Data: ', backendResponse.data);
+    // console.log('backendResponse Data: ', backendResponse.data);
 
     if (backendResponse.status !== 201) {
       return NextResponse.json(
@@ -39,12 +39,11 @@ export async function POST(request: NextRequest) {
       data: backendResponse.data || 'No Data',
     });
   } catch (error: any) {
-    console.error('Login API error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-      stack: error.stack,
-    });
+    // console.error('Login API error:', {
+    //   message: error.message,
+    //   response: error.response?.data,
+    //   status: error.response?.status,
+    // });
 
     if (error.response?.data?.message) {
       return NextResponse.json(

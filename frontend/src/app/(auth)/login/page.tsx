@@ -64,9 +64,9 @@ export default function LoginPage() {
       });
 
       const result = await response.json();
-      console.log('Login response:', result);
-      const resultData = result.data;
-      console.log('Login response:', resultData);
+      // console.log('Login response result:', result);
+      const resultData = result?.data?.data;
+      // console.log('Login response resultData:', resultData);
 
       if (result.success) {
         console.log('Login successful!');
@@ -95,7 +95,7 @@ export default function LoginPage() {
         setSubmitMessage(result.message || 'Login failed. Please try again.');
       }
     } catch (error: any) {
-      console.error('Login error:', error.message);
+      // console.error('Login error:', error.message);
       // Handle axios error responses
       setSubmitMessage(error.message);
     } finally {

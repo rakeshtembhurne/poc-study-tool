@@ -77,9 +77,9 @@ export default function SignupPage() {
       });
 
       const result: any = await response.json();
-      console.log('\n\n\nresult:', result);
-      const resultData = result.data;
-      console.log('Signup response:', resultData);
+      // console.log('\n\n\nresult:', result);
+      const resultData = result?.data?.data;
+      // console.log('Signup response:', resultData);
 
       if (result.success) {
         setSubmitMessage(resultData.message || 'Account created successfully!');
@@ -97,7 +97,7 @@ export default function SignupPage() {
             // Redirect to dashboard or home page after successful signup and login
             router.push('/dashboard');
           } catch (error) {
-            console.error('Failed to store authentication token:', error);
+            // console.error('Failed to store authentication token:', error);
             setSubmitMessage(
               'Account created successfully but failed to save session. Please log in manually.'
             );
@@ -113,7 +113,7 @@ export default function SignupPage() {
         );
       }
     } catch (error: any) {
-      console.error('Signup error:', error.message);
+      // console.error('Signup error:', error.message);
 
       // Handle axios error responses
       setSubmitMessage(error.message);

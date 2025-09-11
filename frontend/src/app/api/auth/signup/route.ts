@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body: SignupRequestBody = await request.json();
-    console.log('signup body: ', body);
+    // console.log('signup body: ', body);
     // Validate required fields
     if (!body.email || !body.password) {
       return NextResponse.json(
@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
       email: body.email,
       password: body.password,
     });
-    console.log('backendResponse: ', backendResponse);
-    console.log('backendResponse Data: ', backendResponse.data);
+    // console.log('backendResponse: ', backendResponse);
+    // console.log('backendResponse Data: ', backendResponse.data);
 
     const backendData = backendResponse.data;
 
@@ -42,12 +42,11 @@ export async function POST(request: NextRequest) {
       data: backendData || 'No Data',
     });
   } catch (error: any) {
-    console.error('SignUp API error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status,
-      stack: error.stack,
-    });
+    // console.error('SignUp API error:', {
+    //   message: error.message,
+    //   response: error.response?.data,
+    //   status: error.response?.status,
+    // });
 
     if (error.response?.data?.message) {
       return NextResponse.json(
