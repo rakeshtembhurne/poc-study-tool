@@ -16,9 +16,13 @@ import {
 } from '../types/type-guards';
 
 interface ErrorResponse {
+  success: false;
   statusCode: number;
   message: string | string[];
-  error?: string;
+  error: {
+    code: string;
+    details?: any;
+  };
   timestamp: string;
   path: string;
   method: string;
@@ -65,7 +69,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   ): ErrorResponse {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal server error';
-    let error = 'Internal Server Error';
+    let errorCode = 'INTERNAL_SERVER_ERROR';
+    let errorDetails: any = undefined;
     let stack: string | undefined;
 
     if (exception instanceof HttpException) {
@@ -74,19 +79,27 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       const parsed = this.parseHttpExceptionResponse(exceptionResponse);
 
       message = parsed.message || exception.message;
-      error = parsed.error || exception.name;
+      errorCode = this.getErrorCode(status, exception.name);
+      errorDetails = this.getErrorDetails(exceptionResponse);
       stack = this.isDevelopment ? exception.stack : undefined;
     } else {
       const errorObj = ensureError(exception);
       message = errorObj.message;
-      error = errorObj.name;
+      errorCode = 'INTERNAL_SERVER_ERROR';
+      errorDetails = this.isDevelopment
+        ? { originalError: errorObj.name }
+        : undefined;
       stack = this.isDevelopment ? errorObj.stack : undefined;
     }
 
     const errorResponse: ErrorResponse = {
+      success: false,
       statusCode: status,
       message,
-      error,
+      error: {
+        code: errorCode,
+        details: errorDetails,
+      },
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
@@ -137,6 +150,44 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     return {};
   }
 
+  private getErrorCode(statusCode: number, exceptionName: string): string {
+    switch (statusCode as HttpStatus) {
+      case HttpStatus.BAD_REQUEST:
+        return 'BAD_REQUEST';
+      case HttpStatus.UNAUTHORIZED:
+        return 'UNAUTHORIZED';
+      case HttpStatus.FORBIDDEN:
+        return 'FORBIDDEN';
+      case HttpStatus.NOT_FOUND:
+        return 'NOT_FOUND';
+      case HttpStatus.CONFLICT:
+        return 'CONFLICT';
+      case HttpStatus.UNPROCESSABLE_ENTITY:
+        return 'VALIDATION_ERROR';
+      case HttpStatus.TOO_MANY_REQUESTS:
+        return 'RATE_LIMIT_EXCEEDED';
+      case HttpStatus.INTERNAL_SERVER_ERROR:
+        return 'INTERNAL_SERVER_ERROR';
+      default:
+        return (
+          exceptionName?.toUpperCase().replace(/EXCEPTION$/, '') ||
+          'UNKNOWN_ERROR'
+        );
+    }
+  }
+
+  private getErrorDetails(exceptionResponse: string | object): any {
+    if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+      const response = exceptionResponse as any;
+      const details = { ...response };
+      delete details.message;
+      delete details.error;
+      delete details.statusCode;
+      return Object.keys(details).length > 0 ? details : undefined;
+    }
+    return undefined;
+  }
+
   private logError(
     exception: unknown,
     errorResponse: ErrorResponse,
@@ -156,7 +207,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? errorResponse.message.join(', ')
         : errorResponse.message;
       this.logger.error(
-        `[${errorResponse.statusCode}] ${errorResponse.error}: ${messageStr}`,
+        `[${errorResponse.statusCode}] ${errorResponse.error.code}: ${messageStr}`,
         exception instanceof Error ? exception.stack : undefined,
         JSON.stringify(logContext)
       );
@@ -165,7 +216,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ? errorResponse.message.join(', ')
         : errorResponse.message;
       this.logger.warn(
-        `[${errorResponse.statusCode}] ${errorResponse.error}: ${messageStr}`,
+        `[${errorResponse.statusCode}] ${errorResponse.error.code}: ${messageStr}`,
         JSON.stringify(logContext)
       );
     }

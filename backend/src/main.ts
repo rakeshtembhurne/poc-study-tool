@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './core/common/filters/global-exception.filter';
 import { LoggerService } from './core/common/services/logger.service';
+import { ResponseInterceptor } from '@/core/common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const logger = new LoggerService();
@@ -16,7 +17,7 @@ async function bootstrap() {
     });
 
     const configService = app.get(ConfigService);
-    const port = configService.get<number>('app.port') || 3000;
+    const port = configService.get<number>('app.port') || 8000;
     const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';
     const corsOrigins = configService.get<string[]>('app.corsOrigins') || ['*'];
 
@@ -58,6 +59,9 @@ async function bootstrap() {
         },
       })
     );
+
+    // Global interceptors
+    app.useGlobalInterceptors(new ResponseInterceptor());
 
     // Global exception filter
     app.useGlobalFilters(new GlobalExceptionFilter());
