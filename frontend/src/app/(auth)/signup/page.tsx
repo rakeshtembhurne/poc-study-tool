@@ -7,6 +7,19 @@ import * as yup from 'yup';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Eye, EyeOff } from 'lucide-react';
 
 // Validation schema
 const signupSchema = yup.object({
@@ -33,6 +46,8 @@ type SignupFormData = yup.InferType<typeof signupSchema>;
 export default function SignupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
 
@@ -56,7 +71,7 @@ export default function SignupPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: data.email,  
+          email: data.email,
           password: data.password,
         }),
       });
@@ -99,7 +114,7 @@ export default function SignupPage() {
       }
     } catch (error: any) {
       console.error('Signup error:', error.message);
-      
+
       // Handle axios error responses
       setSubmitMessage(error.message);
     } finally {
@@ -108,253 +123,156 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="signup-container">
-      <div className="signup-card">
-        <div className="signup-header">
-          <h1>Create Account</h1>
-          <p>Join us today and start your journey</p>
-        </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-5">
+      <Card className="w-full max-w-md bg-white border-gray-200 shadow-xl">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-2xl font-semibold text-gray-900">
+            Create Account
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Join us today and start your journey
+          </CardDescription>
+        </CardHeader>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="signup-form">
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              type="email"
-              {...register('email')}
-              className={errors.email ? 'error' : ''}
-              placeholder="Enter your email address"
-            />
-            {errors.email && (
-              <span className="error-message">{errors.email.message}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              {...register('password')}
-              className={errors.password ? 'error' : ''}
-              placeholder="Create a strong password"
-            />
-            {errors.password && (
-              <span className="error-message">{errors.password.message}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
-            <input
-              id="confirmPassword"
-              type="password"
-              {...register('confirmPassword')}
-              className={errors.confirmPassword ? 'error' : ''}
-              placeholder="Confirm your password"
-            />
-            {errors.confirmPassword && (
-              <span className="error-message">
-                {errors.confirmPassword.message}
-              </span>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="submit-button"
-          >
-            {isSubmitting ? 'Creating Account...' : 'Create Account'}
-          </button>
-
-          {submitMessage && (
-            <div
-              className={`submit-message ${submitMessage.includes('successfully') ? 'success' : 'error'}`}
-            >
-              {submitMessage}
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-gray-900 text-sm font-medium"
+              >
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email')}
+                placeholder="Enter your email address"
+                className={`bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:ring-gray-500 ${
+                  errors.email
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                    : ''
+                }`}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
-          )}
-        </form>
 
-        <div className="signup-footer">
-          <p>
+            <div className="space-y-2">
+              <Label
+                htmlFor="password"
+                className="text-gray-900 text-sm font-medium"
+              >
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  {...register('password')}
+                  placeholder="Create a strong password"
+                  className={`bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:ring-gray-500 pr-10 ${
+                    errors.password
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                      : ''
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="confirmPassword"
+                className="text-gray-900 text-sm font-medium"
+              >
+                Confirm Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  {...register('confirmPassword')}
+                  placeholder="Confirm your password"
+                  className={`bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:ring-gray-500 pr-10 ${
+                    errors.confirmPassword
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                      : ''
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-gray-900 !text-white !cursor-pointer hover:bg-gray-800 font-semibold py-3 transition-all duration-200 hover:-translate-y-0.5 disabled:bg-gray-400 disabled:text-white disabled:transform-none disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
+            </Button>
+
+            {submitMessage && (
+              <Alert
+                className={`mt-4 ${
+                  submitMessage.includes('successfully')
+                    ? 'border-green-500/20 bg-green-50 text-green-700'
+                    : 'border-red-500/20 bg-red-50 text-red-700'
+                }`}
+              >
+                <AlertDescription className="text-center">
+                  {submitMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+          </form>
+        </CardContent>
+
+        <CardFooter className="border-t border-gray-200 pt-6">
+          <p className="text-center text-sm text-gray-600 w-full">
             Already have an account?{' '}
-            <Link href="/login" className="login-link">
+            <Link
+              href="/login"
+              className="text-gray-900 hover:text-gray-700 hover:underline font-medium transition-colors"
+            >
               Sign in here
             </Link>
           </p>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .signup-container {
-          min-height: 100vh;
-          background: #0a0a0a;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          font-family:
-            -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-            Ubuntu, Cantarell, sans-serif;
-        }
-
-        .signup-card {
-          background: #1a1a1a;
-          border: 1px solid #333;
-          border-radius: 12px;
-          padding: 40px;
-          width: 100%;
-          max-width: 450px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .signup-header {
-          text-align: center;
-          margin-bottom: 32px;
-        }
-
-        .signup-header h1 {
-          color: #ffffff;
-          font-size: 28px;
-          font-weight: 600;
-          margin-bottom: 8px;
-        }
-
-        .signup-header p {
-          color: #888;
-          font-size: 16px;
-        }
-
-        .signup-form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .form-group label {
-          color: #ffffff;
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .form-group input {
-          background: #2a2a2a;
-          border: 1px solid #444;
-          border-radius: 8px;
-          padding: 12px 16px;
-          font-size: 16px;
-          color: #ffffff;
-          transition: all 0.2s ease;
-        }
-
-        .form-group input:focus {
-          outline: none;
-          border-color: #666;
-          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
-        }
-
-        .form-group input.error {
-          border-color: #ff4444;
-        }
-
-        .form-group input::placeholder {
-          color: #666;
-        }
-
-        .error-message {
-          color: #ff4444;
-          font-size: 13px;
-          margin-top: 4px;
-        }
-
-        .submit-button {
-          background: #ffffff;
-          color: #000000;
-          border: none;
-          border-radius: 8px;
-          padding: 14px 24px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          margin-top: 8px;
-        }
-
-        .submit-button:hover:not(:disabled) {
-          background: #f0f0f0;
-          transform: translateY(-1px);
-        }
-
-        .submit-button:disabled {
-          background: #666;
-          color: #999;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .submit-message {
-          text-align: center;
-          padding: 12px;
-          border-radius: 6px;
-          font-size: 14px;
-          margin-top: 16px;
-        }
-
-        .submit-message.success {
-          background: rgba(34, 197, 94, 0.1);
-          color: #22c55e;
-          border: 1px solid rgba(34, 197, 94, 0.2);
-        }
-
-        .submit-message.error {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-          border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .signup-footer {
-          text-align: center;
-          margin-top: 32px;
-          padding-top: 24px;
-          border-top: 1px solid #333;
-        }
-
-        .signup-footer p {
-          color: #888;
-          font-size: 14px;
-        }
-
-        .login-link {
-          color: #ffffff;
-          text-decoration: none;
-          font-weight: 500;
-          transition: color 0.2s ease;
-        }
-
-        .login-link:hover {
-          color: #f0f0f0;
-          text-decoration: underline;
-        }
-
-        @media (max-width: 480px) {
-          .signup-card {
-            padding: 24px;
-            margin: 10px;
-          }
-
-          .signup-header h1 {
-            font-size: 24px;
-          }
-        }
-      `}</style>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -5,6 +5,19 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Mail, ArrowLeft } from 'lucide-react';
 
 // Validation schema
 const forgotPasswordSchema = yup.object({
@@ -37,9 +50,11 @@ export default function ForgotPasswordPage() {
     try {
       // Simulate API call for forgot password
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      
+
       setIsEmailSent(true);
-      setSubmitMessage(`Password reset instructions have been sent to ${data.email}`);
+      setSubmitMessage(
+        `Password reset instructions have been sent to ${data.email}`
+      );
     } catch (error) {
       console.error('Forgot password error:', error);
       setSubmitMessage('Failed to send reset email. Please try again.');
@@ -50,398 +65,130 @@ export default function ForgotPasswordPage() {
 
   if (isEmailSent) {
     return (
-      <div className="forgot-password-container">
-        <div className="forgot-password-card">
-          <div className="forgot-password-header">
-            <h1>Check Your Email</h1>
-            <p>We&apos;ve sent password reset instructions to your email address</p>
-          </div>
-          
-          <div className="email-sent-content">
-            <div className="email-icon">
-              <svg
-                width="64"
-                height="64"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-              </svg>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-5">
+        <Card className="w-full max-w-md bg-white border-gray-200 shadow-xl">
+          <CardHeader className="text-center space-y-2">
+            <CardTitle className="text-2xl font-semibold text-gray-900">
+              Check Your Email
+            </CardTitle>
+            <CardDescription className="text-gray-600">
+              We&apos;ve sent password reset instructions to your email address
+            </CardDescription>
+          </CardHeader>
+
+          <CardContent className="text-center space-y-6">
+            <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+              <Mail className="h-8 w-8 text-green-600" />
             </div>
-            
-            <div className="email-sent-text">
-              <p className="success-title">Email sent successfully!</p>
-              <p className="success-description">
-                Please check your inbox and follow the instructions to reset your password.
+
+            <div className="space-y-2">
+              <p className="text-lg font-medium text-gray-900">
+                Email sent successfully!
               </p>
-              <p className="success-note">
-                Didn&apos;t receive the email? Check your spam folder or try again.
+              <p className="text-sm text-gray-600">
+                Please check your inbox and follow the instructions to reset
+                your password.
+              </p>
+              <p className="text-xs text-gray-500">
+                Didn&apos;t receive the email? Check your spam folder or try
+                again.
               </p>
             </div>
 
-            <button
+            <Button
               onClick={() => {
                 setIsEmailSent(false);
                 setSubmitMessage('');
               }}
-              className="resend-button"
+              variant="outline"
+              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
             >
               Send Another Email
-            </button>
-          </div>
+            </Button>
+          </CardContent>
 
-          <div className="forgot-password-footer">
-            <Link href="/login" className="back-link">
-              <span className="back-arrow">←</span>
+          <CardFooter className="border-t border-gray-200 pt-6">
+            <Link
+              href="/login"
+              className="flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors w-full"
+            >
+              <ArrowLeft className="h-4 w-4" />
               Back to Sign In
             </Link>
-          </div>
-        </div>
-
-        <style jsx>{`
-          .forgot-password-container {
-            min-height: 100vh;
-            background: #0a0a0a;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-          }
-
-          .forgot-password-card {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 40px;
-            width: 100%;
-            max-width: 450px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-          }
-
-          .forgot-password-header {
-            text-align: center;
-            margin-bottom: 32px;
-          }
-
-          .forgot-password-header h1 {
-            color: #ffffff;
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
-          }
-
-          .forgot-password-header p {
-            color: #888;
-            font-size: 16px;
-          }
-
-          .email-sent-content {
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-          }
-
-          .email-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto;
-            background: rgba(34, 197, 94, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #22c55e;
-          }
-
-          .email-sent-text {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-          }
-
-          .success-title {
-            color: #ffffff;
-            font-size: 18px;
-            font-weight: 600;
-          }
-
-          .success-description {
-            color: #888;
-            font-size: 14px;
-            line-height: 1.5;
-          }
-
-          .success-note {
-            color: #666;
-            font-size: 12px;
-          }
-
-          .resend-button {
-            background: transparent;
-            border: 1px solid #444;
-            color: #ffffff;
-            border-radius: 8px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-          }
-
-          .resend-button:hover {
-            background: #2a2a2a;
-            border-color: #555;
-          }
-
-          .forgot-password-footer {
-            text-align: center;
-            margin-top: 32px;
-            padding-top: 24px;
-            border-top: 1px solid #333;
-          }
-
-          .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #888;
-            text-decoration: none;
-            font-size: 14px;
-            transition: color 0.2s ease;
-          }
-
-          .back-link:hover {
-            color: #ffffff;
-          }
-
-          .back-arrow {
-            font-size: 16px;
-          }
-
-          @media (max-width: 480px) {
-            .forgot-password-card {
-              padding: 24px;
-              margin: 10px;
-            }
-
-            .forgot-password-header h1 {
-              font-size: 24px;
-            }
-          }
-        `}</style>
+          </CardFooter>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="forgot-password-container">
-      <div className="forgot-password-card">
-        <div className="forgot-password-header">
-          <h1>Forgot Password?</h1>
-          <p>Enter your email address and we&apos;ll send you instructions to reset your password</p>
-        </div>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="forgot-password-form">
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              type="email"
-              {...register('email')}
-              className={errors.email ? 'error' : ''}
-              placeholder="Enter your email address"
-            />
-            {errors.email && (
-              <span className="error-message">{errors.email.message}</span>
-            )}
-          </div>
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-5">
+      <Card className="w-full max-w-md bg-white border-gray-200 shadow-xl">
+        <CardHeader className="text-center space-y-2">
+          <CardTitle className="text-2xl font-semibold text-gray-900">
+            Forgot Password?
+          </CardTitle>
+          <CardDescription className="text-gray-600">
+            Enter your email address and we&apos;ll send you mail to reset your
+            password
+          </CardDescription>
+        </CardHeader>
 
-          <button type="submit" disabled={isSubmitting} className="submit-button">
-            {isSubmitting ? 'Sending Instructions...' : 'Send Reset Instructions'}
-          </button>
-
-          {submitMessage && !isEmailSent && (
-            <div className="submit-message error">
-              {submitMessage}
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-gray-900 text-sm font-medium"
+              >
+                Email Address
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email')}
+                placeholder="Enter your email address"
+                className={`bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:ring-gray-500 ${
+                  errors.email
+                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                    : ''
+                }`}
+              />
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
-          )}
-        </form>
 
-        <div className="forgot-password-footer">
-          <Link href="/login">
-            <p className="back-link">Back to Sign In</p>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full bg-gray-900 !text-white !cursor-pointer hover:bg-gray-800 font-semibold py-3 transition-all duration-200 hover:-translate-y-0.5 disabled:bg-gray-400 disabled:text-white disabled:transform-none disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Sending...' : 'Send Reset Mail'}
+            </Button>
+
+            {submitMessage && !isEmailSent && (
+              <Alert className="mt-4 border-red-500/20 bg-red-50 text-red-700">
+                <AlertDescription className="text-center">
+                  {submitMessage}
+                </AlertDescription>
+              </Alert>
+            )}
+          </form>
+        </CardContent>
+
+        <CardFooter className="border-t border-gray-200 pt-6">
+          <Link
+            href="/login"
+            className="flex items-center justify-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors w-full"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Sign In
           </Link>
-        </div>
-      </div>
-
-      <style jsx>{`
-        .forgot-password-container {
-          min-height: 100vh;
-          background: #0a0a0a;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 20px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-        }
-
-        .forgot-password-card {
-          background: #1a1a1a;
-          border: 1px solid #333;
-          border-radius: 12px;
-          padding: 40px;
-          width: 100%;
-          max-width: 450px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .forgot-password-header {
-          text-align: center;
-          margin-bottom: 32px;
-        }
-
-        .forgot-password-header h1 {
-          color: #ffffff;
-          font-size: 28px;
-          font-weight: 600;
-          margin-bottom: 8px;
-        }
-
-        .forgot-password-header p {
-          color: #888;
-          font-size: 16px;
-          line-height: 1.5;
-        }
-
-        .forgot-password-form {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .form-group label {
-          color: #ffffff;
-          font-size: 14px;
-          font-weight: 500;
-        }
-
-        .form-group input {
-          background: #2a2a2a;
-          border: 1px solid #444;
-          border-radius: 8px;
-          padding: 12px 16px;
-          font-size: 16px;
-          color: #ffffff;
-          transition: all 0.2s ease;
-        }
-
-        .form-group input:focus {
-          outline: none;
-          border-color: #666;
-          box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
-        }
-
-        .form-group input.error {
-          border-color: #ff4444;
-        }
-
-        .form-group input::placeholder {
-          color: #666;
-        }
-
-        .error-message {
-          color: #ff4444;
-          font-size: 13px;
-          margin-top: 4px;
-        }
-
-        .submit-button {
-          background: #ffffff;
-          color: #000000;
-          border: none;
-          border-radius: 8px;
-          padding: 14px 24px;
-          font-size: 16px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          margin-top: 8px;
-        }
-
-        .submit-button:hover:not(:disabled) {
-          background: #f0f0f0;
-          transform: translateY(-1px);
-        }
-
-        .submit-button:disabled {
-          background: #666;
-          color: #999;
-          cursor: not-allowed;
-          transform: none;
-        }
-
-        .submit-message {
-          text-align: center;
-          padding: 12px;
-          border-radius: 6px;
-          font-size: 14px;
-          margin-top: 16px;
-        }
-
-        .submit-message.error {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-          border: 1px solid rgba(239, 68, 68, 0.2);
-        }
-
-        .forgot-password-footer {
-          text-align: center;
-          margin-top: 32px;
-          padding-top: 24px;
-          border-top: 1px solid #333;
-        }
-
-        .back-link {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          color: #888;
-          text-decoration: none;
-          font-size: 14px;
-          transition: color 0.2s ease;
-        }
-
-        .back-link:hover {
-          color: #ffffff;
-        }
-
-        .back-arrow {
-          font-size: 16px;
-        }
-
-        @media (max-width: 480px) {
-          .forgot-password-card {
-            padding: 24px;
-            margin: 10px;
-          }
-
-          .forgot-password-header h1 {
-            font-size: 24px;
-          }
-        }
-      `}</style>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
