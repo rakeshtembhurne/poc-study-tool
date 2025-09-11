@@ -91,8 +91,19 @@ This separation allows each codebase to follow patterns most appropriate for its
 ### Husky Git Hooks
 
 - **`pre-commit`:** Runs ESLint and tests on staged files
-- **`commit-msg`:** Enforces conventional commit format
+- **`commit-msg`:** Enforces conventional commit format with flexible rules
 - **Setup:** Automatically configured via `npm install`
+
+**Commit Message Format:**
+
+```
+type(scope): subject #123
+type(scope): subject #123, #456  // Multiple issues supported
+
+[optional body]
+```
+
+For detailed commit message guidelines and examples, see the [main project README](../README.md#commit-message-guidelines).
 
 ## UI Components (shadcn/ui)
 
