@@ -136,16 +136,13 @@ export async function seedDevelopment(prisma: PrismaClient) {
   const cards = loadTemplateData<CardData>('cards.json', 'development');
   const createdCards = new Map<string, number>();
 
-  let skippedUsers = 0;
-  let skippedDecks = 0;
-  let failedCards = 0;
+
 
   for (const cardData of cards) {
     // Check if user exists
     const userId = createdUsers.get(cardData.userEmail);
     if (!userId) {
-      skippedUsers++;
-      Logger.warn(`❌ Skipping card for missing user: ${cardData.userEmail}`);
+      Logger.warn(`Skipping card for missing user: ${cardData.userEmail}`);
       continue;
     }
 
@@ -170,7 +167,6 @@ export async function seedDevelopment(prisma: PrismaClient) {
           `Deck "${cardData.deckTitle}" created for ${cardData.userEmail}`
         );
       } catch (error) {
-        skippedDecks++;
         continue;
       }
     }
@@ -197,7 +193,8 @@ export async function seedDevelopment(prisma: PrismaClient) {
 
       createdCards.set(cardData.frontContent, card.id);
     } catch (error) {
-      failedCards++;
+      Logger.warn(`OF Cards entry creation failed:`, error);
+
     }
   }
 
