@@ -11,7 +11,7 @@ interface CardData {
   userEmail: string;
   frontContent: string;
   backContent: string;
-  deckId: number;
+  deckTitle: string;
   aFactor: number;
   repetitionCount: number;
   intervalDays: number;
@@ -90,7 +90,7 @@ export async function seedDevelopment(prisma: PrismaClient) {
       if (existingUser) {
         createdUsers.set(userData.email, existingUser.id);
       }
-      Logger.warn(`User ${userData.email} already exists, using existing...`);
+      // Logger.warn(`User ${userData.email} already exists, using existing...`);
     }
   }
   logSeedingProgress('users', users.length);
@@ -98,7 +98,7 @@ export async function seedDevelopment(prisma: PrismaClient) {
   // 2. SEED DECKS
   Logger.log('Creating decks...');
   const decksData = loadTemplateData<DeckData>('decks.json', 'development');
-  const createdDecks = new Map<string, number>(); // Map "userEmail-deckTitle" to deckId
+  const createdDecks = new Map<string, number>();
 
   for (const deckData of decksData) {
     const userId = createdUsers.get(deckData.userEmail);
@@ -109,24 +109,26 @@ export async function seedDevelopment(prisma: PrismaClient) {
 
     try {
       const deck = await prisma.deck.upsert({
-      where: { userId_title: { userId, title: deckData.title } },
-      update: {
-        description: deckData.description,
-        isPublic: deckData.isPublic,
-      },
-      create: {
-        userId,
-        title: deckData.title,
-        description: deckData.description,
-        isPublic: deckData.isPublic,
-      },
+        where: { userId_title: { userId, title: deckData.title } },
+        update: {
+          description: deckData.description,
+          isPublic: deckData.isPublic,
+        },
+        create: {
+          userId,
+          title: deckData.title,
+          description: deckData.description,
+          isPublic: deckData.isPublic,
+        },
       });
+
       const deckKey = `${deckData.userEmail}-${deckData.title}`;
       createdDecks.set(deckKey, deck.id);
     } catch (error) {
-      Logger.warn(`Deck "${deckData.title}" creation failed`);
+      Logger.warn(`Deck "${deckData.title}" creation failed`, error);
     }
   }
+
   logSeedingProgress('decks', decksData.length);
 
   // 3. SEED CARDS
@@ -134,26 +136,49 @@ export async function seedDevelopment(prisma: PrismaClient) {
   const cards = loadTemplateData<CardData>('cards.json', 'development');
   const createdCards = new Map<string, number>();
 
+  let skippedUsers = 0;
+  let skippedDecks = 0;
+  let failedCards = 0;
+
   for (const cardData of cards) {
+    // Check if user exists
     const userId = createdUsers.get(cardData.userEmail);
     if (!userId) {
-      Logger.warn(`User ${cardData.userEmail} not found for card, skipping...`);
+      skippedUsers++;
+      Logger.warn(`❌ Skipping card for missing user: ${cardData.userEmail}`);
       continue;
     }
 
-    const deckKey = `${cardData.userEmail}-${cardData.deckId}`;
-    const deckId = createdDecks.get(deckKey);
+    // Ensure deck exists — auto-create if not found
+    const deckKey = `${cardData.userEmail}-${cardData.deckTitle}`;
+    let deckId = createdDecks.get(deckKey);
+
     if (!deckId) {
-      Logger.warn(
-        `Deck "${cardData.deckId}" for user ${cardData.userEmail} not found, skipping card...`
-      );
-      continue;
+      Logger.warn(`⚠️ Deck "${cardData.deckTitle}" not found for ${cardData.userEmail}, creating it...`);
+
+      try {
+        const newDeck = await prisma.deck.create({
+          data: {
+            title: cardData.deckTitle,
+            userId,
+            isPublic: false,
+          },
+        });
+        deckId = newDeck.id;
+        createdDecks.set(deckKey, deckId);
+        Logger.log(
+          `Deck "${cardData.deckTitle}" created for ${cardData.userEmail}`
+        );
+      } catch (error) {
+        skippedDecks++;
+        continue;
+      }
     }
 
+    // Insert card
     try {
       const nextReviewDate = new Date();
       nextReviewDate.setDate(nextReviewDate.getDate() + cardData.intervalDays);
-
       const card = await prisma.card.create({
         data: {
           userId,
@@ -169,11 +194,13 @@ export async function seedDevelopment(prisma: PrismaClient) {
           nextReviewDate,
         },
       });
+
       createdCards.set(cardData.frontContent, card.id);
     } catch (error) {
-      Logger.warn(`Card "${cardData.frontContent}" creation failed:`, error);
+      failedCards++;
     }
   }
+
   logSeedingProgress('cards', cards.length);
 
   // 4. SEED OF MATRIX
