@@ -2,14 +2,14 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  Logger,
+  InternalServerErrorException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-
-import { Logger, InternalServerErrorException } from '@nestjs/common';
 
 interface JwtPayload {
   sub: string;

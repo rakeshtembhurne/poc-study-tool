@@ -11,11 +11,13 @@ export class AuthController {
 
   @Post('signup')
   signup(@Body() dto: RegisterDto) {
+    this.logger.log(`Signup attempt for email: ${dto.email}`);
     return this.authService.register(dto);
   }
 
   @Post('login')
   async login(@Body() dto: LoginDto) {
+    this.logger.log(`Login attempt for email: ${dto.email}`);
     return this.authService.login(dto);
   }
 
