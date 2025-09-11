@@ -82,7 +82,10 @@ describe('GlobalExceptionFilter', () => {
     expect(jsonCall[0]).toMatchObject({
       statusCode: HttpStatus.BAD_REQUEST,
       message: ['Field is required'],
-      error: 'Bad Request',
+      error: {
+        code: 'BAD_REQUEST',
+        details: undefined,
+      },
     });
   });
 
@@ -98,7 +101,10 @@ describe('GlobalExceptionFilter', () => {
     expect(jsonCall[0]).toMatchObject({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Generic error',
-      error: 'Error',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        details: undefined,
+      },
     });
   });
 
@@ -114,7 +120,10 @@ describe('GlobalExceptionFilter', () => {
     expect(jsonCall[0]).toMatchObject({
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'String error', // ensureError converts string to Error with string as message
-      error: 'Error',
+      error: {
+        code: 'INTERNAL_SERVER_ERROR',
+        details: undefined,
+      },
       path: '/test',
       method: 'GET',
     });

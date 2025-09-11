@@ -220,33 +220,69 @@ Follow a clear and consistent commit message style to make project history easy 
 
 ### Commit Format
 ```
-type(scope): subject (#issue-number)
+type(scope): subject #123
+
+[optional body]
+
+[optional footer]
 ```
-- **type** → Type of change (feat, fix, docs, etc.)  
-- **scope** → Area of code affected (auth, ui, api, etc.)  
-- **subject** → Short description of the change (5–75 characters, lowercase, no sentence-case or PascalCase)  
-- **references** → Issue or ticket number (required, e.g., `#123`)  
+
+**Header Components:**
+- **type** → Type of change (feat, fix, docs, etc.) - **required**
+- **scope** → Area of code affected (auth, ui, api, etc.) - **optional**  
+- **subject** → Short description of the change (5–75 characters, lowercase) - **required**
+- **references** → Issue number(s) like `#123` or `#123, #456` - **required**
+
+**Body and Footer:**
+- **body** → Optional detailed description with blank line after header
+- **footer** → Optional metadata like breaking changes
 
 ### Rules Enforced
 - Maximum header length: 200 characters  
 - Subject length: 5–75 characters  
-- Type, scope, subject, and references **cannot be empty**  
+- Type, subject, and references are **required**, scope is **optional**
 - Subject **cannot** be sentence-case, start-case, PascalCase, or UPPERCASE  
+- Subject **cannot** end with a period
+- Body must have blank line after header (if present)
 
 ### Examples
 
-#### ✅ Correct
+#### ✅ Simple Commit
 ```
-feat(auth): add login validation (#123)
+feat(auth): add login validation #123
 ```
-#### ❌ Incorrect
+
+#### ✅ Multiple Issues
 ```
-Fix: Login Bug
+fix(database): resolve connection timeout issues #456, #789
 ```
-- Type not lowercase  
-- Scope missing  
-- Subject wrong case  
-- References missing  
+
+#### ✅ With Optional Body
+```
+feat(auth): add user registration #101
+
+Added email validation and password strength requirements.
+Updated error messages for better user experience.
+```
+
+#### ✅ Without Scope or References
+```
+docs: update installation guide
+```
+
+#### ✅ Breaking Change
+```
+feat(api): restructure user endpoints #123
+
+BREAKING CHANGE: User API endpoints now require authentication
+```
+
+#### ❌ Incorrect Examples
+```
+Fix: Login Bug        # Type not lowercase, subject too short
+feat(): add feature   # Empty scope not allowed  
+feat: Add Feature.    # Subject wrong case, ends with period
+```  
 
 ## Contributing
 
