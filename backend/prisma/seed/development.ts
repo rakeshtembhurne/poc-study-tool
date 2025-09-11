@@ -90,7 +90,10 @@ export async function seedDevelopment(prisma: PrismaClient) {
       if (existingUser) {
         createdUsers.set(userData.email, existingUser.id);
       }
-      // Logger.warn(`User ${userData.email} already exists, using existing...`);
+      Logger.warn(
+        `User ${userData.email} already exists, using existing...`,
+        error
+      );
     }
   }
   logSeedingProgress('users', users.length);
@@ -136,8 +139,6 @@ export async function seedDevelopment(prisma: PrismaClient) {
   const cards = loadTemplateData<CardData>('cards.json', 'development');
   const createdCards = new Map<string, number>();
 
-
-
   for (const cardData of cards) {
     // Check if user exists
     const userId = createdUsers.get(cardData.userEmail);
@@ -151,7 +152,9 @@ export async function seedDevelopment(prisma: PrismaClient) {
     let deckId = createdDecks.get(deckKey);
 
     if (!deckId) {
-      Logger.warn(`⚠️ Deck "${cardData.deckTitle}" not found for ${cardData.userEmail}, creating it...`);
+      Logger.warn(
+        `⚠️ Deck "${cardData.deckTitle}" not found for ${cardData.userEmail}, creating it...`
+      );
 
       try {
         const newDeck = await prisma.deck.create({
@@ -167,6 +170,8 @@ export async function seedDevelopment(prisma: PrismaClient) {
           `Deck "${cardData.deckTitle}" created for ${cardData.userEmail}`
         );
       } catch (error) {
+        Logger.warn(`OF Cards entry creation failed:`, error);
+
         continue;
       }
     }
@@ -194,7 +199,6 @@ export async function seedDevelopment(prisma: PrismaClient) {
       createdCards.set(cardData.frontContent, card.id);
     } catch (error) {
       Logger.warn(`OF Cards entry creation failed:`, error);
-
     }
   }
 
