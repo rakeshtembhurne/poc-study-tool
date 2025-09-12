@@ -1,0 +1,59 @@
+
+{
+  "development": [
+    {
+      "title": "Default Deck",
+      "description": "Main deck for admin01",
+      "isPublic": true,
+      "userEmail": "user2@example.com"
+    },
+    {
+      "title": "Default Deck",
+      "description": "Main deck for demo user",
+      "isPublic": true,
+      "userEmail": "user1@example.com"
+    },
+    {
+      "title": "Default Deck",
+      "description": "Main deck for user2",
+      "isPublic": true,
+      "userEmail": "user2@example.com"
+    },
+    {
+      "title": "Advanced JavaScript",
+      "description": "deck 02",
+      "isPublic": false,
+      "userEmail": "user1@example.com"
+    },
+    {
+      "title": "Default Deck",
+      "description": "Main deck for admin",
+      "isPublic": true,
+      "userEmail": "admin@example.com"
+    },
+    {
+      "title": "Default Deck",
+      "description": "Main deck for admin",
+      "isPublic": true,
+      "userEmail": "demo@example.com"
+
+    }
+ 
+  ],
+  "test": [
+    {
+      "title": "Test Deck",
+      "description": "A deck for testing purposes.",
+      "isPublic": false,
+      "userEmail": "test@example.com"
+    }
+  ],
+  "production": [
+    {
+      "title": "Production Deck",
+      "description": "A deck for prodcution purposes.",
+      "isPublic": false,
+      "userEmail": "production@example.com"
+    }
+  ]
+}

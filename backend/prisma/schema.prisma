@@ -33,6 +33,7 @@ model User {
   reviews               Review[] // Complete review history for analytics
   ofMatrixEntries       OFMatrix[] // Personalized optimal factors matrix
   statistics            UserStatistic[] // Daily/periodic performance metrics
+  decks                 Deck[]
 
   @@map("users")
 }
@@ -42,7 +43,7 @@ model Card {
   userId       Int      @map("user_id")
   frontContent String   @map("front_content") // Question/prompt text
   backContent  String   @map("back_content") // Answer/explanation text
-  deck         String? // Deck for organization (e.g., "Spanish", "Math")
+  deckId       Int      @map("deck_id") // Fixed the mapping
   createdAt    DateTime @default(now()) @map("created_at")
   // === SM-15 ALGORITHM CRITICAL FIELDS ===
   // These fields are the heart of the spaced repetition system
@@ -93,10 +94,11 @@ model Card {
   // Relationships
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviews         Review[] // Complete review history for this card
+  deck            Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade) // Added onDelete: Cascade
 
   // Indexes for Performance
   @@index([userId, nextReviewDate]) // Critical for due cards queries
-  @@index([userId, deck]) // Enables fast deck filtering
+  @@index([userId, deckId]) // Enables fast deck filtering
   @@index([userId, aFactor]) // For difficulty-based queries
   @@index([userId, repetitionCount]) // For learning progress analysis
   @@map("cards")
@@ -141,6 +143,21 @@ model Review {
   @@index([cardId, reviewDate]) // Card performance over time
   @@index([userId, reviewDate(sort: Desc)]) // User activity timeline
   @@map("reviews")
+}
+
+model Deck {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  isPublic    Boolean  @default(false)
+  userId      Int      @map("user_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  cards       Card[] // Relationship to cards
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade) // Relationship to user
+
+  @@unique([userId, title], name: "userId_title") // Composite unique constraint
+  @@map("decks")
 }
 
 model OFMatrix {
