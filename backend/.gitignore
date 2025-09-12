@@ -446,3 +446,4 @@ dist
 .webpack
 .serverless/**/*.zip
 /generated/prisma
+package-lock.json
