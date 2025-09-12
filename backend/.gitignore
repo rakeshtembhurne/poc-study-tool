@@ -69,7 +69,6 @@ build/
 /generated/
 *.db
 *.db-journal
-/prisma/migrations/
 .prisma/
 
 # OS
@@ -447,3 +446,4 @@ dist
 .webpack
 .serverless/**/*.zip
 /generated/prisma
+package-lock.json
