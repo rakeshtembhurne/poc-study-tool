@@ -1,266 +1,246 @@
 'use client';
 
-import { useAuth } from '@/context/AuthContext';
-import { redirectAfterLogout } from '@/lib/redirect-utils';
-import { useState } from 'react';
-
-function DashboardContent() {
-  const { user, logout } = useAuth();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      // Redirect after logout with a small delay to show the loading state
-      setTimeout(() => {
-        redirectAfterLogout();
-      }, 500);
-    } catch (error) {
-      console.error('Logout failed:', error);
-      setIsLoggingOut(false);
-    }
-  };
-
-  return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <h1>Dashboard</h1>
-        <div className="user-info">
-          <span>Welcome, {user?.name || user?.email || 'User'}!</span>
-          <button 
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            className="logout-btn"
-          >
-            {isLoggingOut ? 'Logging out...' : 'Logout'}
-          </button>
-        </div>
-      </header>
-
-      <main className="dashboard-main">
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <h2>User Information</h2>
-            <div className="user-details">
-              <p><strong>ID:</strong> {user?.id || 'N/A'}</p>
-              <p><strong>Name:</strong> {user?.name || 'N/A'}</p>
-              <p><strong>Email:</strong> {user?.email || 'N/A'}</p>
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <h2>Authentication Status</h2>
-            <div className="auth-status">
-              <p><strong>Status:</strong> <span className="status-authenticated">Authenticated</span></p>
-              <p><strong>Session:</strong> Active</p>
-              <p><strong>Last Login:</strong> {new Date().toLocaleDateString()}</p>
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <h2>Quick Actions</h2>
-            <div className="quick-actions">
-              <button className="action-btn primary">View Profile</button>
-              <button className="action-btn secondary">Settings</button>
-              <button className="action-btn secondary">Help</button>
-            </div>
-          </div>
-
-          <div className="dashboard-card">
-            <h2>Recent Activity</h2>
-            <div className="activity-list">
-              <div className="activity-item">
-                <span className="activity-time">Just now</span>
-                <span className="activity-text">Logged into dashboard</span>
-              </div>
-              <div className="activity-item">
-                <span className="activity-time">5 min ago</span>
-                <span className="activity-text">Updated profile</span>
-              </div>
-              <div className="activity-item">
-                <span className="activity-time">1 hour ago</span>
-                <span className="activity-text">Changed password</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      <style jsx>{`
-        .dashboard-container {
-          min-height: 100vh;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .dashboard-header {
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(10px);
-          padding: 20px 40px;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-        }
-
-        .dashboard-header h1 {
-          color: white;
-          margin: 0;
-          font-size: 2rem;
-          font-weight: 600;
-        }
-
-        .user-info {
-          display: flex;
-          align-items: center;
-          gap: 20px;
-          color: white;
-        }
-
-        .logout-btn {
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          border: 1px solid rgba(255, 255, 255, 0.3);
-          padding: 8px 16px;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        }
-
-        .logout-btn:hover:not(:disabled) {
-          background: rgba(255, 255, 255, 0.3);
-          transform: translateY(-1px);
-        }
-
-        .logout-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .dashboard-main {
-          padding: 40px;
-        }
-
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-          gap: 30px;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
-
-        .dashboard-card {
-          background: rgba(255, 255, 255, 0.95);
-          border-radius: 12px;
-          padding: 30px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-          backdrop-filter: blur(10px);
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .dashboard-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
-        }
-
-        .dashboard-card h2 {
-          margin: 0 0 20px 0;
-          color: #333;
-          font-size: 1.4rem;
-          font-weight: 600;
-        }
-
-        .user-details p, .auth-status p {
-          margin: 10px 0;
-          color: #555;
-          line-height: 1.6;
-        }
-
-        .status-authenticated {
-          color: #28a745;
-          font-weight: 600;
-        }
-
-        .quick-actions {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-        }
-
-        .action-btn {
-          padding: 12px 20px;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.3s ease;
-        }
-
-        .action-btn.primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-        }
-
-        .action-btn.secondary {
-          background: #f8f9fa;
-          color: #495057;
-          border: 1px solid #dee2e6;
-        }
-
-        .action-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .activity-list {
-          display: flex;
-          flex-direction: column;
-          gap: 15px;
-        }
-
-        .activity-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 12px;
-          background: #f8f9fa;
-          border-radius: 8px;
-          border-left: 4px solid #667eea;
-        }
-
-        .activity-time {
-          font-size: 0.9rem;
-          color: #6c757d;
-          font-weight: 500;
-        }
-
-        .activity-text {
-          color: #495057;
-        }
-
-        @media (max-width: 768px) {
-          .dashboard-header {
-            padding: 15px 20px;
-            flex-direction: column;
-            gap: 15px;
-            text-align: center;
-          }
-
-          .dashboard-main {
-            padding: 20px;
-          }
-
-          .dashboard-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import {
+  Play,
+  BookOpen,
+  Plus,
+  Calendar,
+  Flame,
+  Clock,
+  BookMarked,
+} from 'lucide-react';
+import WeeklyProgressChart from '@/components/charts/WeeklyProgressChart';
+import StudyPerformanceChart from '@/components/charts/StudyPerformanceChart';
+import DeckDistributionChart from '@/components/charts/DeckDistributionChart';
+import MonthlyProgressChart from '@/components/charts/MonthlyProgressChart';
+import {
+  useWeeklyProgressData,
+  useStudyPerformanceData,
+  useDeckDistributionData,
+  useMonthlyProgressData,
+} from '@/hooks/useChartData';
 
 export default function DashboardPage() {
-  return <DashboardContent />;
+  // Use custom hooks to manage chart data states
+  const weeklyProgress = useWeeklyProgressData();
+  const studyPerformance = useStudyPerformanceData();
+  const deckDistribution = useDeckDistributionData();
+  const monthlyProgress = useMonthlyProgressData();
+
+  return (
+    <div className="min-h-screen bg-background p-8">
+      <div className="max-w-[80vw] mx-auto space-y-8">
+        {/* Welcome Section */}
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold text-foreground">Welcome back!</h1>
+          <p className="text-md text-muted-foreground">
+            Ready to continue your learning journey?
+          </p>
+        </div>
+
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="flex items-center p-6">
+              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg mr-4">
+                <BookMarked className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">234</p>
+                <p className="text-sm text-muted-foreground">Total Cards</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center p-6">
+              <div className="flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg mr-4">
+                <Calendar className="h-6 w-6 text-green-600 dark:text-green-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">12</p>
+                <p className="text-sm text-muted-foreground">Due Today</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center p-6">
+              <div className="flex items-center justify-center w-12 h-12 bg-red-100 dark:bg-red-900 rounded-lg mr-4">
+                <Flame className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">7 days</p>
+                <p className="text-sm text-muted-foreground">Streak</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="flex items-center p-6">
+              <div className="flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg mr-4">
+                <Clock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">2.5h</p>
+                <p className="text-sm text-muted-foreground">Study Time</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                className="w-full justify-start !cursor-pointer"
+                variant={'outline'}
+                size="lg"
+              >
+                <Play className="mr-2 h-4 w-4" />
+                Start Study Session
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start !cursor-pointer"
+                size="lg"
+              >
+                <BookOpen className="mr-2 h-4 w-4" />
+                Browse Decks
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start !cursor-pointer"
+                size="lg"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create New Card
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Recent Decks */}
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle>Recent Decks</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground">
+                    Spanish Vocabulary
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">
+                      45 cards
+                    </span>
+                    <Badge variant="secondary">8 due</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    last studied: 2 hours ago
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={'default'}
+                  className="!text-primary-foreground !cursor-pointer"
+                >
+                  Study
+                </Button>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground">
+                    Programming Concepts
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">
+                      67 cards
+                    </span>
+                    <Badge variant="secondary">3 due</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    last studied: 1 day ago
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={'default'}
+                  className="!text-primary-foreground !cursor-pointer"
+                >
+                  Study
+                </Button>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-foreground">
+                    History Facts
+                  </h3>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-muted-foreground">
+                      89 cards
+                    </span>
+                    <Badge variant="secondary">15 due</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    last studied: 3 days ago
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant={'default'}
+                  className="!text-primary-foreground !cursor-pointer"
+                >
+                  Study
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Charts Section with Enhanced Error Handling */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <WeeklyProgressChart
+            data={weeklyProgress.data || undefined}
+            isLoading={weeklyProgress.isLoading}
+            error={weeklyProgress.error}
+          />
+          <StudyPerformanceChart
+            data={studyPerformance.data || undefined}
+            isLoading={studyPerformance.isLoading}
+            error={studyPerformance.error}
+          />
+        </div>
+
+        {/* Additional Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <DeckDistributionChart
+            data={deckDistribution.data || undefined}
+            isLoading={deckDistribution.isLoading}
+            error={deckDistribution.error}
+          />
+          <MonthlyProgressChart
+            data={monthlyProgress.data || undefined}
+            isLoading={monthlyProgress.isLoading}
+            error={monthlyProgress.error}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
