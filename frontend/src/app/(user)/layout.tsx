@@ -63,7 +63,9 @@ function TopNavigation() {
     <nav className="sticky top-0 z-50 w-full border-b bg-background-navbar/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
       <div className="flex h-16 max-w-[80vw] mx-auto items-center justify-between">
         <Link href={'/dashboard'} className="flex items-center space-x-8">
-          <h1 className="text-2xl font-bold text-foreground m-0">Super-Memo</h1>
+          <h1 className="text-2xl font-bold text-foreground m-0">
+            Spaced Repetition
+          </h1>
         </Link>
 
         <div className="hidden md:flex items-center space-x-4">

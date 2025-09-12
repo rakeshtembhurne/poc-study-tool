@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Target } from 'lucide-react';
 import {
@@ -12,8 +13,12 @@ import {
   ResponsiveContainer,
   Legend,
 } from 'recharts';
+import { ChartErrorBoundary } from './ChartErrorBoundary';
+import ChartLoadingState from './ChartLoadingState';
+import ChartEmptyState from './ChartEmptyState';
+import { StudyPerformanceData } from '@/hooks/useChartData';
 
-const studyPerformanceData = [
+const mockStudyPerformanceData: StudyPerformanceData[] = [
   { date: '12/5', accuracy: 78, retention: 85 },
   { date: '12/6', accuracy: 82, retention: 88 },
   { date: '12/7', accuracy: 75, retention: 82 },
@@ -23,7 +28,86 @@ const studyPerformanceData = [
   { date: '12/11', accuracy: 89, retention: 92 },
 ];
 
-export default function StudyPerformanceChart() {
+interface StudyPerformanceChartProps {
+  data?: StudyPerformanceData[];
+  isLoading?: boolean;
+  error?: string | null;
+}
+
+function StudyPerformanceChartContent({
+  data = mockStudyPerformanceData,
+  isLoading = false,
+  error = null,
+}: StudyPerformanceChartProps) {
+  const [internalLoading, setInternalLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate data loading
+    const timer = setTimeout(() => {
+      setInternalLoading(false);
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isActuallyLoading = isLoading || internalLoading;
+
+  // Validate data
+  const isValidData = (data: StudyPerformanceData[]): boolean => {
+    return (
+      Array.isArray(data) &&
+      data.length > 0 &&
+      data.every(
+        (item) =>
+          typeof item.date === 'string' &&
+          typeof item.accuracy === 'number' &&
+          typeof item.retention === 'number' &&
+          !isNaN(item.accuracy) &&
+          !isNaN(item.retention) &&
+          item.accuracy >= 0 &&
+          item.accuracy <= 100 &&
+          item.retention >= 0 &&
+          item.retention <= 100
+      )
+    );
+  };
+
+  const handleRetry = () => {
+    setInternalLoading(true);
+    setTimeout(() => setInternalLoading(false), 1200);
+  };
+
+  if (isActuallyLoading) {
+    return (
+      <ChartLoadingState
+        title="Study Performance"
+        icon={<Target className="h-5 w-5" />}
+      />
+    );
+  }
+
+  if (error) {
+    return (
+      <ChartEmptyState
+        title="Study Performance"
+        icon={<Target className="h-5 w-5" />}
+        message={error}
+        onRetry={handleRetry}
+      />
+    );
+  }
+
+  if (!isValidData(data)) {
+    return (
+      <ChartEmptyState
+        title="Study Performance"
+        icon={<Target className="h-5 w-5" />}
+        message="No performance data available"
+        onRetry={handleRetry}
+      />
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -34,7 +118,7 @@ export default function StudyPerformanceChart() {
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={studyPerformanceData}>
+          <LineChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis
               dataKey="date"
@@ -77,5 +161,15 @@ export default function StudyPerformanceChart() {
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+export default function StudyPerformanceChart(
+  props: StudyPerformanceChartProps
+) {
+  return (
+    <ChartErrorBoundary fallbackTitle="Study Performance">
+      <StudyPerformanceChartContent {...props} />
+    </ChartErrorBoundary>
   );
 }

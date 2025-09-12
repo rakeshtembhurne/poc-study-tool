@@ -17,8 +17,20 @@ import WeeklyProgressChart from '@/components/charts/WeeklyProgressChart';
 import StudyPerformanceChart from '@/components/charts/StudyPerformanceChart';
 import DeckDistributionChart from '@/components/charts/DeckDistributionChart';
 import MonthlyProgressChart from '@/components/charts/MonthlyProgressChart';
+import {
+  useWeeklyProgressData,
+  useStudyPerformanceData,
+  useDeckDistributionData,
+  useMonthlyProgressData,
+} from '@/hooks/useChartData';
 
 export default function DashboardPage() {
+  // Use custom hooks to manage chart data states
+  const weeklyProgress = useWeeklyProgressData();
+  const studyPerformance = useStudyPerformanceData();
+  const deckDistribution = useDeckDistributionData();
+  const monthlyProgress = useMonthlyProgressData();
+
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-[80vw] mx-auto space-y-8">
@@ -201,16 +213,32 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Charts Section */}
+        {/* Charts Section with Enhanced Error Handling */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <WeeklyProgressChart />
-          <StudyPerformanceChart />
+          <WeeklyProgressChart
+            data={weeklyProgress.data || undefined}
+            isLoading={weeklyProgress.isLoading}
+            error={weeklyProgress.error}
+          />
+          <StudyPerformanceChart
+            data={studyPerformance.data || undefined}
+            isLoading={studyPerformance.isLoading}
+            error={studyPerformance.error}
+          />
         </div>
 
         {/* Additional Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <DeckDistributionChart />
-          <MonthlyProgressChart />
+          <DeckDistributionChart
+            data={deckDistribution.data || undefined}
+            isLoading={deckDistribution.isLoading}
+            error={deckDistribution.error}
+          />
+          <MonthlyProgressChart
+            data={monthlyProgress.data || undefined}
+            isLoading={monthlyProgress.isLoading}
+            error={monthlyProgress.error}
+          />
         </div>
       </div>
     </div>

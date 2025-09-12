@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Super-Memo',
+  title: 'Spaced Repetition',
   description: 'A powerful study tool for spaced repetition learning',
 };
 
