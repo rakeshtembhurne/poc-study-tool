@@ -33,7 +33,7 @@ model User {
   reviews               Review[] // Complete review history for analytics
   ofMatrixEntries       OFMatrix[] // Personalized optimal factors matrix
   statistics            UserStatistic[] // Daily/periodic performance metrics
-  decks                 Deck[] // Changed from 'Deck' to 'decks' (lowercase, plural)
+  decks                 Deck[]
 
   @@map("users")
 }

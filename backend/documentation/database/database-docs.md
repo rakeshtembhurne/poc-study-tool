@@ -2,9 +2,10 @@
 
 ## Overview
 
-The database is designed to support the SM-15 spaced repetition algorithm with PostgreSQL as the database system and Prisma as the ORM. 
+The database is designed to support the SM-15 spaced repetition algorithm with PostgreSQL as the database system and Prisma as the ORM.
 
 ### Data Types and Constraints
+
 ```sql
 -- Example of PostgreSQL-specific column definitions
 CREATE TABLE cards (
@@ -12,60 +13,62 @@ CREATE TABLE cards (
     user_id INTEGER NOT NULL,
     front_content TEXT NOT NULL,
     back_content TEXT NOT NULL,
-    a_factor DECIMAL(3,2) NOT NULL 
+    a_factor DECIMAL(3,2) NOT NULL
         CHECK (a_factor >= 1.1 AND a_factor <= 2.5),
-    interval_days INTEGER NOT NULL 
+    interval_days INTEGER NOT NULL
         CHECK (interval_days >= 0),
     next_review_date TIMESTAMP WITH TIME ZONE NOT NULL,
     review_history JSONB DEFAULT '[]',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) 
-        REFERENCES users(id) 
+    FOREIGN KEY (user_id)
+        REFERENCES users(id)
         ON DELETE CASCADE
 );
 
 -- Example of composite unique constraint
-CREATE UNIQUE INDEX unique_user_date_stats 
+CREATE UNIQUE INDEX unique_user_date_stats
 ON user_statistics(user_id, date);
 
 -- Example of partial index for due cards
-CREATE INDEX idx_due_cards 
-ON cards(user_id, next_review_date) 
+CREATE INDEX idx_due_cards
+ON cards(user_id, next_review_date)
 WHERE next_review_date <= CURRENT_TIMESTAMP;
 ```
 
 ### Foreign Key Constraints
+
 ```sql
 -- All relationships with CASCADE rules
 ALTER TABLE cards
     ADD CONSTRAINT fk_user_cards
-    FOREIGN KEY (user_id) 
-    REFERENCES users(id) 
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
     ON DELETE CASCADE;
 
 ALTER TABLE reviews
     ADD CONSTRAINT fk_card_reviews
-    FOREIGN KEY (card_id) 
-    REFERENCES cards(id) 
+    FOREIGN KEY (card_id)
+    REFERENCES cards(id)
     ON DELETE CASCADE;
 
 ALTER TABLE of_matrix
     ADD CONSTRAINT fk_user_ofmatrix
-    FOREIGN KEY (user_id) 
-    REFERENCES users(id) 
+    FOREIGN KEY (user_id)
+    REFERENCES users(id)
     ON DELETE CASCADE;
 ```
 
 ### PostgreSQL-Specific Optimizations
 
 #### JSONB Indexing
+
 ```sql
 -- GIN index for JSON search on review history
-CREATE INDEX idx_review_history 
+CREATE INDEX idx_review_history
 ON cards USING GIN (review_history);
 
 -- JSONB path operations for analytics
-SELECT user_id, 
+SELECT user_id,
        review_history->>'grade' as grade,
        review_history->>'date' as review_date
 FROM cards
@@ -73,7 +76,8 @@ WHERE review_history @> '[{"grade": 5}]';
 ```
 
 #### Materialized Views for Analytics
-```sql
+
+````sql
 -- Refresh periodically for performance
 CREATE MATERIALIZED VIEW user_performance_summary AS
 SELECT u.id as user_id,
@@ -105,25 +109,27 @@ WITH NO DATA;
 
 ## Entity Relationship Diagram
 
-```
-┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│     User    │──────▶│    Card     │──────▶│   Review    │
-│             │ 1:N   │             │ 1:N   │             │
-│ - id        │       │ - userId    │       │ - cardId    │
-│ - email     │       │ - aFactor   │       │ - grade     │
-│ - streak    │       │ - interval  │       │ - newInterval│
-└─────────────┘       └─────────────┘       └─────────────┘
-       │                                            │
-       │ 1:N                                    N:1 │
-       ▼                                            ▼
-┌─────────────┐       ┌─────────────┐       ┌─────────────┐
-│ UserStatistic│       │  OFMatrix   │       │   Review    │
-│             │       │             │◀──────│             │
-│ - userId    │       │ - userId    │       │ - userId    │
-│ - date      │       │ - repNumber │       │ - reviewDate│
-│ - accuracy  │       │ - optimal   │       │ - grade     │
-└─────────────┘       └─────────────┘       └─────────────┘
-```
+````
+
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│ User │──────▶│ Card │──────▶│ Review │
+│ │ 1:N │ │ 1:N │ │
+│ - id │ │ - userId │ │ - cardId │
+│ - email │ │ - aFactor │ │ - grade │
+│ - streak │ │ - interval │ │ - newInterval│
+└─────────────┘ └─────────────┘ └─────────────┘
+│ │
+│ 1:N N:1 │
+▼ ▼
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐
+│ UserStatistic│ │ OFMatrix │ │ Review │
+│ │ │ │◀──────│ │
+│ - userId │ │ - userId │ │ - userId │
+│ - date │ │ - repNumber │ │ - reviewDate│
+│ - accuracy │ │ - optimal │ │ - grade │
+└─────────────┘ └─────────────┘ └─────────────┘
+
+````
 
 ## Table Structure and Critical Fields
 
@@ -137,21 +143,21 @@ WITH NO DATA;
 ### Card
 - Individual flashcards with SM-15 algorithm data
 - **Critical Fields**:
-  - `aFactor` (1.1-2.5): Represents card difficulty, higher means harder
-  - `intervalDays`: Current spacing between reviews
-  - `nextReviewDate`: When to show card next
-  - `repetitionCount`: Number of reviews, used for OF Matrix lookups
-  - `lapsesCount`: Failure tracking for interval calculations
-  - `deck`: A string field for associating the card with a deck by its title.
+  - `aFactor` : Learning difficulty factor (1.1–2.5). Higher = harder.
+  - `intervalDays`: Current review interval in days.
+  - `nextReviewDate`: When this card should next appear for review.
+  - `repetitionCount`: Number of successful reviews (used for OF Matrix lookups).
+  - `lapsesCount`: Number of times the card was failed (resets repetition count).
+  - `deckId`: Foreign key reference to the deck this card belongs to.
 
 ### Deck
 - Represents a user-created collection of cards, like a folder or a tag.
 - **Critical Fields**:
-  - `title`: The name of the deck.
-  - `description`: An optional description for the deck.
-  - `isPublic`: Controls if the deck can be seen by other users.
-  - `userId`: The ID of the user who owns the deck.
-  - `cardId`: The ID of a card associated with the deck, possibly as a "cover" or representative card.
+  - `title`: Name of the deck (must be unique per user).
+  - `description`: Optional deck description.
+  - `isPublic`:  Boolean flag indicating if this deck is visible to others.
+  - `userId`: Owner of this deck (relation to User model).
+  - `cards`: Array of `Card` entities that belong to this deck.
 
 ### Review
 - Individual review sessions and algorithm decisions
@@ -224,7 +230,7 @@ WITH NO DATA;
 
 -- UserStatistic table
 @@index([userId, date])          -- Performance charts
-```
+````
 
 ### Common Queries
 
@@ -241,14 +247,15 @@ WHERE user_id = ? AND date >= CURRENT_DATE - INTERVAL '30 days';
 
 -- OF Matrix lookup for interval calculation
 SELECT optimal_factor FROM of_matrix
-WHERE user_id = ? 
-  AND repetition_number = ? 
+WHERE user_id = ?
+  AND repetition_number = ?
   AND difficulty_category = ?;
 ```
 
 ## Data Flow
 
 ### Review Process
+
 1. User grades card (1-5)
 2. SM-15 algorithm calculates new interval
 3. Card schedule updated
@@ -256,6 +263,7 @@ WHERE user_id = ?
 5. OF Matrix refined based on performance
 
 ### Transaction Example
+
 ```sql
 BEGIN;
 -- Create review record
@@ -271,7 +279,7 @@ UPDATE cards SET
   next_review_date = CURRENT_DATE + INTERVAL 'new_interval days';
 
 -- Update OF Matrix
-INSERT INTO of_matrix ... 
+INSERT INTO of_matrix ...
 ON CONFLICT DO UPDATE ...;
 
 -- Update daily statistics
@@ -283,11 +291,13 @@ COMMIT;
 ## Data Integrity
 
 ### Foreign Key Constraints
+
 - All child tables cascade on user deletion
 - Reviews cascade on card deletion
 - Unique constraints prevent duplicate statistics/matrix entries
 
 ### Validation
+
 - Grade validation (1-5) handled at application level
 - A-Factor range (1.1-2.5) enforced by application
 - Date formats standardized (YYYY-MM-DD)
@@ -303,6 +313,7 @@ COMMIT;
 ## PostgreSQL Performance Optimization
 
 ### Indexing Strategy
+
 ```sql
 -- Composite indexes for common queries
 CREATE INDEX idx_card_schedule ON cards(user_id, next_review_date);
@@ -310,21 +321,22 @@ CREATE INDEX idx_review_analytics ON reviews(user_id, review_date);
 CREATE INDEX idx_matrix_lookup ON of_matrix(user_id, repetition_number, difficulty_category);
 
 -- Partial indexes for active cards
-CREATE INDEX idx_active_cards 
-ON cards(user_id, next_review_date) 
+CREATE INDEX idx_active_cards
+ON cards(user_id, next_review_date)
 WHERE next_review_date <= CURRENT_TIMESTAMP;
 
 -- Expression indexes for date operations
-CREATE INDEX idx_review_date_trunc 
+CREATE INDEX idx_review_date_trunc
 ON reviews((date_trunc('day', review_date)));
 ```
 
 ### Query Optimization
 
 #### Using CTE for Complex Analytics
+
 ```sql
 WITH user_daily_stats AS (
-    SELECT 
+    SELECT
         date_trunc('day', review_date) as review_day,
         COUNT(*) as reviews,
         AVG(grade::float) as avg_grade
@@ -332,7 +344,7 @@ WITH user_daily_stats AS (
     WHERE user_id = $1
     GROUP BY 1
 )
-SELECT 
+SELECT
     review_day,
     reviews,
     avg_grade,
@@ -342,10 +354,11 @@ ORDER BY review_day DESC;
 ```
 
 #### Efficient Batch Operations
+
 ```sql
 -- Batch update for card rescheduling
-UPDATE cards 
-SET next_review_date = next_review_date + 
+UPDATE cards
+SET next_review_date = next_review_date +
     (interval_days || ' days')::interval
 WHERE id = ANY($1::int[]);
 ```
@@ -353,9 +366,10 @@ WHERE id = ANY($1::int[]);
 ## Dashboard Analytics Support
 
 ### Key Performance Metrics
+
 ```sql
 -- User's learning progress overview
-SELECT 
+SELECT
   u.current_streak,
   u.total_reviews,
   COUNT(c.id) as total_cards,
@@ -364,36 +378,39 @@ SELECT
   COALESCE(s.accuracy_rate, 0) as recent_accuracy
 FROM users u
 LEFT JOIN cards c ON u.id = c.user_id
-LEFT JOIN user_statistics s ON u.id = s.user_id 
+LEFT JOIN user_statistics s ON u.id = s.user_id
   AND s.date = CURRENT_DATE
 WHERE u.id = ?
 GROUP BY u.id, s.reviews_completed, s.accuracy_rate;
 ```
 
 ### Retention Analysis
+
 ```sql
 -- Learning streak calculation
-SELECT date, reviews_completed 
-FROM user_statistics 
+SELECT date, reviews_completed
+FROM user_statistics
 WHERE user_id = ? AND reviews_completed > 0
 ORDER BY date DESC;
 
 -- Card mastery tracking
-SELECT card_id, AVG(grade) as avg_grade, 
+SELECT card_id, AVG(grade) as avg_grade,
        COUNT(*) as review_count
-FROM reviews 
-GROUP BY card_id 
+FROM reviews
+GROUP BY card_id
 HAVING COUNT(*) > 5;
 ```
 
 ## Integration Points
 
 ### Backend Integration
+
 - Services handle field validation and data consistency
 - Transactions ensure atomic SM-15 updates
 - Performance metrics collected automatically
 
 ### Frontend Integration
+
 - Real-time dashboard updates
 - Progress visualization
 - Learning analytics
@@ -401,6 +418,7 @@ HAVING COUNT(*) > 5;
 ## PostgreSQL Management
 
 ### Database Maintenance
+
 ```sql
 -- Regular VACUUM for performance
 VACUUM ANALYZE cards;
@@ -419,11 +437,13 @@ WHERE schemaname = 'public';
 ### Backup Strategy
 
 #### Physical Backup (pg_basebackup)
+
 ```bash
 pg_basebackup -D backup -Ft -z -P -U postgres
 ```
 
 #### Logical Backup (pg_dump)
+
 ```bash
 # Full database backup
 pg_dump -Fc study_tool > backup.dump
@@ -436,6 +456,7 @@ pg_dump -Fc -Z9 study_tool > backup.fc
 ```
 
 ### Monitoring Queries
+
 ```sql
 -- Active queries
 SELECT pid, age(clock_timestamp(), query_start), usename, query
@@ -450,13 +471,14 @@ WHERE schemaname = 'public'
 ORDER BY idx_scan DESC;
 
 -- Table statistics
-SELECT relname, n_live_tup, n_dead_tup, 
+SELECT relname, n_live_tup, n_dead_tup,
        last_vacuum, last_analyze
 FROM pg_stat_all_tables
 WHERE schemaname = 'public';
 ```
 
 ### High Availability Setup
+
 - Primary/Standby replication using WAL
 - Connection pooling with PgBouncer
 - Regular VACUUM and maintenance windows
@@ -469,22 +491,17 @@ WHERE schemaname = 'public'
 ORDER BY idx_scan DESC;
 
 -- Table statistics
-SELECT relname, n_live_tup, n_dead_tup, 
-       last_vacuum, last_analyze
+SELECT relname, n_live_tup, n_dead_tup,
+last_vacuum, last_analyze
 FROM pg_stat_all_tables
 WHERE schemaname = 'public';
+
 ```
 
-### High Availability Setup
-- Primary/Standby replication using WAL
-- Connection pooling with PgBouncer
-- Regular VACUUM and maintenance windows
-- Monitoring with pg_stat_statementsROM pg_stat_all_tables
-WHERE schemaname = 'public';
-```
 
 ### High Availability Setup
 - Primary/Standby replication using WAL
 - Connection pooling with PgBouncer
 - Regular VACUUM and maintenance windows
 - Monitoring with pg_stat_statements
+```
