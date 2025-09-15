@@ -77,6 +77,6 @@ module.exports = {
   },
 
   helpUrl:
-    'https://github.com/your-org/repo/blob/main/README.md#commit-message-guidelines',
+    'https://github.com/rakeshtembhurne/poc-study-tool/tree/develop?tab=readme-ov-file#commit-message-guidelines',
   defaultIgnores: true,
 };

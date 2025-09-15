@@ -15,4 +15,12 @@ export class FileResponseDto {
   path: string;
   uploadedAt: Date;
   description?: string;
+  extractedText?: string;
+  flashcards?: {
+    parsedFlashcards: Array<{ question: string; answer: string }>;
+    totalCards: number;
+    rawResponse?: any; // Original OpenRouter response
+  };
+  flashcardGenerationStatus?: 'success' | 'failed' | 'skipped';
+  flashcardError?: string;
 }

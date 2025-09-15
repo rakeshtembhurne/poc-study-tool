@@ -4,12 +4,12 @@ import {
   FileResponseDto,
 } from './dto/create-file-processing.dto';
 import { UploadMultipleFilesDto } from './dto/upload-multiple.dto';
-import {
-  ProcessedFileResponseDto,
-  ProcessFileDto,
-} from './dto/processed-file.dto';
 import { PdfProcessingService } from './services/pdf-processing.service';
 import { TextProcessingService } from './services/text-processing.service';
+import { OpenRouterService } from '@/core/openrouter/openrouter.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { UserPayload } from '@/auth/decorators/user.decorator';
+import { unlink } from 'fs/promises';
 
 @Injectable()
 export class FileProcessingService {
@@ -17,12 +17,15 @@ export class FileProcessingService {
 
   constructor(
     private readonly pdfProcessingService: PdfProcessingService,
-    private readonly textProcessingService: TextProcessingService
+    private readonly textProcessingService: TextProcessingService,
+    private readonly openRouterService: OpenRouterService,
+    private readonly prismaService: PrismaService
   ) {}
 
   async uploadSingleFile(
     file: Express.Multer.File,
-    dto: UploadFileDto
+    dto: UploadFileDto,
+    user: UserPayload
   ): Promise<FileResponseDto> {
     if (!file) {
       throw new BadRequestException('No file provided');
@@ -41,14 +44,75 @@ export class FileProcessingService {
       path: file.path,
       uploadedAt: new Date(),
       description: dto.description,
+      flashcardGenerationStatus: 'skipped',
     };
+
+    // Auto-parse file and generate flashcards
+    // Fetch user's OpenAI API key from database
+    const userRecord = await this.prismaService.user.findUnique({
+      where: { id: parseInt(user.sub) },
+      select: { openAiApiKey: true },
+    });
+
+    if (!userRecord?.openAiApiKey) {
+      fileResponse.flashcardGenerationStatus = 'failed';
+      fileResponse.flashcardError =
+        'OpenAI API key not found in user profile. Please add your API key in settings.';
+      return fileResponse;
+    }
+
+    try {
+      const extractedText = await this.extractTextFromFile(file);
+
+      if (extractedText.trim()) {
+        fileResponse.extractedText = extractedText;
+
+        this.logger.debug(
+          `Generating flashcards for file: ${file.originalname}`
+        );
+
+        const flashcards: any = await this.openRouterService.generateFlashcards(
+          extractedText,
+          userRecord.openAiApiKey
+        );
+
+        fileResponse.flashcards = {
+          parsedFlashcards: flashcards.parsedFlashcards || [],
+          totalCards: flashcards.totalCards || 0,
+        };
+        fileResponse.flashcardGenerationStatus = 'success';
+
+        this.logger.debug(
+          `Successfully generated flashcards for: ${file.originalname}`
+        );
+
+        // Delete the uploaded file after successful flashcard generation
+        await this.deleteUploadedFile(file.path);
+      } else {
+        fileResponse.flashcardGenerationStatus = 'failed';
+        fileResponse.flashcardError = 'No text could be extracted from file';
+        // Still delete the file even if no text was extracted
+        await this.deleteUploadedFile(file.path);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.error(
+        `Failed to generate flashcards for ${file.originalname}: ${errorMessage}`
+      );
+      fileResponse.flashcardGenerationStatus = 'failed';
+      fileResponse.flashcardError = errorMessage;
+      // Delete the file even if flashcard generation failed
+      await this.deleteUploadedFile(file.path);
+    }
 
     return fileResponse;
   }
 
   async uploadMultipleFiles(
     files: Express.Multer.File[],
-    dto: UploadMultipleFilesDto
+    dto: UploadMultipleFilesDto,
+    user: UserPayload
   ): Promise<FileResponseDto[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
@@ -60,102 +124,89 @@ export class FileProcessingService {
       `Multiple files uploaded: ${files.length} files (${fileNames}), total size: ${totalSize} bytes`
     );
 
-    const responses = files.map((file, index) => {
-      const description = dto.descriptions?.[index] || undefined;
+    const responses = await Promise.allSettled(
+      files.map(async (file, index) => {
+        const description = dto.descriptions?.[index] || undefined;
 
-      return {
-        id: this.generateFileId(),
-        filename: file.filename,
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        path: file.path,
-        uploadedAt: new Date(),
-        description,
-      };
-    });
+        const fileResponse: FileResponseDto = {
+          id: this.generateFileId(),
+          filename: file.filename,
+          originalname: file.originalname,
+          mimetype: file.mimetype,
+          size: file.size,
+          path: file.path,
+          uploadedAt: new Date(),
+          description,
+          flashcardGenerationStatus: 'skipped',
+        };
 
-    return responses;
-  }
+        // Auto-parse file and generate flashcards
+        // Fetch user's OpenAI API key from database (only once for all files)
+        const userRecord = await this.prismaService.user.findUnique({
+          where: { id: parseInt(user.sub) },
+          select: { openAiApiKey: true },
+        });
 
-  async processFile(
-    file: Express.Multer.File,
-    dto: ProcessFileDto
-  ): Promise<ProcessedFileResponseDto> {
-    if (!file) {
-      throw new BadRequestException('No file provided');
-    }
+        if (!userRecord?.openAiApiKey) {
+          fileResponse.flashcardGenerationStatus = 'failed';
+          fileResponse.flashcardError =
+            'OpenAI API key not found in user profile. Please add your API key in settings.';
+          return fileResponse;
+        }
 
-    const startTime = new Date();
-    const fileId = this.generateFileId();
+        try {
+          const extractedText = await this.extractTextFromFile(file);
 
-    this.logger.debug(
-      `Processing file: ${file.originalname}, type: ${file.mimetype}, size: ${file.size}`
+          if (extractedText.trim()) {
+            fileResponse.extractedText = extractedText;
+
+            this.logger.debug(
+              `Generating flashcards for file: ${file.originalname}`
+            );
+
+            const flashcards: any =
+              await this.openRouterService.generateFlashcards(
+                extractedText,
+                userRecord.openAiApiKey
+              );
+
+            fileResponse.flashcards = {
+              parsedFlashcards: flashcards.parsedFlashcards || [],
+              totalCards: flashcards.totalCards || 0,
+            };
+            fileResponse.flashcardGenerationStatus = 'success';
+
+            this.logger.debug(
+              `Successfully generated flashcards for: ${file.originalname}`
+            );
+
+            // Delete the uploaded file after successful flashcard generation
+            await this.deleteUploadedFile(file.path);
+          } else {
+            fileResponse.flashcardGenerationStatus = 'failed';
+            fileResponse.flashcardError =
+              'No text could be extracted from file';
+            // Still delete the file even if no text was extracted
+            await this.deleteUploadedFile(file.path);
+          }
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+          this.logger.error(
+            `Failed to generate flashcards for ${file.originalname}: ${errorMessage}`
+          );
+          fileResponse.flashcardGenerationStatus = 'failed';
+          fileResponse.flashcardError = errorMessage;
+          // Delete the file even if flashcard generation failed
+          await this.deleteUploadedFile(file.path);
+        }
+
+        return fileResponse;
+      })
     );
 
-    let processingResult: ProcessedFileResponseDto;
-
-    try {
-      if (file.mimetype === 'application/pdf') {
-        processingResult = await this.processPdfFile(
-          file,
-          dto,
-          fileId,
-          startTime
-        );
-      } else if (file.mimetype === 'text/plain' || this.isTextFile(file)) {
-        processingResult = await this.processTextFile(
-          file,
-          dto,
-          fileId,
-          startTime
-        );
-      } else {
-        throw new BadRequestException(
-          `Unsupported file type: ${file.mimetype}`
-        );
-      }
-
-      this.logger.debug(`File processed successfully: ${fileId}`);
-      return processingResult;
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      this.logger.error(`Error processing file ${fileId}: ${errorMessage}`);
-
-      return {
-        id: fileId,
-        filename: file.filename,
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        path: file.path,
-        uploadedAt: startTime,
-        processedAt: new Date(),
-        description: dto.description,
-        processingStatus: 'failed',
-        processingError: errorMessage,
-        extractedText: '',
-        processingOptions: dto.options,
-      };
-    }
-  }
-
-  async processMultipleFiles(
-    files: Express.Multer.File[],
-    dto: ProcessFileDto
-  ): Promise<ProcessedFileResponseDto[]> {
-    if (!files || files.length === 0) {
-      throw new BadRequestException('No files provided');
-    }
-
-    this.logger.debug(`Processing ${files.length} files`);
-
-    const results = await Promise.allSettled(
-      files.map((file) => this.processFile(file, dto))
-    );
-
-    return results.map((result, index) => {
+    // Return all results, including failed ones
+    return responses.map((result, index) => {
       if (result.status === 'fulfilled') {
         return result.value;
       } else {
@@ -168,149 +219,12 @@ export class FileProcessingService {
           size: file.size,
           path: file.path,
           uploadedAt: new Date(),
-          processedAt: new Date(),
-          description: dto.description,
-          processingStatus: 'failed',
-          processingError: result.reason.message,
-          extractedText: '',
-          processingOptions: dto.options,
-        } as ProcessedFileResponseDto;
+          description: dto.descriptions?.[index],
+          flashcardGenerationStatus: 'failed',
+          flashcardError: result.reason.message,
+        } as FileResponseDto;
       }
     });
-  }
-
-  private async processPdfFile(
-    file: Express.Multer.File,
-    dto: ProcessFileDto,
-    fileId: string,
-    startTime: Date
-  ): Promise<ProcessedFileResponseDto> {
-    try {
-      const options = dto.options || {};
-      const pdfResult = await this.pdfProcessingService.processPdfFromPath(
-        file.path,
-        {
-          maxPages: options.maxPages,
-          password: options.password,
-          extractImages: options.extractImages,
-        }
-      );
-
-      return {
-        id: fileId,
-        filename: file.filename,
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        path: file.path,
-        uploadedAt: startTime,
-        processedAt: new Date(),
-        description: dto.description,
-        processingStatus: 'success',
-        extractedText: pdfResult.text,
-        numPages: pdfResult.numPages,
-        characters: pdfResult.text.length,
-        words: this.countWords(pdfResult.text),
-        metadata: pdfResult.metadata,
-        pdfInfo: pdfResult.info,
-        processingOptions: dto.options,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      throw new BadRequestException(`PDF processing failed: ${errorMessage}`);
-    }
-  }
-
-  private async processTextFile(
-    file: Express.Multer.File,
-    dto: ProcessFileDto,
-    fileId: string,
-    startTime: Date
-  ): Promise<ProcessedFileResponseDto> {
-    try {
-      const options = dto.options || {};
-      const textResult = await this.textProcessingService.processTextFromPath(
-        file.path,
-        {
-          targetEncoding: options.targetEncoding,
-          maxSize: options.maxSize,
-          streaming: options.streaming,
-          chunkSize: options.chunkSize,
-          preserveLineBreaks: options.preserveLineBreaks,
-        }
-      );
-
-      return {
-        id: fileId,
-        filename: file.filename,
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        path: file.path,
-        uploadedAt: startTime,
-        processedAt: new Date(),
-        description: dto.description,
-        processingStatus: 'success',
-        extractedText: textResult.content,
-        detectedEncoding: textResult.detectedEncoding,
-        encoding: textResult.encoding,
-        lines: textResult.lines,
-        characters: textResult.characters,
-        words: textResult.words,
-        isLargeFile: textResult.isLargeFile,
-        processingOptions: dto.options,
-      };
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      throw new BadRequestException(`Text processing failed: ${errorMessage}`);
-    }
-  }
-
-  async extractTextOnly(
-    file: Express.Multer.File
-  ): Promise<{ text: string; type: string }> {
-    if (!file) {
-      throw new BadRequestException('No file provided');
-    }
-
-    if (file.mimetype === 'application/pdf') {
-      const text = await this.pdfProcessingService.extractTextOnly(file.path);
-      return { text, type: 'pdf' };
-    } else if (file.mimetype === 'text/plain' || this.isTextFile(file)) {
-      const result = await this.textProcessingService.processTextFromPath(
-        file.path
-      );
-      return { text: result.content, type: 'text' };
-    } else {
-      throw new BadRequestException(
-        `Unsupported file type for text extraction: ${file.mimetype}`
-      );
-    }
-  }
-
-  async validateFile(
-    file: Express.Multer.File
-  ): Promise<{ isValid: boolean; error?: string }> {
-    try {
-      if (file.mimetype === 'application/pdf') {
-        const isValid = this.pdfProcessingService.validatePdfFile(file.path);
-        return { isValid, error: isValid ? undefined : 'Invalid PDF file' };
-      } else if (file.mimetype === 'text/plain' || this.isTextFile(file)) {
-        const isValid = this.textProcessingService.validateTextFile(file.path);
-        return { isValid, error: isValid ? undefined : 'Invalid text file' };
-      } else {
-        return {
-          isValid: false,
-          error: `Unsupported file type: ${file.mimetype}`,
-        };
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error occurred';
-      return { isValid: false, error: errorMessage };
-    }
   }
 
   private isTextFile(file: Express.Multer.File): boolean {
@@ -337,7 +251,47 @@ export class FileProcessingService {
       .filter((word) => word.length > 0).length;
   }
 
+  private async extractTextFromFile(
+    file: Express.Multer.File
+  ): Promise<string> {
+    try {
+      if (file.mimetype === 'application/pdf') {
+        return await this.pdfProcessingService.extractTextOnly(file.path);
+      } else if (file.mimetype === 'text/plain' || this.isTextFile(file)) {
+        const result = await this.textProcessingService.processTextFromPath(
+          file.path
+        );
+        return result.content;
+      } else {
+        throw new BadRequestException(
+          `Unsupported file type for text extraction: ${file.mimetype}`
+        );
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Failed to extract text from ${file.originalname}: ${errorMessage}`
+      );
+      throw error;
+    }
+  }
+
   private generateFileId(): string {
     return `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private async deleteUploadedFile(filePath: string): Promise<void> {
+    try {
+      await unlink(filePath);
+      this.logger.debug(`Deleted uploaded file: ${filePath}`);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      this.logger.warn(
+        `Failed to delete uploaded file ${filePath}: ${errorMessage}`
+      );
+      // Don't throw the error - file deletion failure shouldn't break the response
+    }
   }
 }

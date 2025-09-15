@@ -1,11 +1,18 @@
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import type { Request } from 'express';
+
+// Ensure uploads directory exists
+const uploadsDir = join(process.cwd(), 'uploads');
+if (!existsSync(uploadsDir)) {
+  mkdirSync(uploadsDir, { recursive: true });
+}
 
 export const multerConfig: MulterOptions = {
   storage: diskStorage({
-    destination: './uploads',
+    destination: uploadsDir,
     filename: (
       req: Request,
       file: Express.Multer.File,
