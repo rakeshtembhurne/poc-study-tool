@@ -1,9 +1,15 @@
-"use client"; // required in Next.js 13+ for context providers
+'use client'; // required in Next.js 13+ for context providers
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import authStorage from "@/lib/auth-storage";
-import { AxiosRequestConfig } from "axios";
-import apiClient from "@/lib/api-client";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
+import authStorage from '@/lib/auth-storage';
+import { AxiosRequestConfig } from 'axios';
+import apiClient from '@/lib/api-client';
 
 type User = {
   id: string;
@@ -15,7 +21,12 @@ type AuthContextType = {
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (token: string, userData: User, expiresIn?: number, refreshToken?: string) => void;
+  login: (
+    token: string,
+    userData: User,
+    expiresIn?: number,
+    refreshToken?: string
+  ) => void;
   logout: () => void;
   refreshAuth: () => Promise<boolean>;
   isTokenExpiringSoon: (minutes?: number) => boolean;
@@ -77,15 +88,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token]);
 
   const login = (
-    newToken: string, 
-    userData: User, 
-    expiresIn?: number, 
+    newToken: string,
+    userData: User,
+    expiresIn?: number,
     refreshToken?: string
   ) => {
-    console.log("Login successful!");
+    console.log('Login successful!');
     const success = authStorage.setToken(newToken, expiresIn, refreshToken);
-    localStorage.setItem('user', JSON.stringify({ id: userData?.id || '', email: userData?.email || '' }));
-    
+    localStorage.setItem(
+      'user',
+      JSON.stringify({ id: userData?.id || '', email: userData?.email || '' })
+    );
+
     if (success) {
       setToken(newToken);
       setUser(userData);
@@ -105,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const refreshToken = authStorage.getRefreshToken();
       const userStr = localStorage.getItem('user');
-      
+
       if (!refreshToken || !userStr) {
         return false;
       }
@@ -130,13 +144,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           data.expiresIn,
           data.refreshToken
         );
-        
+
         if (success) {
           setToken(data.accessToken);
           return true;
         }
       }
-      
+
       return false;
     } catch (error) {
       console.error('Token refresh failed:', error);
@@ -153,17 +167,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      token,
-      isAuthenticated: !!token && !!user,
-      isLoading,
-      login, 
-      logout,
-      refreshAuth,
-      isTokenExpiringSoon,
-      getAuthHeader
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: !!token && !!user,
+        isLoading,
+        login,
+        logout,
+        refreshAuth,
+        isTokenExpiringSoon,
+        getAuthHeader,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -171,14 +187,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) throw new Error("useAuth must be used inside AuthProvider");
+  if (!context) throw new Error('useAuth must be used inside AuthProvider');
   return context;
 };
 
 // Hook for protected routes
 export const useRequireAuth = () => {
   const auth = useAuth();
-  
+
   useEffect(() => {
     if (!auth.isLoading && !auth.isAuthenticated) {
       // Redirect to login page

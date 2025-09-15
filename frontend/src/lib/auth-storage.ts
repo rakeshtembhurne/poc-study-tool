@@ -1,3 +1,5 @@
+import CryptoJS from 'crypto-js';
+
 interface TokenData {
   token: string;
   expiresAt: number;
@@ -5,43 +7,117 @@ interface TokenData {
 }
 
 interface StoredTokenData {
-  data: string; // encrypted token data
+  data: string; // AES encrypted token data
+  salt: string; // Random salt for key derivation
+  iv: string; // Initialization vector for AES
   timestamp: number;
+}
+
+interface EncryptionResult {
+  encryptedData: string;
+  salt: string;
+  iv: string;
 }
 
 class AuthTokenStorage {
   private readonly TOKEN_KEY = 'auth_token_data';
-  private readonly ENCRYPTION_KEY = 'poc_study_tool_auth_key';
+  private readonly KEY_ITERATIONS = 10000; // PBKDF2 iterations
+  private readonly KEY_SIZE = 256 / 32; // 256-bit key size in words
 
   /**
-   * Simple encryption using base64 encoding with a salt
-   * Note: For production, consider using a more robust encryption library
+   * Get application-specific salt from environment or generate a consistent one
    */
-  private encrypt(data: string): string {
+  private getApplicationSalt(): string {
+    // In production, this should come from environment variables
+    // For now, we'll use a combination of domain and a fixed salt
+    const domain =
+      typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+    const envSalt = process.env.NEXT_PUBLIC_APP_SALT || 'poc_study_tool_2024';
+    return `${domain}_${envSalt}`;
+  }
+
+  /**
+   * Derive encryption key using PBKDF2
+   */
+  private deriveKey(password: string, salt: string): CryptoJS.lib.WordArray {
+    return CryptoJS.PBKDF2(password, salt, {
+      keySize: this.KEY_SIZE,
+      iterations: this.KEY_ITERATIONS,
+      hasher: CryptoJS.algo.SHA256,
+    });
+  }
+
+  /**
+   * Generate a secure random salt
+   */
+  private generateSalt(): string {
+    return CryptoJS.lib.WordArray.random(128 / 8).toString();
+  }
+
+  /**
+   * Generate a secure random IV
+   */
+  private generateIV(): string {
+    return CryptoJS.lib.WordArray.random(128 / 8).toString();
+  }
+
+  /**
+   * Encrypt data using AES with PBKDF2 key derivation
+   */
+  private encrypt(data: string): EncryptionResult {
     try {
-      const salt = Math.random().toString(36).substring(2, 15);
-      const encoded = btoa(salt + '|' + data);
-      return encoded;
+      const salt = this.generateSalt();
+      const iv = this.generateIV();
+      const appSalt = this.getApplicationSalt();
+
+      // Derive key using PBKDF2
+      const key = this.deriveKey(appSalt, salt);
+
+      // Encrypt using AES
+      const encrypted = CryptoJS.AES.encrypt(data, key, {
+        iv: CryptoJS.enc.Hex.parse(iv),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      });
+
+      return {
+        encryptedData: encrypted.toString(),
+        salt,
+        iv,
+      };
     } catch (error) {
       console.error('Encryption failed:', error);
-      return data; // Fallback to unencrypted
+      throw new Error('Failed to encrypt token data');
     }
   }
 
   /**
-   * Simple decryption for base64 encoded data with salt
+   * Decrypt AES encrypted data with PBKDF2 key derivation
    */
-  private decrypt(encryptedData: string): string {
+  private decrypt(encryptedData: string, salt: string, iv: string): string {
     try {
-      const decoded = atob(encryptedData);
-      const parts = decoded.split('|');
-      if (parts.length >= 2) {
-        return parts.slice(1).join('|'); // Remove salt, rejoin in case data contained |
+      const appSalt = this.getApplicationSalt();
+
+      // Derive the same key using stored salt
+      const key = this.deriveKey(appSalt, salt);
+
+      // Decrypt using AES
+      const decrypted = CryptoJS.AES.decrypt(encryptedData, key, {
+        iv: CryptoJS.enc.Hex.parse(iv),
+        mode: CryptoJS.mode.CBC,
+        padding: CryptoJS.pad.Pkcs7,
+      });
+
+      const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+
+      if (!decryptedText) {
+        throw new Error('Decryption resulted in empty string');
       }
-      return decoded; // Fallback for data without salt
+
+      return decryptedText;
     } catch (error) {
       console.error('Decryption failed:', error);
-      return encryptedData; // Fallback to original data
+      throw new Error('Failed to decrypt token data');
     }
   }
 
@@ -53,7 +129,7 @@ class AuthTokenStorage {
   }
 
   /**
-   * Store authentication token with expiration
+   * Store authentication token with expiration using AES encryption
    */
   setToken(token: string, expiresIn?: number, refreshToken?: string): boolean {
     if (!this.isBrowser()) {
@@ -62,20 +138,22 @@ class AuthTokenStorage {
     }
 
     try {
-      const expiresAt = expiresIn 
-        ? Date.now() + (expiresIn * 1000) // Convert seconds to milliseconds
-        : Date.now() + (24 * 60 * 60 * 1000); // Default 24 hours
+      const expiresAt = expiresIn
+        ? Date.now() + expiresIn * 1000 // Convert seconds to milliseconds
+        : Date.now() + 24 * 60 * 60 * 1000; // Default 24 hours
 
       const tokenData: TokenData = {
         token,
         expiresAt,
-        refreshToken
+        refreshToken,
       };
 
-      const encryptedData = this.encrypt(JSON.stringify(tokenData));
+      const encryptionResult = this.encrypt(JSON.stringify(tokenData));
       const storedData: StoredTokenData = {
-        data: encryptedData,
-        timestamp: Date.now()
+        data: encryptionResult.encryptedData,
+        salt: encryptionResult.salt,
+        iv: encryptionResult.iv,
+        timestamp: Date.now(),
       };
 
       localStorage.setItem(this.TOKEN_KEY, JSON.stringify(storedData));
@@ -101,7 +179,19 @@ class AuthTokenStorage {
       }
 
       const storedData: StoredTokenData = JSON.parse(storedItem);
-      const decryptedData = this.decrypt(storedData.data);
+
+      // Validate required fields
+      if (!storedData.data || !storedData.salt || !storedData.iv) {
+        console.warn('Invalid stored token format, removing corrupted data');
+        this.removeToken();
+        return null;
+      }
+
+      const decryptedData = this.decrypt(
+        storedData.data,
+        storedData.salt,
+        storedData.iv
+      );
       const tokenData: TokenData = JSON.parse(decryptedData);
 
       // Check if token is expired
@@ -133,7 +223,17 @@ class AuthTokenStorage {
       }
 
       const storedData: StoredTokenData = JSON.parse(storedItem);
-      const decryptedData = this.decrypt(storedData.data);
+
+      // Validate required fields
+      if (!storedData.data || !storedData.salt || !storedData.iv) {
+        return null;
+      }
+
+      const decryptedData = this.decrypt(
+        storedData.data,
+        storedData.salt,
+        storedData.iv
+      );
       const tokenData: TokenData = JSON.parse(decryptedData);
 
       return tokenData.refreshToken || null;
@@ -165,7 +265,17 @@ class AuthTokenStorage {
       }
 
       const storedData: StoredTokenData = JSON.parse(storedItem);
-      const decryptedData = this.decrypt(storedData.data);
+
+      // Validate required fields
+      if (!storedData.data || !storedData.salt || !storedData.iv) {
+        return null;
+      }
+
+      const decryptedData = this.decrypt(
+        storedData.data,
+        storedData.salt,
+        storedData.iv
+      );
       const tokenData: TokenData = JSON.parse(decryptedData);
 
       return new Date(tokenData.expiresAt);
@@ -184,7 +294,7 @@ class AuthTokenStorage {
       return true; // Consider no token as "expiring soon"
     }
 
-    const warningTime = Date.now() + (minutes * 60 * 1000);
+    const warningTime = Date.now() + minutes * 60 * 1000;
     return expiration.getTime() <= warningTime;
   }
 
@@ -214,7 +324,7 @@ class AuthTokenStorage {
     try {
       // Remove token data
       this.removeToken();
-      
+
       // Remove any other auth-related items
       const keysToRemove = [];
       for (let i = 0; i < localStorage.length; i++) {
@@ -223,8 +333,8 @@ class AuthTokenStorage {
           keysToRemove.push(key);
         }
       }
-      
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     } catch (error) {
       console.error('Failed to clear auth data:', error);
     }
@@ -253,23 +363,81 @@ class AuthTokenStorage {
       }
 
       const storedData: StoredTokenData = JSON.parse(storedItem);
-      const decryptedData = this.decrypt(storedData.data);
+
+      // Validate required fields
+      if (!storedData.data || !storedData.salt || !storedData.iv) {
+        return false;
+      }
+
+      const decryptedData = this.decrypt(
+        storedData.data,
+        storedData.salt,
+        storedData.iv
+      );
       const tokenData: TokenData = JSON.parse(decryptedData);
 
       // Extend expiration
-      tokenData.expiresAt += (additionalSeconds * 1000);
+      tokenData.expiresAt += additionalSeconds * 1000;
 
-      // Re-encrypt and store
-      const encryptedData = this.encrypt(JSON.stringify(tokenData));
+      // Re-encrypt and store with new salt and IV for forward secrecy
+      const encryptionResult = this.encrypt(JSON.stringify(tokenData));
       const newStoredData: StoredTokenData = {
-        data: encryptedData,
-        timestamp: Date.now()
+        data: encryptionResult.encryptedData,
+        salt: encryptionResult.salt,
+        iv: encryptionResult.iv,
+        timestamp: Date.now(),
       };
 
       localStorage.setItem(this.TOKEN_KEY, JSON.stringify(newStoredData));
       return true;
     } catch (error) {
       console.error('Failed to extend token expiration:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Validate the integrity of stored token data
+   */
+  validateStoredData(): boolean {
+    if (!this.isBrowser()) {
+      return false;
+    }
+
+    try {
+      const storedItem = localStorage.getItem(this.TOKEN_KEY);
+      if (!storedItem) {
+        return false;
+      }
+
+      const storedData: StoredTokenData = JSON.parse(storedItem);
+
+      // Check if all required fields are present
+      if (
+        !storedData.data ||
+        !storedData.salt ||
+        !storedData.iv ||
+        !storedData.timestamp
+      ) {
+        return false;
+      }
+
+      // Try to decrypt to validate integrity
+      const decryptedData = this.decrypt(
+        storedData.data,
+        storedData.salt,
+        storedData.iv
+      );
+      const tokenData: TokenData = JSON.parse(decryptedData);
+
+      // Validate token data structure
+      return !!(
+        tokenData.token &&
+        tokenData.expiresAt &&
+        typeof tokenData.expiresAt === 'number'
+      );
+    } catch (error) {
+      console.error('Token validation failed:', error);
       return false;
     }
   }
@@ -291,5 +459,5 @@ export const {
   removeToken,
   clearAll,
   getAuthHeader,
-  extendTokenExpiration
+  extendTokenExpiration,
 } = authStorage;

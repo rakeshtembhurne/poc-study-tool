@@ -1,6 +1,16 @@
 // utils/apiClient.ts
-import axios, { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { getToken, getRefreshToken, setToken, removeToken, willExpireSoon } from './auth-storage';
+import axios, {
+  AxiosError,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios';
+import {
+  getToken,
+  getRefreshToken,
+  setToken,
+  removeToken,
+  willExpireSoon,
+} from './auth-storage';
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
@@ -9,7 +19,7 @@ const apiClient = axios.create({
   },
 });
 
-console.log("config: ",apiClient);
+// console.log('config: ', apiClient);
 
 // Flag to prevent multiple refresh attempts
 let isRefreshing = false;
@@ -26,7 +36,7 @@ const processQueue = (error: any, token: string | null = null) => {
       resolve(token);
     }
   });
-  
+
   failedQueue = [];
 };
 
@@ -38,9 +48,10 @@ apiClient.interceptors.request.use(
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      
+
       // Check if token will expire soon and refresh proactively
-      if (typeof window !== 'undefined' && willExpireSoon(5)) { // 5 minutes before expiry
+      if (typeof window !== 'undefined' && willExpireSoon(5)) {
+        // 5 minutes before expiry
         try {
           await refreshTokenIfNeeded();
           // Get the new token after refresh
@@ -63,7 +74,9 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -71,14 +84,16 @@ apiClient.interceptors.response.use(
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
-        }).then(token => {
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-          }
-          return apiClient(originalRequest);
-        }).catch(err => {
-          return Promise.reject(err);
-        });
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
       }
 
       originalRequest._retry = true;

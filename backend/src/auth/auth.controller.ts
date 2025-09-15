@@ -4,10 +4,9 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
-
 function maskEmail(email: string): string {
   const [local, domain] = email.split('@');
-  if (!local || !domain) return email; 
+  if (!local || !domain) return email;
   return local[0] + '***@' + domain;
 }
 @Controller('auth')
@@ -33,9 +32,11 @@ export class AuthController {
     return this.authService.refreshTokens(body.refreshToken);
   }
 
-   @Post('reset-password')
+  @Post('reset-password')
   async resetPassword(@Body() dto: ResetPasswordDto) {
-    this.logger.log(`Password reset request for email: ${maskEmail(dto.email)}`);
+    this.logger.log(
+      `Password reset request for email: ${maskEmail(dto.email)}`
+    );
     return this.authService.resetPassword(dto.email);
   }
 }
