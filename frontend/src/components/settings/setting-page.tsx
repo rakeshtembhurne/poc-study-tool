@@ -249,144 +249,131 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-[80vw] mx-auto space-y-8">
-        {/* Header Section - matching dashboard style */}
-        <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
-          <p className="text-md text-muted-foreground">
-            Configure your API keys and application preferences
-          </p>
-        </div>
-
-        {/* API Keys Section - simplified layout */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5" />
-              API Keys
-            </CardTitle>
-            <CardDescription>
-              Configure your API keys for AI services. These keys are stored
-              locally in your browser.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* OpenAI API Key */}
-            <div className="space-y-2">
-              <Label htmlFor="openai-key">OpenAI API Key</Label>
-              <div className="relative">
-                <Input
-                  id="openai-key"
-                  type={showKeys.openaiApiKey ? 'text' : 'password'}
-                  placeholder="sk-... or sk-proj-..."
-                  value={
-                    showKeys.openaiApiKey
-                      ? apiKeys.openaiApiKey
-                      : maskApiKey(apiKeys.openaiApiKey)
-                  }
-                  onChange={(e) =>
-                    handleInputChange('openaiApiKey', e.target.value)
-                  }
-                  className={
-                    validationErrors.openaiApiKey ? 'border-destructive' : ''
-                  }
-                />
-                {/* Validation Status Indicator */}
-                {apiKeys.openaiApiKey && (
-                  <div className="absolute right-12 top-0 h-full flex items-center">
-                    {getValidationStatus('openaiApiKey') === 'valid' ? (
-                      <Check className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <X className="h-4 w-4 text-red-500" />
-                    )}
-                  </div>
-                )}
-
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => toggleKeyVisibility('openaiApiKey')}
-                >
-                  {showKeys.openaiApiKey ? (
-                    <EyeOff className="h-4 w-4" />
+    <div className="space-y-6">
+      {/* API Keys Section - simplified layout */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="h-5 w-5" />
+            API Keys
+          </CardTitle>
+          <CardDescription>
+            Configure your API keys for AI services. These keys are stored
+            locally in your browser.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* OpenAI API Key */}
+          <div className="space-y-2">
+            <Label htmlFor="openai-key">Open Router API Key</Label>
+            <div className="relative">
+              <Input
+                id="openai-key"
+                type={showKeys.openaiApiKey ? 'text' : 'password'}
+                placeholder="sk-... or sk-proj-..."
+                value={
+                  showKeys.openaiApiKey
+                    ? apiKeys.openaiApiKey
+                    : maskApiKey(apiKeys.openaiApiKey)
+                }
+                onChange={(e) =>
+                  handleInputChange('openaiApiKey', e.target.value)
+                }
+                className={
+                  validationErrors.openaiApiKey ? 'border-destructive' : ''
+                }
+              />
+              {/* Validation Status Indicator */}
+              {apiKeys.openaiApiKey && (
+                <div className="absolute right-12 top-0 h-full flex items-center">
+                  {getValidationStatus('openaiApiKey') === 'valid' ? (
+                    <Check className="h-4 w-4 text-green-500" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <X className="h-4 w-4 text-red-500" />
                   )}
-                </Button>
-              </div>
-              {validationErrors.openaiApiKey && (
-                <p className="text-sm text-destructive">
-                  {validationErrors.openaiApiKey}
-                </p>
+                </div>
               )}
-              <p className="text-xs text-muted-foreground">
-                Get your API key from{' '}
-                <a
-                  href="https://platform.openai.com/api-keys"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  OpenAI Platform
-                </a>
-              </p>
-            </div>
 
-            {/* Save Status Alert */}
-            {saveStatus !== 'idle' && saveMessage && (
-              <Alert
-                variant={saveStatus === 'error' ? 'destructive' : 'default'}
-              >
-                {saveStatus === 'success' ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : saveStatus === 'error' ? (
-                  <AlertCircle className="h-4 w-4" />
-                ) : null}
-                <AlertDescription>{saveMessage}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Save Button */}
-            <div className="flex justify-end pt-4">
               <Button
-                onClick={handleSave}
-                disabled={saveStatus === 'saving'}
-                className="min-w-[120px] !text-primary-foreground !cursor-pointer"
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => toggleKeyVisibility('openaiApiKey')}
               >
-                {saveStatus === 'saving' ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Saving...
-                  </>
+                {showKeys.openaiApiKey ? (
+                  <EyeOff className="h-4 w-4" />
                 ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Settings
-                  </>
+                  <Eye className="h-4 w-4" />
                 )}
               </Button>
             </div>
-          </CardContent>
-        </Card>
+            {validationErrors.openaiApiKey && (
+              <p className="text-sm text-destructive">
+                {validationErrors.openaiApiKey}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Get your API key from{' '}
+              <a
+                href="https://platform.openai.com/api-keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                OpenAI Platform
+              </a>
+            </p>
+          </div>
 
-        {/* Security Notice - matching dashboard card style */}
-        <Card>
-          <CardContent className="p-6">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Security Notice:</strong> API keys are stored locally in
-                your browser&apos;s localStorage. They are not transmitted to
-                our servers. Keep your API keys secure and never share them
-                publicly.
-              </AlertDescription>
+          {/* Save Status Alert */}
+          {saveStatus !== 'idle' && saveMessage && (
+            <Alert variant={saveStatus === 'error' ? 'destructive' : 'default'}>
+              {saveStatus === 'success' ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : saveStatus === 'error' ? (
+                <AlertCircle className="h-4 w-4" />
+              ) : null}
+              <AlertDescription>{saveMessage}</AlertDescription>
             </Alert>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+
+          {/* Save Button */}
+          <div className="flex justify-end pt-4">
+            <Button
+              onClick={handleSave}
+              disabled={saveStatus === 'saving'}
+              className="min-w-[120px] !text-primary-foreground !cursor-pointer"
+            >
+              {saveStatus === 'saving' ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Settings
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security Notice - matching dashboard card style */}
+      <Card>
+        <CardContent className="p-6">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              <strong>Security Notice:</strong> API keys are stored locally in
+              your browser&apos;s localStorage. They are not transmitted to our
+              servers. Keep your API keys secure and never share them publicly.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     </div>
   );
 }
