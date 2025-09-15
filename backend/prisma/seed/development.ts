@@ -68,9 +68,51 @@ interface UserStatisticData {
 export async function seedDevelopment(prisma: PrismaClient) {
   Logger.log('🌱 Seeding development data...');
 
+  // VALIDATION: Load and validate all data first
+  Logger.log('🔍 Validating seed data integrity...');
+  const users = loadTemplateData<UserData>('users.json', 'development');
+  const decksData = loadTemplateData<DeckData>('decks.json', 'development');
+  const cards = loadTemplateData<CardData>('cards.json', 'development');
+
+  // Validate user emails exist in users data
+  const userEmails = new Set(users.map((u) => u.email));
+  const deckUserEmails = decksData.map((d) => d.userEmail);
+  const cardUserEmails = cards.map((c) => c.userEmail);
+
+  // Check for missing users in deck data
+  const missingDeckUsers = deckUserEmails.filter(
+    (email) => !userEmails.has(email)
+  );
+  if (missingDeckUsers.length > 0) {
+    throw new Error(
+      `❌ Deck data references non-existent users: ${missingDeckUsers.join(', ')}`
+    );
+  }
+
+  // Check for missing users in card data
+  const missingCardUsers = cardUserEmails.filter(
+    (email) => !userEmails.has(email)
+  );
+  if (missingCardUsers.length > 0) {
+    throw new Error(
+      `❌ Card data references non-existent users: ${missingCardUsers.join(', ')}`
+    );
+  }
+
+  // Validate deck associations for cards
+  const deckKeys = new Set(decksData.map((d) => `${d.userEmail}-${d.title}`));
+  const cardDeckKeys = cards.map((c) => `${c.userEmail}-${c.deckTitle}`);
+  const missingDecks = cardDeckKeys.filter((key) => !deckKeys.has(key));
+  if (missingDecks.length > 0) {
+    throw new Error(
+      `❌ Card data references non-existent decks: ${missingDecks.join(', ')}`
+    );
+  }
+
+  Logger.log('✅ Data validation passed');
+
   // 1. SEED USERS
   Logger.log('Creating users...');
-  const users = loadTemplateData<UserData>('users.json', 'development');
   const createdUsers = new Map<string, number>();
 
   for (const userData of users) {
@@ -100,45 +142,61 @@ export async function seedDevelopment(prisma: PrismaClient) {
 
   // 2. SEED DECKS
   Logger.log('Creating decks...');
-  const decksData = loadTemplateData<DeckData>('decks.json', 'development');
   const createdDecks = new Map<string, number>();
 
-  for (const deckData of decksData) {
+  // Process decks in batches for better performance
+  const validDecks = decksData.filter((deckData) => {
     const userId = createdUsers.get(deckData.userEmail);
     if (!userId) {
       Logger.warn(`User ${deckData.userEmail} not found for deck, skipping...`);
-      continue;
+      return false;
     }
+    return true;
+  });
 
-    try {
-      const deck = await prisma.deck.upsert({
-        where: { userId_title: { userId, title: deckData.title } },
-        update: {
-          description: deckData.description,
-          isPublic: deckData.isPublic,
-        },
-        create: {
-          userId,
-          title: deckData.title,
-          description: deckData.description,
-          isPublic: deckData.isPublic,
-        },
-      });
+  // Use transaction for batch deck operations
+  try {
+    const createdDecksList = await prisma.$transaction(async (tx) => {
+      const results = [];
+      for (const deckData of validDecks) {
+        const userId = createdUsers.get(deckData.userEmail)!;
 
+        const deck = await tx.deck.upsert({
+          where: { userId_title: { userId, title: deckData.title } },
+          update: {
+            description: deckData.description,
+            isPublic: deckData.isPublic,
+          },
+          create: {
+            userId,
+            title: deckData.title,
+            description: deckData.description,
+            isPublic: deckData.isPublic,
+          },
+        });
+
+        results.push({ deckData, deck });
+      }
+      return results;
+    });
+
+    // Build deck lookup map from batch results
+    for (const { deckData, deck } of createdDecksList) {
       const deckKey = `${deckData.userEmail}-${deckData.title}`;
       createdDecks.set(deckKey, deck.id);
-    } catch (error) {
-      Logger.warn(`Deck "${deckData.title}" creation failed`, error);
     }
+  } catch (error) {
+    Logger.error(`❌ Batch deck creation failed`, error);
+    throw error;
   }
 
   logSeedingProgress('decks', decksData.length);
 
   // 3. SEED CARDS
   Logger.log('Creating flashcards...');
-  const cards = loadTemplateData<CardData>('cards.json', 'development');
   const createdCards = new Map<string, number>();
 
+  // Process cards in batches with transaction safety
   for (const cardData of cards) {
     // Check if user exists
     const userId = createdUsers.get(cardData.userEmail);
@@ -147,58 +205,58 @@ export async function seedDevelopment(prisma: PrismaClient) {
       continue;
     }
 
-    // Ensure deck exists — auto-create if not found
+    // Validate deck exists using proper relational lookup
     const deckKey = `${cardData.userEmail}-${cardData.deckTitle}`;
-    let deckId = createdDecks.get(deckKey);
+    const deckId = createdDecks.get(deckKey);
 
     if (!deckId) {
-      Logger.warn(
-        `⚠️ Deck "${cardData.deckTitle}" not found for ${cardData.userEmail}, creating it...`
+      Logger.error(
+        `❌ Deck "${cardData.deckTitle}" not found for user ${cardData.userEmail}. Card creation failed: "${cardData.frontContent}"`
       );
-
-      try {
-        const newDeck = await prisma.deck.create({
-          data: {
-            title: cardData.deckTitle,
-            userId,
-            isPublic: false,
-          },
-        });
-        deckId = newDeck.id;
-        createdDecks.set(deckKey, deckId);
-        Logger.log(
-          `Deck "${cardData.deckTitle}" created for ${cardData.userEmail}`
-        );
-      } catch (error) {
-        Logger.warn(`OF Cards entry creation failed:`, error);
-
-        continue;
-      }
+      continue;
     }
 
-    // Insert card
+    // Insert card with transaction safety
     try {
-      const nextReviewDate = new Date();
-      nextReviewDate.setDate(nextReviewDate.getDate() + cardData.intervalDays);
-      const card = await prisma.card.create({
-        data: {
-          userId,
-          deckId,
-          frontContent: cardData.frontContent,
-          backContent: cardData.backContent,
-          aFactor: cardData.aFactor,
-          repetitionCount: cardData.repetitionCount,
-          intervalDays: cardData.intervalDays,
-          lapsesCount: cardData.lapsesCount,
-          sourceType: cardData.sourceType,
-          reviewHistory: JSON.parse(cardData.reviewHistory),
-          nextReviewDate,
-        },
-      });
+      await prisma.$transaction(async (tx) => {
+        const nextReviewDate = new Date();
+        nextReviewDate.setDate(
+          nextReviewDate.getDate() + cardData.intervalDays
+        );
 
-      createdCards.set(cardData.frontContent, card.id);
+        // Verify deck still exists in transaction
+        const deckExists = await tx.deck.findUnique({
+          where: { id: deckId },
+          select: { id: true },
+        });
+
+        if (!deckExists) {
+          throw new Error(`Deck with ID ${deckId} no longer exists`);
+        }
+
+        const card = await tx.card.create({
+          data: {
+            userId,
+            deckId,
+            frontContent: cardData.frontContent,
+            backContent: cardData.backContent,
+            aFactor: cardData.aFactor,
+            repetitionCount: cardData.repetitionCount,
+            intervalDays: cardData.intervalDays,
+            lapsesCount: cardData.lapsesCount,
+            sourceType: cardData.sourceType,
+            reviewHistory: JSON.parse(cardData.reviewHistory),
+            nextReviewDate,
+          },
+        });
+
+        createdCards.set(cardData.frontContent, card.id);
+      });
     } catch (error) {
-      Logger.warn(`OF Cards entry creation failed:`, error);
+      Logger.error(
+        `❌ Card creation failed for user ${cardData.userEmail} in deck "${cardData.deckTitle}": "${cardData.frontContent}"`,
+        error
+      );
     }
   }
 
@@ -242,7 +300,10 @@ export async function seedDevelopment(prisma: PrismaClient) {
         },
       });
     } catch (error) {
-      Logger.warn(`OF Matrix entry creation failed:`, error);
+      Logger.error(
+        `❌ OF Matrix entry creation failed for user ${ofData.userEmail}: repetition ${ofData.repetitionNumber}, difficulty ${ofData.difficultyCategory}`,
+        error
+      );
     }
   }
   logSeedingProgress('OF Matrix entries', ofMatrixEntries.length);
@@ -276,7 +337,10 @@ export async function seedDevelopment(prisma: PrismaClient) {
         },
       });
     } catch (error) {
-      Logger.warn(`Review creation failed:`, error);
+      Logger.error(
+        `❌ Review creation failed for user ${reviewData.userEmail}, card "${reviewData.cardFrontContent}" on ${reviewData.reviewDate}`,
+        error
+      );
     }
   }
   logSeedingProgress('reviews', reviews.length);
@@ -338,8 +402,11 @@ export async function seedDevelopment(prisma: PrismaClient) {
           grade5Count: statData.grade5Count,
         },
       });
-    } catch {
-      Logger.warn(`User statistic creation failed:`);
+    } catch (error) {
+      Logger.error(
+        `❌ User statistic creation failed for user ${statData.userEmail} on date ${statData.date}`,
+        error
+      );
     }
   }
   logSeedingProgress('user statistics', userStats.length);
