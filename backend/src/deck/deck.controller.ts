@@ -12,6 +12,7 @@ import {
   Delete,
   ParseIntPipe,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 @Controller('decks')
 @UseGuards(JwtAuthGuard)
@@ -24,8 +25,25 @@ export class DecksController {
   }
 
   @Get()
-  findAll() {
-    return this.decksService.findAll();
+  findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('publicOnly') publicOnly?: string,
+    @Query('userId') userId?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: string,
+    @Query('search') search?: string
+  ) {
+    return this.decksService.findAll({
+      page: page ? Number(page) : undefined,
+      limit: limit ? Number(limit) : undefined,
+      publicOnly: publicOnly === 'true',
+      userId: userId ? Number(userId) : undefined,
+      sortBy,
+      sortOrder:
+        sortOrder === 'asc' || sortOrder === 'desc' ? sortOrder : undefined,
+      search,
+    });
   }
 
   @Get(':id')
