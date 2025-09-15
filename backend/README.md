@@ -33,16 +33,19 @@ This project uses Docker Compose to run PostgreSQL locally.
 ### Setup
 
 1. Create a `.env` file by copying the example:
+
    ```bash
    cp .env.example .env
    ```
 
 2. Start PostgreSQL:
+
    ```bash
    docker compose up -d
    ```
 
 3. Install dependencies:
+
    ```bash
    npm install
    ```
@@ -58,6 +61,7 @@ This project uses Docker Compose to run PostgreSQL locally.
   ```bash
   docker compose up -d
   ```
+
 ### Environment File Structure
 
 ```
@@ -73,6 +77,7 @@ ugp-bos/
 ### Usage Commands
 
 **Development (default):**
+
 ```bash
 docker compose up -d
 # or explicitly
@@ -80,6 +85,7 @@ docker compose --env-file .env up -d
 ```
 
 - **Stop services:**
+
   ```bash
   docker compose down
   ```
@@ -90,6 +96,7 @@ docker compose --env-file .env up -d
   ```
 
 **Testing:**
+
 ```bash
 docker compose --env-file .env.test up -d
 ```
@@ -204,8 +211,9 @@ This project enforces code quality and consistency using ESLint, Prettier, Jest,
 ### ESLint Configuration
 
 **Backend ESLint Setup**: Uses `eslint-config-airbnb-extended` for enterprise-grade Node.js development:
+
 - **Airbnb Style Guide**: Industry-standard JavaScript/TypeScript patterns
-- **Server-Side Optimizations**: Rules tailored for backend API development  
+- **Server-Side Optimizations**: Rules tailored for backend API development
 - **Security Focus**: Enhanced patterns for secure server applications
 - **Unused Imports Plugin**: Automatic cleanup of unused imports and variables
 
@@ -224,12 +232,24 @@ Jest is configured with strict coverage thresholds:
 ### Husky Git Hooks
 
 - **`pre-commit`:** Runs ESLint and tests on staged files
-- **`commit-msg`:** Enforces conventional commit format
+- **`commit-msg`:** Enforces conventional commit format with flexible rules
 - **Setup:** Automatically configured via `npm install`
+
+**Commit Message Format:**
+
+```
+type(scope): subject #123
+type(scope): subject #123, #456  // Multiple issues supported
+
+[optional body]
+```
+
+For detailed commit message guidelines and examples, see the [main project README](../README.md#commit-message-guidelines).
 
 ## Features Implemented
 
 ### Core Infrastructure
+
 - ✅ NestJS application setup with TypeScript
 - ✅ Global exception handling with structured error responses
 - ✅ Environment-based configuration management
@@ -239,12 +259,14 @@ Jest is configured with strict coverage thresholds:
 - ✅ Docker development environment
 
 ### Authentication (Configured)
+
 - ✅ JWT configuration setup
 - ✅ Password policy configuration
 - ⏳ User registration/login (not implemented)
 - ⏳ JWT tokens and refresh logic (not implemented)
 
 ### Database
+
 - ✅ Prisma ORM setup
 - ✅ PostgreSQL connection configuration
 - ✅ Complete database schema with SM-15 algorithm support
@@ -264,7 +286,9 @@ Jest is configured with strict coverage thresholds:
 Copy `.env.example` files into `.env`:
 
 - **From the project root** (run this if you are in the main folder):
+
   ```bash
   cp backend/.env.example backend/.env   # Copies backend env file
 
   cp .env.example .env      # run this if you are in respective folder
+  ```

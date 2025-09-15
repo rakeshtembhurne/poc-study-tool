@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { GlobalExceptionFilter } from './core/common/filters/global-exception.filter';
 import { LoggerService } from './core/common/services/logger.service';
+import { ResponseInterceptor } from '@/core/common/interceptors/response.interceptor';
 
 async function bootstrap() {
   const logger = new LoggerService();
@@ -58,6 +59,9 @@ async function bootstrap() {
         },
       })
     );
+
+    // Global interceptors
+    app.useGlobalInterceptors(new ResponseInterceptor());
 
     // Global exception filter
     app.useGlobalFilters(new GlobalExceptionFilter());
