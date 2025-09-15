@@ -38,14 +38,7 @@ export class AuthService {
 
       // 2. Generate access and refresh tokens
       const accessToken = await this.generateToken(user.id, user.email);
-      const refreshToken = await this.generateRefreshToken(user.id);
-      const hashedRefreshToken = await this.hashPassword(refreshToken);
-
-      // 3. Save hashed refresh token in DB
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { hashedRefreshToken },
-      });
+      const refreshToken = await this.generateRefreshToken(user.id, user.email);
 
       // 4. Return response with tokens
       return {
@@ -77,13 +70,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
 
     const accessToken = await this.generateToken(user.id, user.email);
-    const refreshToken = await this.generateRefreshToken(user.id);
-
-    const hashedRefreshToken = await this.hashPassword(refreshToken);
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { hashedRefreshToken },
-    });
+    const refreshToken = await this.generateRefreshToken(user.id, user.email);
 
     return {
       message: 'Login successful',
@@ -96,7 +83,8 @@ export class AuthService {
 
   async hashPassword(password: string): Promise<string> {
     try {
-      const salt = await bcrypt.genSalt(10);
+      const rounds = Number(process.env.BCRYPT_ROUNDS) || 12;
+      const salt = await bcrypt.genSalt(rounds);
       return await bcrypt.hash(password, salt);
     } catch (error) {
       this.logger.error(
@@ -113,7 +101,7 @@ export class AuthService {
       this.logger.error(
         `Error verifying password: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-      throw new InternalServerErrorException('Error verifying password');
+      throw new UnauthorizedException('Error verifying password');
     }
   }
 
@@ -128,61 +116,77 @@ export class AuthService {
       throw new InternalServerErrorException('Error generating token');
     }
   }
-  async verifyToken(token: string): Promise<JwtPayload> {
+  async verifyToken(token: string, secret?: string): Promise<JwtPayload> {
     try {
-      return this.jwtService.verify<JwtPayload>(token);
+      return this.jwtService.verify<JwtPayload>(token, {
+        secret: secret || process.env.JWT_SECRET,
+      });
     } catch (error) {
       this.logger.error(
         `Error verifying token: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
-      throw new InternalServerErrorException('Error verifying token');
+      throw new UnauthorizedException('Error verifying token');
     }
   }
 
-  async generateRefreshToken(userId: string | number): Promise<string> {
+  async generateRefreshToken(
+    userId: string | number,
+    email: string,
+    oldRefreshToken?: string
+  ): Promise<string> {
     try {
-      const payload: JwtPayload = { sub: String(userId), email: '' };
+      if (oldRefreshToken) {
+        await this.verifyToken(
+          oldRefreshToken,
+          process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+        );
+      }
+      const payload: JwtPayload = { sub: String(userId), email };
       return this.jwtService.sign(payload, {
-        expiresIn: '7d',
+        expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d',
+        secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
       });
     } catch (error) {
       this.logger.error(
-        `Error generating refresh token: ${error instanceof Error ? error.message : 'Unknown error'}`
+        `Error generating refresh token: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
       throw new InternalServerErrorException('Error generating refresh token');
     }
   }
 
-  async refreshTokens(userId: string, refreshToken: string) {
-    const userIdNum = parseInt(userId, 10);
-    if (isNaN(userIdNum)) {
-      throw new BadRequestException('Invalid userId');
+  async refreshTokens(refreshToken: string) {
+    try {
+      const payload = await this.verifyToken(
+        refreshToken,
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+      );
+
+      const newAccessToken = await this.generateToken(
+        payload.sub,
+        payload.email
+      );
+      const newRefreshToken = await this.generateRefreshToken(
+        payload.sub,
+        payload.email,
+        refreshToken
+      );
+
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+      };
+    } catch (error: any) {
+      if (error.name === 'TokenExpiredError') {
+        this.logger.warn('Refresh token expired');
+        throw new UnauthorizedException(
+          'Refresh token expired, please login again'
+        );
+      }
+      this.logger.warn('Invalid refresh token');
+      throw new UnauthorizedException('Invalid refresh token');
     }
-    const user = await this.prisma.user.findUnique({
-      where: { id: userIdNum },
-    });
-    if (!user || !user.hashedRefreshToken)
-      throw new UnauthorizedException('Access Denied');
-
-    const isValid = await this.verifyPassword(
-      refreshToken,
-      user.hashedRefreshToken
-    );
-    if (!isValid) throw new UnauthorizedException('Invalid refresh token');
-
-    const newAccessToken = await this.generateToken(user.id, user.email);
-    const newRefreshToken = await this.generateRefreshToken(user.id);
-    const hashedNewRefreshToken = await this.hashPassword(newRefreshToken);
-
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: { hashedRefreshToken: hashedNewRefreshToken },
-    });
-
-    return {
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
-    };
   }
 
   async resetPassword(email: string) {
@@ -194,15 +198,10 @@ export class AuthService {
       return { message: 'If this email exists, a reset link has been sent.' };
     }
 
-    // Generate a temporary reset token (JWT or random string)
     const resetToken = this.jwtService.sign(
       { sub: user.id, email },
       { expiresIn: '15m' }
     );
-
-    // Console log instead of sending email
-    this.logger.log(`Password reset token for ${email}: ${resetToken}`);
-
     return { message: 'If this email exists, a reset link has been sent.' };
   }
 }
