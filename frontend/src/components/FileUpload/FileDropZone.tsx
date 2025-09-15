@@ -3,13 +3,14 @@
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { FileText } from 'lucide-react';
+import { FileText, X } from 'lucide-react';
 import { FileValidationConfig } from '@/types/card';
 
 interface FileDropZoneProps {
   file: File | null;
   isDragging: boolean;
   onFileSelect: (file: File) => void;
+  onFileRemove: () => void;
   onDragStateChange: (isDragging: boolean) => void;
   onError: (error: string | null) => void;
   validationConfig: FileValidationConfig;
@@ -19,6 +20,7 @@ export default function FileDropZone({
   file,
   isDragging,
   onFileSelect,
+  onFileRemove,
   onDragStateChange,
   onError,
   validationConfig,
@@ -26,12 +28,19 @@ export default function FileDropZone({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (selectedFile: File): string | null => {
-    if (!validationConfig.allowedTypes.includes(selectedFile.type)) {
-      return 'Only .txt files are allowed.';
+    const isAllowed =
+      validationConfig.allowedTypes.includes(selectedFile.type) ||
+      selectedFile.name.toLowerCase().endsWith('.txt') ||
+      selectedFile.name.toLowerCase().endsWith('.pdf');
+
+    if (!isAllowed) {
+      return 'Only .txt or .pdf files are allowed.';
     }
+
     if (selectedFile.size > validationConfig.maxSize) {
       return 'File size must be less than 10 MB.';
     }
+
     return null;
   };
 
@@ -98,11 +107,10 @@ export default function FileDropZone({
 
   return (
     <div className="space-y-2">
-      <Label className="text-sm font-medium text-gray-700">
-        Upload File (.txt)
+      <Label htmlFor="deckName" className="text-sm font-medium text-foreground">
+        Upload File (.txt or .pdf)
       </Label>
 
-      {/* Drag and Drop Area */}
       <div
         onClick={openFilePicker}
         onDrop={handleDrop}
@@ -111,41 +119,65 @@ export default function FileDropZone({
         onDragLeave={handleDragLeave}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ${
           isDragging
-            ? 'border-blue-400 bg-blue-50'
-            : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+            ? 'border-primary/70 bg-primary/5'
+            : 'border-border bg-muted hover:bg-muted/70'
         }`}
       >
         <div className="flex flex-col items-center space-y-4">
-          <FileText className="h-12 w-12 text-gray-400" />
+          <FileText className="h-12 w-12 text-muted-foreground" />
           <div className="flex items-center gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={(e: React.MouseEvent) => {
-                e.stopPropagation();
-                openFilePicker();
-              }}
-              className="bg-white border-gray-300"
-            >
-              Choose File
-            </Button>
-            <span className="text-sm text-gray-500">
-              {file ? file.name : 'No file chosen'}
-            </span>
+            {!file ? (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    openFilePicker();
+                  }}
+                >
+                  Choose File
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  No file chosen
+                </span>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                <FileText className="h-4 w-4 text-primary" />
+                <span className="text-sm text-primary font-medium">
+                  {file.name}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    onFileRemove();
+                  }}
+                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Instructions */}
       <div className="text-center space-y-1">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted-foreground">
           Select a .txt file with your cards
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Format: Question|Answer|Difficulty (one card per line)
         </p>
-        <p className="text-xs text-gray-400">Example: What is 2+2?|4|Easy</p>
+        <p className="text-xs text-muted-foreground/80">
+          Example: What is 2+2?|4|Easy
+        </p>
       </div>
 
       {/* Hidden File Input */}
@@ -154,7 +186,7 @@ export default function FileDropZone({
         ref={fileInputRef}
         className="hidden"
         onChange={handleFileChange}
-        accept=".txt"
+        accept=".txt,.pdf"
       />
     </div>
   );

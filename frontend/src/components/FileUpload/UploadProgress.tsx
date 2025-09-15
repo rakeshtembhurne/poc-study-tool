@@ -16,9 +16,10 @@ export default function UploadProgress({
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span>Creating cards...</span>
+        <span>{isUploading ? 'Uploading file...' : 'Processing cards...'}</span>
         <span>{progress}%</span>
       </div>
+
       <Progress value={progress} className="w-full" />
     </div>
   );
