@@ -15,6 +15,7 @@ interface JwtPayload {
   sub: string;
   email: string;
 }
+import { AuthPayload } from './types/auth.types';
 
 @Injectable()
 export class AuthService {
@@ -88,9 +89,9 @@ export class AuthService {
     }
   }
 
-  async generateToken(userId: string | number, email: string): Promise<string> {
+  async generateToken(userId: number | string, email: string): Promise<string> {
     try {
-      const payload: JwtPayload = { sub: String(userId), email }; // convert to string
+      const payload: AuthPayload = { id: String(userId), email }; // convert to string
       return this.jwtService.sign(payload);
     } catch (error) {
       this.logger.error(
@@ -99,9 +100,9 @@ export class AuthService {
       throw new InternalServerErrorException('Error generating token');
     }
   }
-  async verifyToken(token: string): Promise<JwtPayload> {
+  async verifyToken(token: string): Promise<AuthPayload> {
     try {
-      return this.jwtService.verify<JwtPayload>(token);
+      return this.jwtService.verify<AuthPayload>(token);
     } catch (error) {
       this.logger.error(
         `Error verifying token: ${error instanceof Error ? error.message : 'Unknown error'}`

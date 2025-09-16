@@ -88,7 +88,16 @@ ${text.trim()}`;
         const totalElapsedTime = Date.now() - startTime;
         this.logger.log(`Total generation time: ${totalElapsedTime}ms`);
 
-        return completion;
+        // Parse the response content and convert to structured JSON
+        const parsedFlashcards = this.parseFlashcardsToJson(
+          completion.choices[0].message.content
+        );
+
+        return {
+          ...completion,
+          parsedFlashcards,
+          totalCards: parsedFlashcards.length,
+        };
       } catch (error: any) {
         const attemptElapsedTime = Date.now() - attemptStartTime;
         const errorMessage =
@@ -162,5 +171,72 @@ ${text.trim()}`;
 
   private async delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private parseFlashcardsToJson(
+    content: string
+  ): Array<{ question: string; answer: string }> {
+    const flashcards: Array<{ question: string; answer: string }> = [];
+
+    try {
+      // Split content into lines and process
+      const lines = content
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+      let currentQuestion = '';
+      let currentAnswer = '';
+
+      for (const line of lines) {
+        // Check if line starts with Q: or Question:
+        if (/^Q\s*:/i.test(line)) {
+          // If we have a previous Q&A pair, save it
+          if (currentQuestion && currentAnswer) {
+            flashcards.push({
+              question: currentQuestion.trim(),
+              answer: currentAnswer.trim(),
+            });
+          }
+
+          // Start new question
+          currentQuestion = line.replace(/^Q\s*:/i, '').trim();
+          currentAnswer = '';
+        }
+        // Check if line starts with A: or Answer:
+        else if (/^A\s*:/i.test(line)) {
+          currentAnswer = line.replace(/^A\s*:/i, '').trim();
+        }
+        // If we're in the middle of collecting an answer, append to it
+        else if (currentQuestion && currentAnswer) {
+          currentAnswer += ' ' + line;
+        }
+        // If we're in the middle of collecting a question, append to it
+        else if (currentQuestion && !currentAnswer) {
+          currentQuestion += ' ' + line;
+        }
+      }
+
+      // Don't forget the last Q&A pair
+      if (currentQuestion && currentAnswer) {
+        flashcards.push({
+          question: currentQuestion.trim(),
+          answer: currentAnswer.trim(),
+        });
+      }
+
+      this.logger.debug(`Parsed ${flashcards.length} flashcards from response`);
+    } catch (error) {
+      this.logger.error('Failed to parse flashcards content:', error);
+      // Return a fallback with the raw content
+      return [
+        {
+          question: 'Raw Content',
+          answer: content,
+        },
+      ];
+    }
+
+    return flashcards;
   }
 }
