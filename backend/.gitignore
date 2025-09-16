@@ -439,7 +439,6 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-=======
 # Local
 .env
 dist
@@ -447,3 +446,4 @@ dist
 .serverless/**/*.zip
 /generated/prisma
 package-lock.json
+uploads/
