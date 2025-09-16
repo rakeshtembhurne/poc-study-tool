@@ -149,50 +149,42 @@ export class DecksService {
     updateDeckDto: UpdateDeckDto,
     requestingUserId: number
   ) {
-    try {
-      const existingDeck = await this.prisma.deck.findUnique({ where: { id } });
-      if (!existingDeck) {
-        throw new NotFoundException(`Deck with ID ${id} not found`);
-      }
-      if (existingDeck.userId !== requestingUserId) {
-        throw new ForbiddenException('You can only update your own decks');
-      }
-
-      return this.prisma.deck.update({
-        where: { id },
-        data: updateDeckDto,
-      });
-    } catch (error) {
-      throw error;
+    const existingDeck = await this.prisma.deck.findUnique({ where: { id } });
+    if (!existingDeck) {
+      throw new NotFoundException(`Deck with ID ${id} not found`);
     }
+    if (existingDeck.userId !== requestingUserId) {
+      throw new ForbiddenException('You can only update your own decks');
+    }
+
+    return this.prisma.deck.update({
+      where: { id },
+      data: updateDeckDto,
+    });
   }
 
   async remove(id: number, requestingUserId: number) {
-    try {
-      const existingDeck = await this.prisma.deck.findUnique({ where: { id } });
-      if (!existingDeck) {
-        throw new NotFoundException(`Deck with ID ${id} not found`);
-      }
-      if (existingDeck.userId !== requestingUserId) {
-        throw new ForbiddenException('You can only delete your own decks');
-      }
-
-      const result = await this.prisma.$transaction([
-        this.prisma.card.deleteMany({
-          where: { deckId: id },
-        }),
-        this.prisma.deck.delete({
-          where: { id },
-        }),
-      ]);
-
-      return {
-        message: `Deck and its cards deleted successfully`,
-        deletedCards: result[0].count,
-        deletedDeck: result[1],
-      };
-    } catch (error) {
-      throw error;
+    const existingDeck = await this.prisma.deck.findUnique({ where: { id } });
+    if (!existingDeck) {
+      throw new NotFoundException(`Deck with ID ${id} not found`);
     }
+    if (existingDeck.userId !== requestingUserId) {
+      throw new ForbiddenException('You can only delete your own decks');
+    }
+
+    const result = await this.prisma.$transaction([
+      this.prisma.card.deleteMany({
+        where: { deckId: id },
+      }),
+      this.prisma.deck.delete({
+        where: { id },
+      }),
+    ]);
+
+    return {
+      message: `Deck and its cards deleted successfully`,
+      deletedCards: result[0].count,
+      deletedDeck: result[1],
+    };
   }
 }
