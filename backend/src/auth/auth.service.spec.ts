@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../utils/mail.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -23,7 +24,15 @@ describe('AuthService', () => {
             sign: jest.fn().mockReturnValue('test-token'),
             verify: jest
               .fn()
-              .mockReturnValue({ sub: 'user-id', email: 'test@example.com' }),
+              .mockReturnValue({ id: 'user-id', email: 'test@example.com' }),
+          },
+        },
+        {
+          provide: MailService,
+          useValue: {
+            sendMail: jest
+              .fn()
+              .mockResolvedValue({ messageId: 'test-message-id' }),
           },
         },
       ],
@@ -71,7 +80,7 @@ describe('AuthService', () => {
 
       const token = await service.generateToken(userId, email);
       expect(token).toBe('test-token');
-      expect(jwtService.sign).toHaveBeenCalledWith({ sub: userId, email });
+      expect(jwtService.sign).toHaveBeenCalledWith({ id: userId, email });
     });
   });
 
@@ -80,8 +89,10 @@ describe('AuthService', () => {
       const token = 'test-token';
       const payload = await service.verifyToken(token);
 
-      expect(payload).toEqual({ sub: 'user-id', email: 'test@example.com' });
-      expect(jwtService.verify).toHaveBeenCalledWith(token);
+      expect(payload).toEqual({ id: 'user-id', email: 'test@example.com' });
+      expect(jwtService.verify).toHaveBeenCalledWith(token, {
+        secret: process.env.JWT_SECRET,
+      });
     });
   });
 });
