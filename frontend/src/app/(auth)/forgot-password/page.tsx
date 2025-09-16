@@ -38,26 +38,38 @@ export default function ForgotPasswordPage() {
     register,
     handleSubmit,
     formState: { errors },
-    getValues,
   } = useForm<ForgotPasswordFormData>({
     resolver: yupResolver(forgotPasswordSchema),
   });
 
-  const onSubmit = async (data: ForgotPasswordFormData) => {
+  const onSubmit = async (data: any) => {
     setIsSubmitting(true);
     setSubmitMessage('');
 
     try {
-      // Simulate API call for forgot password
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-      setIsEmailSent(true);
-      setSubmitMessage(
-        `Password reset instructions have been sent to ${data.email}`
-      );
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      setSubmitMessage('Failed to send reset email. Please try again.');
+      const result = await response.json();
+      // console.log('Login response result:', result);
+      const resultData = result?.data?.data;
+      // console.log('Login response resultData:', resultData);
+
+      if (result.data.success) {
+        setSubmitMessage(resultData.message || 'Email sent successfully');
+        setIsEmailSent(true);
+      } else {
+        setSubmitMessage(result.message || 'Failed to send reset email');
+      }
+    } catch (error: any) {
+      // console.error('Login error:', error.message);
+      // Handle axios error responses
+      setSubmitMessage(error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -71,9 +83,6 @@ export default function ForgotPasswordPage() {
             <CardTitle className="text-2xl font-semibold text-gray-900">
               Check Your Email
             </CardTitle>
-            <CardDescription className="text-gray-600">
-              We&apos;ve sent password reset instructions to your email address
-            </CardDescription>
           </CardHeader>
 
           <CardContent className="text-center space-y-6">
@@ -83,11 +92,7 @@ export default function ForgotPasswordPage() {
 
             <div className="space-y-2">
               <p className="text-lg font-medium text-gray-900">
-                Email sent successfully!
-              </p>
-              <p className="text-sm text-gray-600">
-                Please check your inbox and follow the instructions to reset
-                your password.
+                If this email exists, a reset link has been sent.
               </p>
               <p className="text-xs text-gray-500">
                 Didn&apos;t receive the email? Check your spam folder or try
@@ -101,7 +106,7 @@ export default function ForgotPasswordPage() {
                 setSubmitMessage('');
               }}
               variant="outline"
-              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
+              className="w-full border-gray-300 text-gray-700 hover:bg-gray-50 !cursor-pointer"
             >
               Send Another Email
             </Button>

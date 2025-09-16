@@ -1,25 +1,26 @@
 import apiClient from '@/lib/api-client';
 import { NextRequest, NextResponse } from 'next/server';
-import { LoginRequestBody } from '@/interfaces/auth.interface';
 
 export async function POST(request: NextRequest) {
   try {
-    const body: LoginRequestBody = await request.json();
+    const body: any = await request.json();
 
     // Validate required fields
-    if (!body.email || !body.password) {
+    if (!body.email) {
       return NextResponse.json(
-        { success: false, message: 'Email and password are required' },
+        { success: false, message: 'Email is required' },
         { status: 400 }
       );
     }
 
     // Call backend API
-    const backendResponse = await apiClient.post(`/api/v1/auth/login`, {
-      email: body.email,
-      password: body.password,
-    });
-    // console.log('backendResponse Data: ', backendResponse.data);
+    const backendResponse = await apiClient.post(
+      `/api/v1/auth/reset-password`,
+      {
+        email: body.email,
+      }
+    );
+    console.log('backendResponse Data: ', backendResponse.data);
 
     if (backendResponse.status !== 200) {
       return NextResponse.json(
@@ -54,18 +55,6 @@ export async function POST(request: NextRequest) {
         },
         { status: error.response?.status }
       );
-    } else if (error.code === 'ECONNABORTED') {
-      return NextResponse.json({
-        success: false,
-        message: 'Request timeout. Please try again.',
-        error: 'Request timeout. Please try again.',
-      });
-    } else if (error.message === 'Network Error') {
-      return NextResponse.json({
-        success: false,
-        message: 'Network error. Please check your connection and try again.',
-        error: 'Network error. Please check your connection and try again.',
-      });
     } else {
       return NextResponse.json({
         success: false,
