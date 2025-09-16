@@ -163,7 +163,6 @@ export class DecksService {
         data: updateDeckDto,
       });
     } catch (error) {
-      console.log('-------------------------------->', error);
       throw error;
     }
   }
@@ -193,7 +192,6 @@ export class DecksService {
         deletedDeck: result[1],
       };
     } catch (error) {
-      console.error('Error deleting deck and cards:', error);
       throw error;
     }
   }

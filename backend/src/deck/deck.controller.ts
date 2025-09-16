@@ -1,4 +1,5 @@
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { User } from '@/auth/decorators/user.decorator';
 import { AuthPayload } from '@/auth/types/auth.types';
 import { DecksService } from '@/deck/deck.service';
 import { CreateDeckDto } from '@/deck/dto/create.dto';
@@ -19,16 +20,6 @@ import {
   Req,
 } from '@nestjs/common';
 
-// Create a custom decorator to extract user from request
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-
-export const CurrentUser = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user;
-  }
-);
-
 @Controller('decks')
 @UseGuards(JwtAuthGuard)
 export class DecksController {
@@ -37,7 +28,7 @@ export class DecksController {
   @Post()
   create(
     @Body() createDeckDto: CreateDeckDto,
-    @CurrentUser() user: AuthPayload
+    @User() user: AuthPayload
   ) {
     // Ensure the deck is created for the authenticated user
     const deckData = {
@@ -50,7 +41,7 @@ export class DecksController {
   @Get('By/:id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: AuthPayload,
+    @User() user: AuthPayload,
     @Req() req: Request
   ) {
     const deck = await this.decksService.findOne(id, parseInt(user.id));
@@ -70,7 +61,7 @@ export class DecksController {
 
   @Get()
   findAll(
-    @CurrentUser() user: AuthPayload,
+    @User() user: AuthPayload,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('publicOnly') publicOnly?: string,
@@ -101,14 +92,14 @@ export class DecksController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDeckDto: UpdateDeckDto,
-    @CurrentUser() user: AuthPayload
+    @User() user: AuthPayload
   ) {
     return this.decksService.update(id, updateDeckDto, parseInt(user.id));
   }
 
   @Delete(':id')
   remove(
-    @CurrentUser() user: AuthPayload,
+    @User() user: AuthPayload,
     @Param('id', ParseIntPipe) id: number
   ) {
     return this.decksService.remove(id, parseInt(user.id));
