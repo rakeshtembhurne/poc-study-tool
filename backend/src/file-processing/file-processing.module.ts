@@ -16,7 +16,6 @@ import {
   FileValidationPipe,
   MultipleFilesValidationPipe,
 } from './pipes/file-validation.pipe';
-import { FileProcessingQueueService } from './queues/file-processing.queue';
 
 @Module({
   imports: [OpenRouterModule, AuthModule, PrismaModule],
@@ -34,7 +33,6 @@ import { FileProcessingQueueService } from './queues/file-processing.queue';
     OpenAIFlashcardStrategy,
     FileValidationPipe,
     MultipleFilesValidationPipe,
-    FileProcessingQueueService,
   ],
   exports: [FileProcessingService, PdfProcessingService, TextProcessingService],
 })

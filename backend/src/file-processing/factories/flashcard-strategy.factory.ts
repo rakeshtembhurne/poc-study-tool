@@ -31,12 +31,19 @@ export class FlashcardStrategyFactory {
   }
 
   getStrategyForApiKey(apiKey: string): IFlashcardStrategy {
-    // Auto-detect provider based on API key format
-    if (apiKey.startsWith('sk-')) {
-      return this.openAIStrategy;
+    // Validate API key is provided
+    if (!apiKey || apiKey.trim().length === 0) {
+      throw new Error('API key is required');
     }
 
-    // Default to OpenRouter for other key formats
+    // For now, always use OpenRouter since OpenAI strategy is not implemented
+    // TODO: Implement OpenAI strategy and enable auto-detection
+    // Auto-detect provider based on API key format
+    // if (apiKey.startsWith('sk-')) {
+    //   return this.openAIStrategy;
+    // }
+
+    // Default to OpenRouter for all API keys until OpenAI strategy is implemented
     return this.openRouterStrategy;
   }
 }

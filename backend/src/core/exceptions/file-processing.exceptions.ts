@@ -90,9 +90,13 @@ export class ApiKeyMissingException extends FlashcardGenerationException {
 
 export class FlashcardServiceException extends FlashcardGenerationException {
   constructor(originalError: string, context?: Record<string, any>) {
-    super('Flashcard generation service error', 'FLASHCARD_SERVICE_ERROR', {
-      originalError,
-      ...context,
-    });
+    super(
+      `Flashcard generation failed: ${originalError}`,
+      'FLASHCARD_SERVICE_ERROR',
+      {
+        originalError,
+        ...context,
+      }
+    );
   }
 }

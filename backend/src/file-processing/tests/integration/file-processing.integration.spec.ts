@@ -235,10 +235,6 @@ describe('File Processing Integration Tests', () => {
         .field('description', 'Integration test file')
         .expect(201);
 
-      console.log(
-        'Full response body:',
-        JSON.stringify(response.body, null, 2)
-      );
       expect(response.body).toMatchObject({
         id: expect.any(String),
         originalname: 'test-document.txt',
@@ -441,9 +437,7 @@ describe('File Processing Integration Tests', () => {
 
       expect(response.body).toMatchObject({
         flashcardGenerationStatus: 'failed',
-        flashcardError: expect.stringContaining(
-          'Flashcard generation service error'
-        ),
+        flashcardError: expect.stringContaining('Flashcard generation failed'),
       });
 
       // Cleanup
