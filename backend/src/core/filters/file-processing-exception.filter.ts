@@ -35,7 +35,7 @@ export class FileProcessingExceptionFilter implements ExceptionFilter {
       context: exceptionResponse.context,
       url: request.url,
       method: request.method,
-      userId: request.user?.sub,
+      userId: request.user?.id,
     });
 
     // Send consistent error response

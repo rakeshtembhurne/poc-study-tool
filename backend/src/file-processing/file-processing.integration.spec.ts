@@ -54,7 +54,7 @@ describe('File Processing Integration Tests', () => {
       .useValue({
         canActivate: (context: any) => {
           const req = context.switchToHttp().getRequest();
-          req.user = { sub: '1', email: 'test@example.com' }; // Mock user
+          req.user = { id: '1', email: 'test@example.com' }; // Mock user
           return true;
         },
       })

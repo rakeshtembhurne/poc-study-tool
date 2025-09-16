@@ -20,7 +20,7 @@ import { UploadMultipleFilesDto } from './dto/upload-multiple.dto';
 import { multerConfig } from '@/core/config/multer.config';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
 import { User } from '@/auth/decorators/user.decorator';
-import { UserPayload } from '@/auth/types/auth.types';
+import { AuthPayload } from '@/auth/types/auth.types';
 import {
   FileValidationPipe,
   MultipleFilesValidationPipe,
@@ -46,7 +46,7 @@ export class FileProcessingController {
   async uploadFile(
     @UploadedFile(FileValidationPipe) file: Express.Multer.File,
     @Body() dto: UploadFileDto,
-    @User() user: UserPayload
+    @User() user: AuthPayload
   ) {
     return this.fileProcessingService.uploadSingleFile(file, dto, user);
   }
@@ -65,7 +65,7 @@ export class FileProcessingController {
   async uploadMultipleFiles(
     @UploadedFiles(MultipleFilesValidationPipe) files: Express.Multer.File[],
     @Body() dto: UploadMultipleFilesDto,
-    @User() user: UserPayload
+    @User() user: AuthPayload
   ) {
     return this.fileProcessingService.uploadMultipleFiles(files, dto, user);
   }

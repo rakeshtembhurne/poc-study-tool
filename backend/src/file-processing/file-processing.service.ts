@@ -12,7 +12,7 @@ import {
 import { UploadMultipleFilesDto } from './dto/upload-multiple.dto';
 import { PdfProcessingService } from './services/pdf-processing.service';
 import { TextProcessingService } from './services/text-processing.service';
-import { UserPayload } from '@/auth/types/auth.types';
+import { AuthPayload } from '@/auth/types/auth.types';
 import { unlink } from 'fs/promises';
 import {
   ApiKeyMissingException,
@@ -40,7 +40,7 @@ export class FileProcessingService {
   async uploadSingleFile(
     file: Express.Multer.File,
     dto: UploadFileDto,
-    user: UserPayload
+    user: AuthPayload
   ): Promise<FileResponseDto> {
     if (!file) {
       throw new BadRequestException('No file provided');
@@ -64,7 +64,7 @@ export class FileProcessingService {
 
     // Auto-parse file and generate flashcards
     // Fetch user's API key using repository pattern
-    const userRecord = await this.userRepository.findUserApiKey(user.sub);
+    const userRecord = await this.userRepository.findUserApiKey(user.id);
 
     if (!userRecord?.openAiApiKey) {
       fileResponse.flashcardGenerationStatus = 'failed';
@@ -142,7 +142,7 @@ export class FileProcessingService {
   async uploadMultipleFiles(
     files: Express.Multer.File[],
     dto: UploadMultipleFilesDto,
-    user: UserPayload
+    user: AuthPayload
   ): Promise<FileResponseDto[]> {
     if (!files || files.length === 0) {
       throw new BadRequestException('No files provided');
@@ -155,7 +155,7 @@ export class FileProcessingService {
     );
 
     // Fetch user data once for all files
-    const userRecord = await this.userRepository.findUserApiKey(user.sub);
+    const userRecord = await this.userRepository.findUserApiKey(user.id);
 
     const responses = await Promise.allSettled(
       files.map(async (file, index) => {

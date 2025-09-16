@@ -90,7 +90,7 @@ describe('FileProcessingService Performance Tests', () => {
     const result = await service.uploadSingleFile(
       testFile,
       { description: 'Performance test small file' },
-      { sub: '1', email: 'test@example.com' }
+      { id: '1', email: 'test@example.com' }
     );
 
     const processingTime = Date.now() - startTime;
@@ -113,7 +113,7 @@ describe('FileProcessingService Performance Tests', () => {
     const result = await service.uploadSingleFile(
       testFile,
       { description: 'Performance test medium file' },
-      { sub: '1', email: 'test@example.com' }
+      { id: '1', email: 'test@example.com' }
     );
 
     const processingTime = Date.now() - startTime;
@@ -136,7 +136,7 @@ describe('FileProcessingService Performance Tests', () => {
     const result = await service.uploadSingleFile(
       testFile,
       { description: 'Performance test large file' },
-      { sub: '1', email: 'test@example.com' }
+      { id: '1', email: 'test@example.com' }
     );
 
     const processingTime = Date.now() - startTime;
@@ -160,7 +160,7 @@ describe('FileProcessingService Performance Tests', () => {
     const results = await service.uploadMultipleFiles(
       testFiles,
       { descriptions: ['Test 1', 'Test 2', 'Test 3'] },
-      { sub: '1', email: 'test@example.com' }
+      { id: '1', email: 'test@example.com' }
     );
 
     const processingTime = Date.now() - startTime;
@@ -227,7 +227,7 @@ describe('FileProcessingService Performance Tests', () => {
         .uploadSingleFile(
           testFile,
           { description: `Concurrent test ${i}` },
-          { sub: '1', email: 'test@example.com' }
+          { id: '1', email: 'test@example.com' }
         )
         .finally(() => cleanupFile(testFile.path));
     });

@@ -63,7 +63,7 @@ describe('File Processing Integration Tests', () => {
                 }),
                 verify: jest
                   .fn()
-                  .mockReturnValue({ sub: '1', email: 'test@example.com' }),
+                  .mockReturnValue({ id: '1', email: 'test@example.com' }),
               },
             },
           ],
@@ -107,7 +107,7 @@ describe('File Processing Integration Tests', () => {
       .useValue({
         verifyToken: jest
           .fn()
-          .mockResolvedValue({ sub: '1', email: 'test@example.com' }),
+          .mockResolvedValue({ id: '1', email: 'test@example.com' }),
       })
       .overrideProvider(OpenRouterService)
       .useValue({
@@ -202,7 +202,7 @@ describe('File Processing Integration Tests', () => {
           }
 
           // If valid bearer token, set user and allow access
-          req.user = { sub: '1', email: 'test@example.com' };
+          req.user = { id: '1', email: 'test@example.com' };
           return true;
         },
       })
@@ -212,7 +212,7 @@ describe('File Processing Integration Tests', () => {
     jwtService = moduleFixture.get<JwtService>(JwtService);
 
     // Generate auth token for testing
-    authToken = jwtService.sign({ sub: '1', email: 'test@example.com' });
+    authToken = jwtService.sign({ id: '1', email: 'test@example.com' });
 
     await app.init();
   });
