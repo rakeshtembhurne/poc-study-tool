@@ -1,7 +1,9 @@
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { AuthPayload } from '@/auth/types/auth.types';
 import { DecksService } from '@/deck/deck.service';
 import { CreateDeckDto } from '@/deck/dto/create.dto';
 import { UpdateDeckDto } from '@/deck/dto/update-deck.dto';
+
 import {
   Controller,
   Get,
@@ -27,14 +29,6 @@ export const CurrentUser = createParamDecorator(
   }
 );
 
-// Interface for the authenticated user
-export interface AuthenticatedUser {
-  sub: string; // user ID from JWT
-  email: string;
-  iat: number;
-  exp: number;
-}
-
 @Controller('decks')
 @UseGuards(JwtAuthGuard)
 export class DecksController {
@@ -43,12 +37,12 @@ export class DecksController {
   @Post()
   create(
     @Body() createDeckDto: CreateDeckDto,
-    @CurrentUser() user: AuthenticatedUser
+    @CurrentUser() user: AuthPayload
   ) {
     // Ensure the deck is created for the authenticated user
     const deckData = {
       ...createDeckDto,
-      userId: parseInt(user.sub), // Set userId from authenticated user
+      userId: parseInt(user.id), // Set userId from authenticated user
     };
     return this.decksService.create(deckData);
   }
@@ -56,10 +50,10 @@ export class DecksController {
   @Get('By/:id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthPayload,
     @Req() req: Request
   ) {
-    const deck = await this.decksService.findOne(id, parseInt(user.sub));
+    const deck = await this.decksService.findOne(id, parseInt(user.id));
 
     return {
       success: true,
@@ -76,7 +70,7 @@ export class DecksController {
 
   @Get()
   findAll(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthPayload,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('publicOnly') publicOnly?: string,
@@ -88,7 +82,7 @@ export class DecksController {
     // If userId is not provided in query, use the authenticated user's ID
     // If userId IS provided, you might want to check if the user has permission to view other users' decks
     const targetUserId =
-      userId && userId.trim() !== '' ? Number(userId) : parseInt(user.sub);
+      userId && userId.trim() !== '' ? Number(userId) : parseInt(user.id);
 
     return this.decksService.findAll({
       page: page && page.trim() !== '' ? Number(page) : undefined,
@@ -99,7 +93,7 @@ export class DecksController {
       sortOrder:
         sortOrder === 'asc' || sortOrder === 'desc' ? sortOrder : undefined,
       search: search && search.trim() !== '' ? search : undefined,
-      requestingUserId: parseInt(user.sub), // Pass the requesting user's ID for authorization checks
+      requestingUserId: parseInt(user.id), // Pass the requesting user's ID for authorization checks
     });
   }
 
@@ -107,16 +101,16 @@ export class DecksController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateDeckDto: UpdateDeckDto,
-    @CurrentUser() user: AuthenticatedUser
+    @CurrentUser() user: AuthPayload
   ) {
-    return this.decksService.update(id, updateDeckDto, parseInt(user.sub));
+    return this.decksService.update(id, updateDeckDto, parseInt(user.id));
   }
 
   @Delete(':id')
   remove(
-    @CurrentUser() user: AuthenticatedUser,
+    @CurrentUser() user: AuthPayload,
     @Param('id', ParseIntPipe) id: number
   ) {
-    return this.decksService.remove(id, parseInt(user.sub));
+    return this.decksService.remove(id, parseInt(user.id));
   }
 }

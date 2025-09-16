@@ -6,6 +6,7 @@ import { ConfigModule } from './core/config/config.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { OpenRouterModule } from './core/openrouter/openrouter.module';
+import { FileProcessingModule } from '@/file-processing/file-processing.module';
 import { DeckModule } from '@/deck/deck.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { DeckModule } from '@/deck/deck.module';
     AuthModule,
     OpenRouterModule,
     UserModule,
+    FileProcessingModule,
     DeckModule,
   ],
   controllers: [AppController],
