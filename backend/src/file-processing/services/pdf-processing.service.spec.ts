@@ -225,7 +225,10 @@ describe('PdfProcessingService', () => {
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.statSync.mockReturnValue(mockStats as any);
-      mockFs.readFileSync.mockReturnValue(mockBuffer);
+      mockFs.openSync.mockReturnValue(3 as any);
+      mockFs.readSync.mockReturnValue(8);
+      mockFs.closeSync.mockReturnValue(undefined);
+      Buffer.alloc = jest.fn().mockReturnValue(mockBuffer);
 
       const result = service.validatePdfFile('/test/file.pdf');
 

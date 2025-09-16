@@ -19,7 +19,12 @@ import { UploadFileDto } from './dto/create-file-processing.dto';
 import { UploadMultipleFilesDto } from './dto/upload-multiple.dto';
 import { multerConfig } from '@/core/config/multer.config';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
-import { User, UserPayload } from '@/auth/decorators/user.decorator';
+import { User } from '@/auth/decorators/user.decorator';
+import { UserPayload } from '@/auth/types/auth.types';
+import {
+  FileValidationPipe,
+  MultipleFilesValidationPipe,
+} from './pipes/file-validation.pipe';
 
 @ApiTags('File Processing')
 @Controller('file-processing')
@@ -39,7 +44,7 @@ export class FileProcessingController {
   })
   @UseInterceptors(FileInterceptor('file', multerConfig))
   async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(FileValidationPipe) file: Express.Multer.File,
     @Body() dto: UploadFileDto,
     @User() user: UserPayload
   ) {
@@ -58,7 +63,7 @@ export class FileProcessingController {
   })
   @UseInterceptors(FilesInterceptor('files', 5, multerConfig))
   async uploadMultipleFiles(
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles(MultipleFilesValidationPipe) files: Express.Multer.File[],
     @Body() dto: UploadMultipleFilesDto,
     @User() user: UserPayload
   ) {

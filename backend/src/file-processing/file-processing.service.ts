@@ -1,4 +1,10 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  Inject,
+} from '@nestjs/common';
+import { ConfigType } from '@nestjs/config';
 import {
   UploadFileDto,
   FileResponseDto,
@@ -6,10 +12,17 @@ import {
 import { UploadMultipleFilesDto } from './dto/upload-multiple.dto';
 import { PdfProcessingService } from './services/pdf-processing.service';
 import { TextProcessingService } from './services/text-processing.service';
-import { OpenRouterService } from '@/core/openrouter/openrouter.service';
-import { PrismaService } from '@/prisma/prisma.service';
-import { UserPayload } from '@/auth/decorators/user.decorator';
+import { UserPayload } from '@/auth/types/auth.types';
 import { unlink } from 'fs/promises';
+import {
+  ApiKeyMissingException,
+  TextExtractionException,
+  FlashcardServiceException,
+  UnsupportedFileTypeException,
+} from '@/core/exceptions/file-processing.exceptions';
+import { IUserRepository } from './repositories/user.repository';
+import { FlashcardStrategyFactory } from './factories/flashcard-strategy.factory';
+import fileProcessingConfig from '@/core/config/file-processing.config';
 
 @Injectable()
 export class FileProcessingService {
@@ -18,8 +31,10 @@ export class FileProcessingService {
   constructor(
     private readonly pdfProcessingService: PdfProcessingService,
     private readonly textProcessingService: TextProcessingService,
-    private readonly openRouterService: OpenRouterService,
-    private readonly prismaService: PrismaService
+    @Inject('IUserRepository') private readonly userRepository: IUserRepository,
+    private readonly flashcardStrategyFactory: FlashcardStrategyFactory,
+    @Inject(fileProcessingConfig.KEY)
+    private readonly config: ConfigType<typeof fileProcessingConfig>
   ) {}
 
   async uploadSingleFile(
@@ -48,16 +63,14 @@ export class FileProcessingService {
     };
 
     // Auto-parse file and generate flashcards
-    // Fetch user's OpenAI API key from database
-    const userRecord = await this.prismaService.user.findUnique({
-      where: { id: parseInt(user.sub) },
-      select: { openAiApiKey: true },
-    });
+    // Fetch user's API key using repository pattern
+    const userRecord = await this.userRepository.findUserApiKey(user.sub);
 
     if (!userRecord?.openAiApiKey) {
       fileResponse.flashcardGenerationStatus = 'failed';
-      fileResponse.flashcardError =
-        'OpenAI API key not found in user profile. Please add your API key in settings.';
+      const error = new ApiKeyMissingException();
+      const errorResponse = error.getResponse() as any;
+      fileResponse.flashcardError = errorResponse.reason;
       return fileResponse;
     }
 
@@ -71,14 +84,18 @@ export class FileProcessingService {
           `Generating flashcards for file: ${file.originalname}`
         );
 
-        const flashcards: any = await this.openRouterService.generateFlashcards(
+        // Use strategy pattern for flashcard generation
+        const strategy = this.flashcardStrategyFactory.getStrategyForApiKey(
+          userRecord.openAiApiKey
+        );
+        const flashcards = await strategy.generateFlashcards(
           extractedText,
           userRecord.openAiApiKey
         );
 
         fileResponse.flashcards = {
-          parsedFlashcards: flashcards.parsedFlashcards || [],
-          totalCards: flashcards.totalCards || 0,
+          parsedFlashcards: flashcards.parsedFlashcards,
+          totalCards: flashcards.totalCards,
         };
         fileResponse.flashcardGenerationStatus = 'success';
 
@@ -90,7 +107,12 @@ export class FileProcessingService {
         await this.deleteUploadedFile(file.path);
       } else {
         fileResponse.flashcardGenerationStatus = 'failed';
-        fileResponse.flashcardError = 'No text could be extracted from file';
+        const error = new TextExtractionException(
+          file.originalname,
+          'No text could be extracted from file'
+        );
+        const errorResponse = error.getResponse() as any;
+        fileResponse.flashcardError = errorResponse.reason;
         // Still delete the file even if no text was extracted
         await this.deleteUploadedFile(file.path);
       }
@@ -101,7 +123,15 @@ export class FileProcessingService {
         `Failed to generate flashcards for ${file.originalname}: ${errorMessage}`
       );
       fileResponse.flashcardGenerationStatus = 'failed';
-      fileResponse.flashcardError = errorMessage;
+
+      const flashcardError = new FlashcardServiceException(errorMessage, {
+        fileName: file.originalname,
+        fileSize: file.size,
+        mimeType: file.mimetype,
+      });
+      const errorResponse = flashcardError.getResponse() as any;
+      fileResponse.flashcardError = errorResponse.reason;
+
       // Delete the file even if flashcard generation failed
       await this.deleteUploadedFile(file.path);
     }
@@ -124,6 +154,9 @@ export class FileProcessingService {
       `Multiple files uploaded: ${files.length} files (${fileNames}), total size: ${totalSize} bytes`
     );
 
+    // Fetch user data once for all files
+    const userRecord = await this.userRepository.findUserApiKey(user.sub);
+
     const responses = await Promise.allSettled(
       files.map(async (file, index) => {
         const description = dto.descriptions?.[index] || undefined;
@@ -141,16 +174,11 @@ export class FileProcessingService {
         };
 
         // Auto-parse file and generate flashcards
-        // Fetch user's OpenAI API key from database (only once for all files)
-        const userRecord = await this.prismaService.user.findUnique({
-          where: { id: parseInt(user.sub) },
-          select: { openAiApiKey: true },
-        });
-
         if (!userRecord?.openAiApiKey) {
           fileResponse.flashcardGenerationStatus = 'failed';
-          fileResponse.flashcardError =
-            'OpenAI API key not found in user profile. Please add your API key in settings.';
+          const error = new ApiKeyMissingException();
+          const errorResponse = error.getResponse() as any;
+          fileResponse.flashcardError = errorResponse.reason;
           return fileResponse;
         }
 
@@ -164,15 +192,18 @@ export class FileProcessingService {
               `Generating flashcards for file: ${file.originalname}`
             );
 
-            const flashcards: any =
-              await this.openRouterService.generateFlashcards(
-                extractedText,
-                userRecord.openAiApiKey
-              );
+            // Use strategy pattern for flashcard generation
+            const strategy = this.flashcardStrategyFactory.getStrategyForApiKey(
+              userRecord.openAiApiKey
+            );
+            const flashcards = await strategy.generateFlashcards(
+              extractedText,
+              userRecord.openAiApiKey
+            );
 
             fileResponse.flashcards = {
-              parsedFlashcards: flashcards.parsedFlashcards || [],
-              totalCards: flashcards.totalCards || 0,
+              parsedFlashcards: flashcards.parsedFlashcards,
+              totalCards: flashcards.totalCards,
             };
             fileResponse.flashcardGenerationStatus = 'success';
 
@@ -258,13 +289,34 @@ export class FileProcessingService {
       if (file.mimetype === 'application/pdf') {
         return await this.pdfProcessingService.extractTextOnly(file.path);
       } else if (file.mimetype === 'text/plain' || this.isTextFile(file)) {
-        const result = await this.textProcessingService.processTextFromPath(
-          file.path
+        // Use streaming for large files to optimize memory usage
+        const stats = await import('fs').then((fs) =>
+          fs.promises.stat(file.path)
         );
-        return result.content;
+
+        if (stats.size > this.config.largeFileThreshold) {
+          this.logger.debug(
+            `Using streaming processing for large file: ${file.originalname} (${stats.size} bytes)`
+          );
+
+          const result = await this.textProcessingService.processLargeTextFile(
+            file.path,
+            {
+              streaming: this.config.enableStreaming,
+              chunkSize: this.config.chunkSize,
+            }
+          );
+          return result.content;
+        } else {
+          const result = await this.textProcessingService.processTextFromPath(
+            file.path
+          );
+          return result.content;
+        }
       } else {
-        throw new BadRequestException(
-          `Unsupported file type for text extraction: ${file.mimetype}`
+        throw new UnsupportedFileTypeException(
+          file.mimetype,
+          this.config.allowedMimeTypes
         );
       }
     } catch (error) {
@@ -278,7 +330,7 @@ export class FileProcessingService {
   }
 
   private generateFileId(): string {
-    return `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `file_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
 
   private async deleteUploadedFile(filePath: string): Promise<void> {

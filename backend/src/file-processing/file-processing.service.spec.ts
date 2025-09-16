@@ -1,9 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 import { FileProcessingService } from './file-processing.service';
 import { PdfProcessingService } from './services/pdf-processing.service';
 import { TextProcessingService } from './services/text-processing.service';
-import { OpenRouterService } from '@/core/openrouter/openrouter.service';
-import { PrismaService } from '@/prisma/prisma.service';
+import { FlashcardStrategyFactory } from './factories/flashcard-strategy.factory';
+import fileProcessingConfig from '@/core/config/file-processing.config';
 
 describe('FileProcessingService', () => {
   let service: FileProcessingService;
@@ -15,25 +16,36 @@ describe('FileProcessingService', () => {
 
     const mockTextProcessingService = {
       processTextFromPath: jest.fn(),
+      processLargeTextFile: jest.fn(),
     };
 
-    const mockOpenRouterService = {
-      generateFlashcards: jest.fn(),
+    const mockUserRepository = {
+      findUserApiKey: jest.fn().mockResolvedValue({
+        id: '1',
+        openAiApiKey: 'test-key',
+      }),
     };
 
-    const mockPrismaService = {
-      user: {
-        findUnique: jest.fn(),
-      },
+    const mockFlashcardStrategyFactory = {
+      getStrategyForApiKey: jest.fn().mockReturnValue({
+        generateFlashcards: jest.fn().mockResolvedValue({
+          parsedFlashcards: [{ question: 'Test?', answer: 'Test.' }],
+          totalCards: 1,
+        }),
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ConfigModule.forFeature(fileProcessingConfig)],
       providers: [
         FileProcessingService,
         { provide: PdfProcessingService, useValue: mockPdfProcessingService },
         { provide: TextProcessingService, useValue: mockTextProcessingService },
-        { provide: OpenRouterService, useValue: mockOpenRouterService },
-        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: 'IUserRepository', useValue: mockUserRepository },
+        {
+          provide: FlashcardStrategyFactory,
+          useValue: mockFlashcardStrategyFactory,
+        },
       ],
     }).compile();
 

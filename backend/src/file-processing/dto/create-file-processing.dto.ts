@@ -1,4 +1,10 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsEnum } from 'class-validator';
+import {
+  ProcessedFile,
+  TextExtractionResult,
+  ProcessingStatus,
+  Flashcard,
+} from '../types/file-processing.types';
 
 export class UploadFileDto {
   @IsOptional()
@@ -6,7 +12,8 @@ export class UploadFileDto {
   description?: string;
 }
 
-export class FileResponseDto {
+// Enhanced response DTO with proper typing
+export class FileResponseDto implements ProcessedFile {
   id: string;
   filename: string;
   originalname: string;
@@ -15,12 +22,48 @@ export class FileResponseDto {
   path: string;
   uploadedAt: Date;
   description?: string;
+
+  // Enhanced extraction result
   extractedText?: string;
+  textExtractionMeta?: Omit<TextExtractionResult, 'content'>;
+
+  // Enhanced flashcard result
   flashcards?: {
-    parsedFlashcards: Array<{ question: string; answer: string }>;
+    parsedFlashcards: Flashcard[];
     totalCards: number;
-    rawResponse?: any; // Original OpenRouter response
+    model?: string;
+    usage?: {
+      promptTokens: number;
+      completionTokens: number;
+      totalTokens: number;
+      cost?: number;
+    };
+    processingTimeMs?: number;
+    confidence?: number;
   };
-  flashcardGenerationStatus?: 'success' | 'failed' | 'skipped';
+
+  @IsEnum(['success', 'failed', 'skipped', 'processing', 'pending'])
+  flashcardGenerationStatus: ProcessingStatus;
+
   flashcardError?: string;
+
+  // Processing metadata
+  processingMeta?: {
+    startTime: Date;
+    endTime?: Date;
+    processingTimeMs?: number;
+    retryCount?: number;
+  };
+}
+
+// Batch response DTO
+export class BatchFileResponseDto {
+  files: FileResponseDto[];
+  summary: {
+    totalFiles: number;
+    successfulFiles: number;
+    failedFiles: number;
+    skippedFiles: number;
+    totalProcessingTimeMs: number;
+  };
 }

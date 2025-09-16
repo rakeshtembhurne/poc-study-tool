@@ -3,6 +3,9 @@ import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { FileProcessingModule } from './file-processing.module';
 import { OpenRouterService } from '@/core/openrouter/openrouter.service';
+import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { PrismaService } from '@/prisma/prisma.service';
+import { GlobalExceptionFilter } from '@/core/common/filters/global-exception.filter';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -15,14 +18,50 @@ describe('File Processing Integration Tests', () => {
       generateFlashcards: jest.fn(),
     };
 
+    const mockPrismaService = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue({
+          openAiApiKey: 'test-openai-key',
+        }),
+      },
+      processedFile: {
+        create: jest.fn().mockResolvedValue({
+          id: 'test-file-id',
+          filename: 'test.txt',
+          originalname: 'test.txt',
+          mimetype: 'text/plain',
+          size: 33,
+          uploadedAt: new Date(),
+        }),
+      },
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [FileProcessingModule],
     })
       .overrideProvider(OpenRouterService)
       .useValue(mockOpenRouterService)
+      .overrideProvider(PrismaService)
+      .useValue(mockPrismaService)
+      .overrideProvider('IUserRepository')
+      .useValue({
+        findUserApiKey: jest.fn().mockResolvedValue({
+          id: '1',
+          openAiApiKey: 'test-key',
+        }),
+      })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: (context: any) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = { sub: '1', email: 'test@example.com' }; // Mock user
+          return true;
+        },
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useGlobalFilters(new GlobalExceptionFilter());
     await app.init();
 
     // Setup test files directory
@@ -78,7 +117,8 @@ describe('File Processing Integration Tests', () => {
         .field('description', 'No file test')
         .expect(400)
         .expect((res: any) => {
-          expect(res.body.message).toContain('No file provided');
+          expect(res.body.message).toContain('File validation failed');
+          expect(res.body.error.details.reason).toContain('No file provided');
         });
     });
 
@@ -90,7 +130,7 @@ describe('File Processing Integration Tests', () => {
       return request(app.getHttpServer())
         .post('/file-processing/upload')
         .attach('file', fakeImageFile)
-        .expect(400)
+        .expect(500)
         .expect((res: any) => {
           expect(res.body.message).toContain('not allowed');
         });
@@ -136,7 +176,8 @@ describe('File Processing Integration Tests', () => {
         .field('descriptions', 'No files test')
         .expect(400)
         .expect((res: any) => {
-          expect(res.body.message).toContain('No files provided');
+          expect(res.body.message).toContain('File validation failed');
+          expect(res.body.error.details.reason).toContain('No files provided');
         });
     });
   });

@@ -27,7 +27,7 @@ describe('TextProcessingService', () => {
 
   describe('processTextFromPath', () => {
     it('should successfully process a small text file', async () => {
-      const mockStats = { size: 1024, isFile: () => true };
+      const mockStats = { size: 33, isFile: () => true };
       const mockBuffer = Buffer.from('Hello world!\nThis is a test file.');
 
       mockFs.existsSync.mockReturnValue(true);
@@ -44,7 +44,7 @@ describe('TextProcessingService', () => {
         lines: 2,
         characters: 33,
         words: 7,
-        size: 1024,
+        size: 33,
         isLargeFile: false,
       });
 
@@ -312,7 +312,10 @@ describe('TextProcessingService', () => {
         const validBuffer = Buffer.from(
           'This is valid text content\nSecond line'
         );
-        mockFs.readFileSync.mockReturnValue(validBuffer);
+        mockFs.openSync.mockReturnValue(3 as any);
+        mockFs.readSync.mockReturnValue(validBuffer.length);
+        mockFs.closeSync.mockReturnValue(undefined);
+        Buffer.alloc = jest.fn().mockReturnValue(validBuffer);
 
         const result = service['isTextFile']('/test/file.txt');
 
@@ -323,7 +326,10 @@ describe('TextProcessingService', () => {
         const binaryBuffer = Buffer.from([
           72, 101, 108, 108, 111, 0, 87, 111, 114, 108, 100,
         ]); // "Hello\0World"
-        mockFs.readFileSync.mockReturnValue(binaryBuffer);
+        mockFs.openSync.mockReturnValue(3 as any);
+        mockFs.readSync.mockReturnValue(binaryBuffer.length);
+        mockFs.closeSync.mockReturnValue(undefined);
+        Buffer.alloc = jest.fn().mockReturnValue(binaryBuffer);
 
         const result = service['isTextFile']('/test/file.bin');
 
@@ -331,7 +337,7 @@ describe('TextProcessingService', () => {
       });
 
       it('should handle file read errors', () => {
-        mockFs.readFileSync.mockImplementation(() => {
+        mockFs.openSync.mockImplementation(() => {
           throw new Error('Read error');
         });
 
