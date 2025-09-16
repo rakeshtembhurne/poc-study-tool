@@ -18,7 +18,7 @@ describe('CardController', () => {
           useValue: {
             createCard: jest.fn(),
             updateCard: jest.fn(),
-            getByDeckName: jest.fn(),
+            getByDeckId: jest.fn(),
             deleteById: jest.fn(),
           },
         },
@@ -84,30 +84,24 @@ describe('CardController', () => {
     });
   });
 
-  describe('getByDeckName', () => {
+  describe('getByDeckId', () => {
     it('should return cards for a deck', async () => {
       const mockResponse = {
         data: [{ id: 1, frontContent: 'Q', backContent: 'A' }],
         meta: { total: 1, page: 1, limit: 10, totalPages: 1 },
       };
-      (service.getByDeckName as jest.Mock).mockResolvedValue(mockResponse);
+      (service.getByDeckId as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await controller.getByDeckName(
-        'deck1',
-        1,
-        1,
-        10,
-        undefined
-      );
+      const result = await controller.getByDeckId(1, 1, 1, 10, undefined);
       expect(result).toEqual(mockResponse);
     });
 
     it('should throw NotFoundException if no cards found', async () => {
-      (service.getByDeckName as jest.Mock).mockRejectedValue(
+      (service.getByDeckId as jest.Mock).mockRejectedValue(
         new NotFoundException()
       );
 
-      await expect(controller.getByDeckName('deck1', 1, 1, 10)).rejects.toThrow(
+      await expect(controller.getByDeckId(1, 1, 1, 10)).rejects.toThrow(
         NotFoundException
       );
     });

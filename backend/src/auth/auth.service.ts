@@ -86,7 +86,10 @@ export class AuthService {
 
   async generateToken(userId: number | string, email: string): Promise<string> {
     try {
-      const payload: JwtPayload = { id: Number(userId), email }; // convert to string
+      const payload: JwtPayload = {
+        id: typeof userId === 'string' ? parseInt(userId) : userId,
+        email,
+      };
       return this.jwtService.sign(payload);
     } catch (error) {
       this.logger.error(

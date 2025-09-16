@@ -14,13 +14,11 @@ export const User = createParamDecorator(
     }
 
     const userId = request.user.id;
-    console.log('============================>', request.user);
 
     if (!userId) {
       throw new UnauthorizedException('User ID not found in JWT payload');
     }
 
-    console.log(data ? request.user[data] : userId);
-    return userId;
+    return data ? request.user[data] : userId;
   }
 );

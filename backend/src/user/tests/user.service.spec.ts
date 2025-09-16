@@ -26,6 +26,7 @@ describe('UserService', () => {
     reviews: [],
     ofMatrixEntries: [],
     statistics: [],
+    openAiApiKey: null,
   };
 
   const mockAuthService = {
@@ -34,7 +35,7 @@ describe('UserService', () => {
     generateToken: jest.fn().mockResolvedValue('mocked-jwt-token'),
     verifyToken: jest
       .fn()
-      .mockResolvedValue({ sub: 1, email: 'test@example.com' }),
+      .mockResolvedValue({ id: 1, email: 'test@example.com' }),
   };
 
   beforeEach(async () => {

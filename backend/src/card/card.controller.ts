@@ -40,7 +40,7 @@ export class CardController {
   }
 
   @Get(':deckId')
-  async getByDeckName(
+  async getByDeckId(
     @Param('deckId') deckId: number,
     @User('id') userId: number,
     @Query('page') page: number = 1,
