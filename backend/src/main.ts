@@ -19,7 +19,7 @@ async function bootstrap() {
     const configService = app.get(ConfigService);
     const port = configService.get<number>('app.port') || 8000;
     const apiPrefix = configService.get<string>('app.apiPrefix') || 'api/v1';
-    const corsOrigins = configService.get<string[]>('app.corsOrigins') || ['*'];
+    // const corsOrigins = configService.get<string[]>('app.corsOrigins') || ['*'];
 
     // Security middleware
     app.use(
@@ -35,7 +35,12 @@ async function bootstrap() {
       origin: ['http://localhost:3000'],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'x-api-key', 'x-request-id'],
+      allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'x-api-key',
+        'x-request-id',
+      ],
       exposedHeaders: ['x-request-id'],
     });
 

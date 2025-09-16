@@ -11,10 +11,10 @@ import { LoginDto } from './dto/login.dto';
 
 import { Logger, InternalServerErrorException } from '@nestjs/common';
 
-interface JwtPayload {
-  sub: string;
-  email: string;
-}
+// interface JwtPayload {
+//   sub: string;
+//   email: string;
+// }
 import { MailService } from '@/utils/mail.service';
 import { AuthPayload } from './types/auth.types';
 
