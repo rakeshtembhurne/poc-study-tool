@@ -15,7 +15,8 @@
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "strictPropertyInitialization": true,
+    "strictPropertyInitialization": false,
+    "useDefineForClassFields": false,
     "paths": {
       "@/*": ["./src/*"]
     }

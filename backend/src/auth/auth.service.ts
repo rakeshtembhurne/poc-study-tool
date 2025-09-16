@@ -11,11 +11,7 @@ import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { MailService } from '@/utils/mail.service';
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-}
+import { AuthPayload } from './types/auth.types';
 
 @Injectable()
 export class AuthService {
@@ -109,7 +105,7 @@ export class AuthService {
 
   async generateToken(userId: string | number, email: string): Promise<string> {
     try {
-      const payload: JwtPayload = { sub: String(userId), email }; // convert to string
+      const payload: AuthPayload = { id: String(userId), email }; // convert to string
       return this.jwtService.sign(payload);
     } catch (error) {
       this.logger.error(
@@ -118,9 +114,9 @@ export class AuthService {
       throw new InternalServerErrorException('Error generating token');
     }
   }
-  async verifyToken(token: string, secret?: string): Promise<JwtPayload> {
+  async verifyToken(token: string, secret?: string): Promise<AuthPayload> {
     try {
-      return this.jwtService.verify<JwtPayload>(token, {
+      return this.jwtService.verify<AuthPayload>(token, {
         secret: secret || process.env.JWT_SECRET,
       });
     } catch (error) {
@@ -143,7 +139,7 @@ export class AuthService {
           process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
         );
       }
-      const payload: JwtPayload = { sub: String(userId), email };
+      const payload: AuthPayload = { id: String(userId), email };
       return this.jwtService.sign(payload, {
         expiresIn: process.env.REFRESH_TOKEN_EXPIRY || '7d',
         secret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
@@ -166,11 +162,11 @@ export class AuthService {
       );
 
       const newAccessToken = await this.generateToken(
-        payload.sub,
+        payload.id,
         payload.email
       );
       const newRefreshToken = await this.generateRefreshToken(
-        payload.sub,
+        payload.id,
         payload.email,
         refreshToken
       );
@@ -258,7 +254,7 @@ export class AuthService {
 
       // 2. Find user
       const user = await this.prisma.user.findUnique({
-        where: { id: Number(payload.sub) }, // payload.sub = userId
+        where: { id: Number(payload.id) }, // payload.sub = userId
       });
 
       if (!user) {

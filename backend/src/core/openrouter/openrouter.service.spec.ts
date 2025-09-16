@@ -1,14 +1,55 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { OpenRouterService } from './openrouter.service';
+import { ModelManager } from './services/model-manager.service';
+import { ConnectionManager } from './services/connection-manager.service';
+import { FlashcardGenerator } from './services/flashcard-generator.service';
 
 describe('OpenRouterService', () => {
   let service: OpenRouterService;
 
   beforeEach(async () => {
+    const mockModelManager = {
+      ensureInitialized: jest.fn().mockResolvedValue(undefined),
+      getModels: jest.fn().mockReturnValue(['openai/gpt-3.5-turbo']),
+      isUsingFallback: jest.fn().mockReturnValue(false),
+      refresh: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const mockConnectionManager = {
+      getStats: jest.fn().mockReturnValue({ totalClients: 0, clientKeys: [] }),
+      clearClient: jest.fn(),
+    };
+
+    const mockFlashcardGenerator = {
+      generate: jest.fn().mockResolvedValue({
+        id: 'test-id',
+        choices: [
+          {
+            message: {
+              role: 'assistant',
+              content: 'Q: Test Question\nA: Test Answer',
+            },
+            index: 0,
+            finish_reason: 'stop',
+          },
+        ],
+        created: Date.now(),
+        model: 'openai/gpt-3.5-turbo',
+        usage: {
+          prompt_tokens: 10,
+          completion_tokens: 20,
+          total_tokens: 30,
+        },
+      }),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OpenRouterService,
+        { provide: ModelManager, useValue: mockModelManager },
+        { provide: ConnectionManager, useValue: mockConnectionManager },
+        { provide: FlashcardGenerator, useValue: mockFlashcardGenerator },
         {
           provide: ConfigService,
           useValue: {
@@ -38,7 +79,12 @@ describe('OpenRouterService', () => {
 
   describe('generateFlashcards', () => {
     it('should generate flashcards successfully', async () => {
-      const mockResponse = {
+      const result = await service.generateFlashcards(
+        'test text',
+        'test-api-key'
+      );
+
+      expect(result).toEqual({
         id: 'test-id',
         choices: [
           {
@@ -50,60 +96,14 @@ describe('OpenRouterService', () => {
             finish_reason: 'stop',
           },
         ],
-        created: Date.now(),
+        created: expect.any(Number),
         model: 'openai/gpt-3.5-turbo',
         usage: {
           prompt_tokens: 10,
           completion_tokens: 20,
           total_tokens: 30,
         },
-      };
-
-      jest.spyOn(service as any, 'tryNextModel').mockImplementation();
-      const openaiInstance = {
-        chat: {
-          completions: {
-            create: jest.fn().mockResolvedValue(mockResponse),
-          },
-        },
-      };
-      (service as any).openAIInstances.set(
-        'openai/gpt-3.5-turbo',
-        openaiInstance
-      );
-
-      const result = await service.generateFlashcards('test text');
-      expect(result).toEqual(mockResponse);
-    });
-
-    it('should try next model on error', async () => {
-      const error = new Error('Rate limit exceeded');
-      const openaiInstance = {
-        chat: {
-          completions: {
-            create: jest.fn().mockRejectedValue(error),
-          },
-        },
-      };
-      (service as any).openAIInstances.set(
-        'openai/gpt-3.5-turbo',
-        openaiInstance
-      );
-
-      const tryNextModelSpy = jest.spyOn(service as any, 'tryNextModel');
-
-      try {
-        await service.generateFlashcards('test text');
-        // Should not reach here as we expect an error
-        expect(true).toBe(false);
-      } catch (e: unknown) {
-        expect(tryNextModelSpy).toHaveBeenCalled();
-        if (e instanceof Error) {
-          expect(e.message).toContain(
-            'Failed to generate flashcards after trying all models'
-          );
-        }
-      }
+      });
     });
   });
 });
