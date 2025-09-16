@@ -7,6 +7,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCardDto } from '@/card/cardDto/createCard.dto';
 import { UpdateCardDto } from '@/card/cardDto/updateCard.dto';
+import { Prisma } from '@prisma/client';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class CardService {
@@ -19,23 +21,67 @@ export class CardService {
         message: 'Card created successfully',
         newCard,
       };
-    } catch (error: any) {
-      throw new InternalServerErrorException('Failed to create card', error);
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: 'Failed to create card',
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }
 
+  // async updateCard(id: number, data: UpdateCardDto, userId: number) {
+  //   try {
+  //     const card = await this.prisma.card.findUnique({ where: { id } });
+  //     if (!card) {
+  //       throw new NotFoundException(`Card with id ${id} not found`);
+  //     }
+  //     if (Number(card.userId) !== Number(userId)) {
+  //       throw new UnauthorizedException(`You cannot update this card`);
+  //     }
+  //     const updatedCard = await this.prisma.card.update({
+  //       where: { id },
+  //       data,
+  //     });
+  //     return {
+  //       message: `Card with id ${id} updated successfully`,
+  //       updatedCard,
+  //     };
+  //   } catch (error) {
+  //     throw new InternalServerErrorException({
+  //       message: `Failed to update card with id ${id}`,
+  //       error: error instanceof Error ? error.message : String(error),
+  //       stack: error instanceof Error ? error.stack : undefined,
+  //     });
+  //   }
+  // }
+
+  // inside your updateCard
   async updateCard(id: number, data: UpdateCardDto, userId: number) {
     const card = await this.prisma.card.findUnique({ where: { id } });
     if (!card) {
       throw new NotFoundException(`Card with id ${id} not found`);
     }
+
+    // console.log(card.userId)
+    // console.log(userId)
+
     if (Number(card.userId) !== Number(userId)) {
       throw new UnauthorizedException(`You cannot update this card`);
     }
+
+    const prismaData: any = {
+      ...data,
+      reviewHistory: data.reviewHistory
+        ? instanceToPlain(data.reviewHistory)
+        : [],
+    };
+
     const updatedCard = await this.prisma.card.update({
       where: { id },
-      data,
+      data: prismaData,
     });
+
     return {
       message: `Card with id ${id} updated successfully`,
       updatedCard,
@@ -49,42 +95,51 @@ export class CardService {
     limit: number,
     search?: string
   ) {
-    const skip = (page - 1) * limit;
-    const where: any = {
-      deck: deckName,
-      userId,
-    };
+    try {
+      const skip = (page - 1) * limit;
 
-    if (search) {
-      where.OR = [
-        { frontContent: { contains: search, mode: 'insensitive' } },
-        { backContent: { contains: search, mode: 'insensitive' } },
-      ];
+      const where: Prisma.CardWhereInput = {
+        deck: deckName,
+        userId,
+      };
+
+      if (search) {
+        where.OR = [
+          { frontContent: { contains: search, mode: 'insensitive' } },
+          { backContent: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+
+      const [cards, total] = await Promise.all([
+        this.prisma.card.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+        }),
+        this.prisma.card.count({ where }),
+      ]);
+
+      if (!cards.length) {
+        throw new NotFoundException(`No cards found for deck "${deckName}"`);
+      }
+
+      return {
+        data: cards,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
+      };
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: `Failed to fetch cards for deck "${deckName}"`,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
-
-    const [cards, total] = await Promise.all([
-      this.prisma.card.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.card.count({ where }),
-    ]);
-
-    if (!cards.length) {
-      throw new NotFoundException(`No cards found for deck "${deckName}"`);
-    }
-
-    return {
-      data: cards,
-      meta: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
-    };
   }
 
   async deleteById(id: number, userId: number) {
@@ -105,27 +160,11 @@ export class CardService {
       ) {
         throw error;
       }
-      throw new InternalServerErrorException(
-        `Failed to delete card with id ${id}: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
+      throw new InternalServerErrorException({
+        message: `Failed to delete card with id ${id}`,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }
-
-  // async deleteAll() {
-  //   try {
-  //     const count = await this.prisma.card.count();
-  //     if (count === 0) {
-  //       return { message: 'Table is already empty' };
-  //     }
-  //     const result = await this.prisma.card.deleteMany({});
-  //     return {
-  //       message: 'All cards deleted successfully',
-  //       deletedCount: result.count,
-  //     };
-  //   } catch (error) {
-  //     throw new InternalServerErrorException('Failed to delete all cards');
-  //   }
-  // }
 }

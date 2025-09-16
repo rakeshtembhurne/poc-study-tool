@@ -1,9 +1,16 @@
-import { IsNotEmpty, IsOptional, IsString, IsInt } from 'class-validator';
+// createCard.dto.ts
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsInt,
+  IsNumber,
+} from 'class-validator';
 
 export class CreateCardDto {
   @IsInt()
   @IsNotEmpty()
-  userId!: number; // ✅ notice the !
+  userId!: number;
 
   @IsString()
   @IsNotEmpty()
@@ -14,21 +21,26 @@ export class CreateCardDto {
   backContent!: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'deckName cannot be empty' })
-  deck?: string;
+  @IsNotEmpty({ message: 'deck cannot be empty' }) // 🔹 fixed message
+  deck!: string; // required when creating
 
+  @IsNumber()
   @IsOptional()
-  a_factor?: number;
+  aFactor?: number; // 🔹 fixed casing
 
+  @IsInt()
   @IsOptional()
-  repetition_count?: number;
+  repetitionCount?: number;
 
+  @IsInt()
   @IsOptional()
-  interval_days?: number;
+  intervalDays?: number;
 
+  @IsInt()
   @IsOptional()
-  lapses_count?: number;
+  lapsesCount?: number;
 
+  @IsString()
   @IsOptional()
-  source_type?: string;
+  sourceType?: string;
 }

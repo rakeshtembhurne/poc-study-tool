@@ -12,7 +12,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 
 interface JwtPayload {
-  sub: string;
+  id: number;
   email: string;
 }
 
@@ -88,9 +88,9 @@ export class AuthService {
     }
   }
 
-  async generateToken(userId: string | number, email: string): Promise<string> {
+  async generateToken(userId: number | string, email: string): Promise<string> {
     try {
-      const payload: JwtPayload = { sub: String(userId), email }; // convert to string
+      const payload: JwtPayload = { id: Number(userId), email }; // convert to string
       return this.jwtService.sign(payload);
     } catch (error) {
       this.logger.error(

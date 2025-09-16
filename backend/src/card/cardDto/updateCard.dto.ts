@@ -1,41 +1,12 @@
-// import { IsOptional, IsString, IsInt, IsNotEmpty } from 'class-validator';
-
-// export class UpdateCardDto {
-//   @IsString()
-//   @IsOptional()
-//   front_content?: string;
-
-//   @IsString()
-//   @IsOptional()
-//   back_content?: string;
-
-//   @IsString()
-//   @IsNotEmpty({ message: 'deckName cannot be empty' })
-//   deck?: string;
-
-//   @IsOptional()
-//   a_factor?: number;
-
-//   @IsOptional()
-//   repetition_count?: number;
-
-//   @IsOptional()
-//   interval_days?: number;
-
-//   @IsOptional()
-//   lapses_count?: number;
-
-//   @IsOptional()
-//   source_type?: string;
-// }
-
 import {
   IsOptional,
   IsString,
   IsInt,
   IsNumber,
-  IsNotEmpty,
+  ValidateNested,
 } from 'class-validator';
+import { ReviewHistoryDto } from './ReviewHistoryDto.dto';
+import { Type } from 'class-transformer';
 
 export class UpdateCardDto {
   @IsString()
@@ -47,8 +18,8 @@ export class UpdateCardDto {
   backContent?: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'deckName cannot be empty' })
-  deck?: string;
+  @IsOptional()
+  deck?: string; // optional for updates
 
   @IsNumber()
   @IsOptional()
@@ -70,8 +41,10 @@ export class UpdateCardDto {
   @IsOptional()
   sourceType?: string;
 
+  @ValidateNested({ each: true })
+  @Type(() => ReviewHistoryDto)
   @IsOptional()
-  reviewHistory?: any[];
+  reviewHistory?: ReviewHistoryDto[];
 
   @IsOptional()
   ofMatrixUpdates?: object;

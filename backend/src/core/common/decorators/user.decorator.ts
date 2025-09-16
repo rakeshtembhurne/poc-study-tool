@@ -1,8 +1,26 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import {
+  createParamDecorator,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 export const User = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext) => {
+  (data: keyof any, ctx: ExecutionContext) => {
     const request = ctx.switchToHttp().getRequest();
-    return request.user.sub;
+
+    // Validate user object exists
+    if (!request.user) {
+      throw new UnauthorizedException('Invalid or missing user payload in JWT');
+    }
+
+    const userId = request.user.id || request.user.sub;
+    console.log('============================>', request.user);
+
+    if (!userId) {
+      throw new UnauthorizedException('User ID not found in JWT payload');
+    }
+
+    console.log(data ? request.user[data] : userId);
+    return userId;
   }
 );
