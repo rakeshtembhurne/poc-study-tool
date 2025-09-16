@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   ReactNode,
 } from 'react';
 import authStorage from '@/lib/auth-storage';
@@ -39,53 +40,110 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isMountedRef = useRef(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize auth state on mount
+  // Initialize auth state on mount with proper token validation
   useEffect(() => {
-    const initializeAuth = () => {
+    const initializeAuth = async () => {
+      if (!isMountedRef.current) return;
+
       try {
+        // Check if we have a stored token
         const storedToken = authStorage.getToken();
+
         if (storedToken) {
-          setToken(storedToken);
-          // Try to get user data from localStorage
-          const userStr = localStorage.getItem('user');
-          if (userStr) {
-            const userData = JSON.parse(userStr);
-            setUser(userData);
+          // Token exists, validate it
+          if (authStorage.isTokenValid()) {
+            // Token is valid, restore auth state
+            if (isMountedRef.current) {
+              setToken(storedToken);
+
+              // Try to get user data from localStorage
+              const userStr = localStorage.getItem('user');
+              if (userStr) {
+                const userData = JSON.parse(userStr);
+                setUser(userData);
+              } else {
+                setUser({ id: '', email: '' }); // Placeholder user data
+              }
+            }
           } else {
-            setUser({ id: '', email: '' }); // Placeholder user data
+            // Token is expired, try to refresh
+            console.log('Token expired, attempting refresh...');
+            const refreshed = await refreshAuth();
+
+            if (!refreshed && isMountedRef.current) {
+              // Refresh failed, clear auth state
+              console.log('Token refresh failed, clearing auth state');
+              authStorage.clearAll();
+              localStorage.removeItem('user');
+            }
           }
+        } else {
+          // No token found, user needs to login
+          console.log('No token found, user needs to authenticate');
         }
       } catch (error) {
         console.error('Failed to initialize auth:', error);
-        authStorage.clearAll(); // Clear corrupted data
+        if (isMountedRef.current) {
+          authStorage.clearAll(); // Clear corrupted data
+          localStorage.removeItem('user');
+        }
       } finally {
-        setIsLoading(false);
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
       }
     };
 
     initializeAuth();
+
+    // Cleanup function
+    return () => {
+      isMountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, []);
 
   // Set up token expiration monitoring
   useEffect(() => {
-    if (!token) return;
+    if (!token || !isMountedRef.current) return;
 
     const checkTokenExpiration = async () => {
+      if (!isMountedRef.current) return;
+
       if (!authStorage.isTokenValid()) {
         // Try to refresh token before logging out
         const refreshed = await refreshAuth();
-        if (!refreshed) {
+        if (!refreshed && isMountedRef.current) {
           logout();
         }
       }
     };
 
     // Check token validity every minute
-    const interval = setInterval(checkTokenExpiration, 60000);
+    intervalRef.current = setInterval(checkTokenExpiration, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
   }, [token]);
+
+  // Component unmount cleanup
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
 
   const login = (
     newToken: string,
@@ -136,7 +194,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (response.ok && data.success && isMountedRef.current) {
         const success = authStorage.setToken(
           data.accessToken,
           data.expiresIn,
@@ -145,6 +203,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (success) {
           setToken(data.accessToken);
+
+          // Restore user data if we don't have it
+          if (!user && userStr) {
+            const userData = JSON.parse(userStr);
+            setUser(userData);
+          }
+
           return true;
         }
       }
