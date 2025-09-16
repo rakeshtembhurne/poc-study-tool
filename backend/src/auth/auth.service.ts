@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { MailService } from '@/utils/mail.service';
 
 interface JwtPayload {
   sub: string;
@@ -22,7 +23,8 @@ export class AuthService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly mailService: MailService
   ) {}
 
   async register(dto: RegisterDto) {
@@ -200,8 +202,86 @@ export class AuthService {
 
     const resetToken = this.jwtService.sign(
       { sub: user.id, email },
-      { expiresIn: '15m' }
+      {
+        expiresIn: '15m',
+        secret: process.env.JWT_RESET_SECRET || process.env.JWT_SECRET,
+      }
     );
+
+    // Construct reset link (Frontend route to handle reset)
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    // Send email
+    await this.mailService.sendMail(
+      email,
+      'Reset Your Password',
+      `
+  <div style="font-family: Arial, sans-serif; background-color: #f0f0f0; padding: 50px 0;">
+    <div style="max-width: 600px; margin: auto; background-color: #ffffff; padding: 40px; border-radius: 8px; border: 1px solid #e0e0e0;">
+      <h2 style="text-align: center; color: #333333;">Forgot Your Password?</h2>
+      <p style="text-align: center; color: #555555; font-size: 16px; line-height: 1.5;">
+        No worries! Click the button below to reset your password. If you didn’t request this, you can safely ignore this email.
+      </p>
+
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${resetLink}" 
+           style="background-color: #007BFF; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+           Reset Password
+        </a>
+      </div>
+
+      <p style="text-align: center; color: #999999; font-size: 14px; line-height: 1.4;">
+        If the button doesn’t work, paste this link into your browser:<br>
+        <a href="${resetLink}" style="color: #007BFF; word-break: break-all;">${resetLink}</a>
+      </p>
+
+      <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 30px 0;">
+
+      <p style="text-align: center; color: #cccccc; font-size: 12px;">
+        © 2025 Your Company. All rights reserved.
+      </p>
+    </div>
+  </div>
+  `
+    );
+
     return { message: 'If this email exists, a reset link has been sent.' };
+  }
+
+  async resetPasswordConfirm(resetToken: string, newPassword: string) {
+    try {
+      // 1. Verify token
+      const payload = await this.verifyToken(
+        resetToken,
+        process.env.JWT_RESET_SECRET || process.env.JWT_SECRET
+      );
+
+      // 2. Find user
+      const user = await this.prisma.user.findUnique({
+        where: { id: Number(payload.sub) }, // payload.sub = userId
+      });
+
+      if (!user) {
+        throw new BadRequestException('Invalid token or user not found');
+      }
+
+      // 3. Hash the new password
+      const hashedPassword = await this.hashPassword(newPassword);
+
+      // 4. Update user’s password
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { password: hashedPassword },
+      });
+
+      return { message: 'Password reset successful' };
+    } catch (error) {
+      this.logger.error(
+        `Error resetting password: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+      throw new BadRequestException('Invalid or expired token');
+    }
   }
 }
