@@ -5,6 +5,8 @@ import { AppModule } from '../src/app.module';
 
 describe('Auth Module (e2e)', () => {
   let app: INestApplication;
+  let userId: string;
+  let refreshToken: string;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -76,9 +78,14 @@ describe('Auth Module (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
         .send(user)
-        .expect(201);
+        .expect(200);
 
-      expect(res.body).toHaveProperty('accessToken'); // match camelCase from AuthService
+      expect(res.body).toHaveProperty('accessToken');
+      expect(res.body).toHaveProperty('refreshToken');
+      expect(res.body).toHaveProperty('userId');
+
+      userId = res.body.userId as string;
+      refreshToken = res.body.refreshToken as string;
     });
 
     it('should login another registered user (201)', async () => {
@@ -87,7 +94,7 @@ describe('Auth Module (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
         .send(user)
-        .expect(201);
+        .expect(200);
 
       expect(res.body).toHaveProperty('accessToken');
     });
@@ -108,6 +115,47 @@ describe('Auth Module (e2e)', () => {
         .post('/auth/login')
         .send(user)
         .expect(400);
+    });
+  });
+
+  describe('POST /auth/refresh-token', () => {
+    it('should return new tokens with valid refresh token (201)', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/refresh-token')
+        .send({
+          userId,
+          refreshToken,
+        })
+        .expect(200);
+
+      expect(res.body).toHaveProperty('accessToken');
+      expect(res.body).toHaveProperty('refreshToken');
+
+      // update refreshToken for chaining
+      refreshToken = res.body.refreshToken;
+    });
+
+    it('should fail with invalid refresh token (401)', async () => {
+      await request(app.getHttpServer())
+        .post('/auth/refresh-token')
+        .send({
+          userId,
+          refreshToken: 'invalid-token',
+        })
+        .expect(401);
+    });
+  });
+
+  describe('POST /auth/reset-password', () => {
+    it('should generate reset token and log it', async () => {
+      const email = 'user1@example.com';
+
+      const res = await request(app.getHttpServer())
+        .post('/auth/reset-password')
+        .send({ email })
+        .expect(200);
+
+      expect(res.body).toHaveProperty('message');
     });
   });
 });

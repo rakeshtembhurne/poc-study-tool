@@ -5,6 +5,11 @@ import { AuthService } from '../auth/auth.service';
 import { AuthController } from '../auth/auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '../core/config/config.module';
+import { MailService } from '@/utils/mail.service';
+
+if (!process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined');
+}
 
 @Module({
   imports: [
@@ -23,7 +28,7 @@ import { ConfigModule } from '../core/config/config.module';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService],
+  providers: [AuthService, MailService],
   controllers: [AuthController],
   exports: [AuthService],
 })
