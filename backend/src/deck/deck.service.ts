@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDeckDto } from '@/deck/dto/create.dto';
 import { UpdateDeckDto } from '@/deck/dto/update-deck.dto';
@@ -7,11 +12,21 @@ import { Prisma } from '@prisma/client';
 @Injectable()
 export class DecksService {
   constructor(private readonly prisma: PrismaService) {}
-
-  async create(createDeckDto: CreateDeckDto) {
-    return this.prisma.deck.create({ data: createDeckDto });
+  async create(createDeckDto: CreateDeckDto & { userId: number }) {
+    try {
+      return await this.prisma.deck.create({ data: createDeckDto });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(
+          `A deck with the title "${createDeckDto.title}" already exists for this user.`
+        );
+      }
+      throw error;
+    }
   }
-
   async findAll({
     page = 1,
     limit = 10,
@@ -20,6 +35,7 @@ export class DecksService {
     sortBy,
     sortOrder,
     search,
+    requestingUserId,
   }: {
     page?: number;
     limit?: number;
@@ -28,14 +44,22 @@ export class DecksService {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
     search?: string;
+    requestingUserId?: number;
   }) {
     page = Math.max(Number(page) || 1, 1);
     limit = Math.max(Number(limit) || 10, 1);
     const skip = (page - 1) * limit;
 
     const whereClause: Prisma.DeckWhereInput = {};
-    if (publicOnly) whereClause.isPublic = true;
-    if (userId) whereClause.userId = userId;
+
+    if (userId || !publicOnly) {
+      whereClause.userId = userId ?? requestingUserId;
+    }
+
+    if (publicOnly || (userId && userId !== requestingUserId)) {
+      whereClause.isPublic = true;
+    }
+
     if (search) {
       whereClause.OR = [
         { title: { contains: search, mode: 'insensitive' } },
@@ -62,6 +86,14 @@ export class DecksService {
         skip,
         take: limit,
         orderBy,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
+        },
       }),
       this.prisma.deck.count({ where: whereClause }),
     ]);
@@ -77,7 +109,7 @@ export class DecksService {
         hasPreviousPage: page > 1,
         appliedFilters: {
           publicOnly,
-          userId,
+          userId: userId ?? requestingUserId,
           sortBy: sortBy || 'createdAt',
           sortOrder: sortOrder || 'desc',
           search: search || null,
@@ -86,17 +118,45 @@ export class DecksService {
     };
   }
 
-  async findOne(id: number) {
-    const deck = await this.prisma.deck.findUnique({ where: { id } });
-    if (!deck) throw new NotFoundException(`Deck with ID ${id} not found`);
+  async findOne(id: number, requestingUserId: number) {
+    const deck = await this.prisma.deck.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!deck) {
+      throw new NotFoundException(`Deck with ID ${id} not found`);
+    }
+
+    if (deck.userId !== requestingUserId && !deck.isPublic) {
+      throw new ForbiddenException(
+        'You do not have permission to access this deck'
+      );
+    }
+
     return deck;
   }
 
-  async update(id: number, updateDeckDto: UpdateDeckDto) {
+  async update(
+    id: number,
+    updateDeckDto: UpdateDeckDto,
+    requestingUserId: number
+  ) {
     try {
       const existingDeck = await this.prisma.deck.findUnique({ where: { id } });
-      if (!existingDeck)
+      if (!existingDeck) {
         throw new NotFoundException(`Deck with ID ${id} not found`);
+      }
+      if (existingDeck.userId !== requestingUserId) {
+        throw new ForbiddenException('You can only update your own decks');
+      }
 
       return this.prisma.deck.update({
         where: { id },
@@ -108,11 +168,14 @@ export class DecksService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: number, requestingUserId: number) {
     try {
       const existingDeck = await this.prisma.deck.findUnique({ where: { id } });
       if (!existingDeck) {
         throw new NotFoundException(`Deck with ID ${id} not found`);
+      }
+      if (existingDeck.userId !== requestingUserId) {
+        throw new ForbiddenException('You can only delete your own decks');
       }
 
       const result = await this.prisma.$transaction([

@@ -12,7 +12,4 @@ export class CreateDeckDto {
   @IsBoolean()
   @IsOptional()
   isPublic?: boolean = false;
-
-  @IsNotEmpty()
-  userId: number;
 }
