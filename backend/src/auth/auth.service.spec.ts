@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../utils/mail.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -24,6 +25,14 @@ describe('AuthService', () => {
             verify: jest
               .fn()
               .mockReturnValue({ id: 'user-id', email: 'test@example.com' }),
+          },
+        },
+        {
+          provide: MailService,
+          useValue: {
+            sendMail: jest
+              .fn()
+              .mockResolvedValue({ messageId: 'test-message-id' }),
           },
         },
       ],
@@ -81,7 +90,9 @@ describe('AuthService', () => {
       const payload = await service.verifyToken(token);
 
       expect(payload).toEqual({ id: 'user-id', email: 'test@example.com' });
-      expect(jwtService.verify).toHaveBeenCalledWith(token);
+      expect(jwtService.verify).toHaveBeenCalledWith(token, {
+        secret: process.env.JWT_SECRET,
+      });
     });
   });
 });

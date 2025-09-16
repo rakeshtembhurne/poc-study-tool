@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module';
 import { OpenRouterModule } from './core/openrouter/openrouter.module';
 import { CardModule } from './card/card.module';
 import { FileProcessingModule } from '@/file-processing/file-processing.module';
+import { DeckModule } from '@/deck/deck.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { FileProcessingModule } from '@/file-processing/file-processing.module';
     UserModule,
     CardModule,
     FileProcessingModule,
+    DeckModule,
   ],
   controllers: [AppController],
   providers: [AppService],
