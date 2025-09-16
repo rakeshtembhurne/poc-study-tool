@@ -13,6 +13,7 @@ describe('UserService', () => {
     id: 1,
     email: 'test@example.com',
     password: 'hashedPassword',
+    openAiApiKey: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     sm15Parameters: {},
@@ -26,7 +27,6 @@ describe('UserService', () => {
     reviews: [],
     ofMatrixEntries: [],
     statistics: [],
-    openAiApiKey: null,
   };
 
   const mockAuthService = {

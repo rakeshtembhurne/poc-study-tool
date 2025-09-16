@@ -7,6 +7,8 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { OpenRouterModule } from './core/openrouter/openrouter.module';
 import { CardModule } from './card/card.module';
+import { FileProcessingModule } from '@/file-processing/file-processing.module';
+
 @Module({
   imports: [
     ConfigModule,
@@ -15,6 +17,7 @@ import { CardModule } from './card/card.module';
     OpenRouterModule,
     UserModule,
     CardModule,
+    FileProcessingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

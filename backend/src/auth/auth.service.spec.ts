@@ -23,7 +23,7 @@ describe('AuthService', () => {
             sign: jest.fn().mockReturnValue('test-token'),
             verify: jest
               .fn()
-              .mockReturnValue({ id: 1, email: 'test@example.com' }),
+              .mockReturnValue({ id: 'user-id', email: 'test@example.com' }),
           },
         },
       ],
@@ -71,11 +71,7 @@ describe('AuthService', () => {
 
       const token = await service.generateToken(userId, email);
       expect(token).toBe('test-token');
-      // expect(jwtService.sign).toHaveBeenCalledWith({ sub: userId, email });
-      expect(jwtService.sign).toHaveBeenCalledWith({
-        id: expect.any(Number),
-        email,
-      });
+      expect(jwtService.sign).toHaveBeenCalledWith({ id: userId, email });
     });
   });
 
@@ -84,7 +80,7 @@ describe('AuthService', () => {
       const token = 'test-token';
       const payload = await service.verifyToken(token);
 
-      expect(payload).toEqual({ id: 1, email: 'test@example.com' });
+      expect(payload).toEqual({ id: 'user-id', email: 'test@example.com' });
       expect(jwtService.verify).toHaveBeenCalledWith(token);
     });
   });
