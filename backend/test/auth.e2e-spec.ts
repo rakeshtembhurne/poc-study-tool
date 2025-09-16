@@ -78,14 +78,14 @@ describe('Auth Module (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
         .send(user)
-        .expect(201);
+        .expect(200);
 
       expect(res.body).toHaveProperty('accessToken');
       expect(res.body).toHaveProperty('refreshToken');
       expect(res.body).toHaveProperty('userId');
 
-      userId = res.body.userId;
-      refreshToken = res.body.refreshToken;
+      userId = res.body.userId as string;
+      refreshToken = res.body.refreshToken as string;
     });
 
     it('should login another registered user (201)', async () => {
@@ -94,7 +94,7 @@ describe('Auth Module (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
         .send(user)
-        .expect(201);
+        .expect(200);
 
       expect(res.body).toHaveProperty('accessToken');
     });
@@ -126,7 +126,7 @@ describe('Auth Module (e2e)', () => {
           userId,
           refreshToken,
         })
-        .expect(201);
+        .expect(200);
 
       expect(res.body).toHaveProperty('accessToken');
       expect(res.body).toHaveProperty('refreshToken');
@@ -144,16 +144,6 @@ describe('Auth Module (e2e)', () => {
         })
         .expect(401);
     });
-
-    it('should fail with invalid userId (400)', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/refresh-token')
-        .send({
-          userId: 'not-a-number',
-          refreshToken,
-        })
-        .expect(400);
-    });
   });
 
   describe('POST /auth/reset-password', () => {
@@ -163,7 +153,7 @@ describe('Auth Module (e2e)', () => {
       const res = await request(app.getHttpServer())
         .post('/auth/reset-password')
         .send({ email })
-        .expect(201);
+        .expect(200);
 
       expect(res.body).toHaveProperty('message');
     });

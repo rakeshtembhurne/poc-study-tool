@@ -197,7 +197,7 @@ export class AuthService {
     }
 
     const resetToken = this.jwtService.sign(
-      { sub: user.id, email },
+      { id: user.id, email },
       {
         expiresIn: '15m',
         secret: process.env.JWT_RESET_SECRET || process.env.JWT_SECRET,
@@ -254,7 +254,7 @@ export class AuthService {
 
       // 2. Find user
       const user = await this.prisma.user.findUnique({
-        where: { id: Number(payload.id) }, // payload.sub = userId
+        where: { id: Number(payload.id) }, // payload.id = userId
       });
 
       if (!user) {
