@@ -22,4 +22,4 @@ import { FileProcessingModule } from '@/file-processing/file-processing.module';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
