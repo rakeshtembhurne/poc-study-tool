@@ -26,10 +26,7 @@ export class DecksController {
   constructor(private readonly decksService: DecksService) {}
 
   @Post()
-  create(
-    @Body() createDeckDto: CreateDeckDto,
-    @User() user: AuthPayload
-  ) {
+  create(@Body() createDeckDto: CreateDeckDto, @User() user: AuthPayload) {
     // Ensure the deck is created for the authenticated user
     const deckData = {
       ...createDeckDto,
@@ -98,10 +95,7 @@ export class DecksController {
   }
 
   @Delete(':id')
-  remove(
-    @User() user: AuthPayload,
-    @Param('id', ParseIntPipe) id: number
-  ) {
+  remove(@User() user: AuthPayload, @Param('id', ParseIntPipe) id: number) {
     return this.decksService.remove(id, parseInt(user.id));
   }
 }
