@@ -4,11 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Settings, User } from 'lucide-react';
+import { User, Settings } from 'lucide-react';
 
 const settingsNavItems = [
   { href: '/settings/profile', label: 'Profile', icon: User },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/settings/profile-settings', label: 'Settings', icon: Settings },
 ];
 
 export default function SettingsLayout({
