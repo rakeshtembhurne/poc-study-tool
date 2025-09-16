@@ -20,9 +20,13 @@ export class CreateCardDto {
   @IsNotEmpty()
   backContent!: string;
 
-  @IsString()
-  @IsNotEmpty({ message: 'deck cannot be empty' }) // 🔹 fixed message
-  deck!: string; // required when creating
+  // @IsString()
+  // @IsNotEmpty({ message: 'deck cannot be empty' }) // 🔹 fixed message
+  // deck!: string; // required when creating
+
+  @IsInt()
+  @IsNotEmpty({ message: 'deckId is required' })
+  deckId!: number; // ✅ required foreign key
 
   @IsNumber()
   @IsOptional()

@@ -39,16 +39,16 @@ export class CardController {
     return this.cardService.updateCard(id, updateCardDto, userId);
   }
 
-  @Get(':deckName')
+  @Get(':deckId')
   async getByDeckName(
-    @Param('deckName') deckName: string,
+    @Param('deckId') deckId: number,
     @User('id') userId: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
     @Query('search') search?: string
   ) {
-    return this.cardService.getByDeckName(
-      deckName,
+    return this.cardService.getByDeckId(
+      deckId,
       Number(userId),
       page,
       limit,

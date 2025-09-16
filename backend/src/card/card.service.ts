@@ -30,41 +30,12 @@ export class CardService {
     }
   }
 
-  // async updateCard(id: number, data: UpdateCardDto, userId: number) {
-  //   try {
-  //     const card = await this.prisma.card.findUnique({ where: { id } });
-  //     if (!card) {
-  //       throw new NotFoundException(`Card with id ${id} not found`);
-  //     }
-  //     if (Number(card.userId) !== Number(userId)) {
-  //       throw new UnauthorizedException(`You cannot update this card`);
-  //     }
-  //     const updatedCard = await this.prisma.card.update({
-  //       where: { id },
-  //       data,
-  //     });
-  //     return {
-  //       message: `Card with id ${id} updated successfully`,
-  //       updatedCard,
-  //     };
-  //   } catch (error) {
-  //     throw new InternalServerErrorException({
-  //       message: `Failed to update card with id ${id}`,
-  //       error: error instanceof Error ? error.message : String(error),
-  //       stack: error instanceof Error ? error.stack : undefined,
-  //     });
-  //   }
-  // }
-
   // inside your updateCard
   async updateCard(id: number, data: UpdateCardDto, userId: number) {
     const card = await this.prisma.card.findUnique({ where: { id } });
     if (!card) {
       throw new NotFoundException(`Card with id ${id} not found`);
     }
-
-    // console.log(card.userId)
-    // console.log(userId)
 
     if (Number(card.userId) !== Number(userId)) {
       throw new UnauthorizedException(`You cannot update this card`);
@@ -88,8 +59,8 @@ export class CardService {
     };
   }
 
-  async getByDeckName(
-    deckName: string,
+  async getByDeckId(
+    deckId: number,
     userId: number,
     page: number,
     limit: number,
@@ -99,7 +70,7 @@ export class CardService {
       const skip = (page - 1) * limit;
 
       const where: Prisma.CardWhereInput = {
-        deck: deckName,
+        deckId,
         userId,
       };
 
@@ -121,7 +92,7 @@ export class CardService {
       ]);
 
       if (!cards.length) {
-        throw new NotFoundException(`No cards found for deck "${deckName}"`);
+        throw new NotFoundException(`No cards found for deck "${deckId}"`);
       }
 
       return {
@@ -134,8 +105,12 @@ export class CardService {
         },
       };
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error; // let NestJS handle 404 properly
+      }
+
       throw new InternalServerErrorException({
-        message: `Failed to fetch cards for deck "${deckName}"`,
+        message: `Failed to fetch cards for deck "${deckId}"`,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
       });

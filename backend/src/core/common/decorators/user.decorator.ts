@@ -13,7 +13,7 @@ export const User = createParamDecorator(
       throw new UnauthorizedException('Invalid or missing user payload in JWT');
     }
 
-    const userId = request.user.id || request.user.sub;
+    const userId = request.user.id;
     console.log('============================>', request.user);
 
     if (!userId) {
