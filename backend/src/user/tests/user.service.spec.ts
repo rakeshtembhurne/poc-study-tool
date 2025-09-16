@@ -13,6 +13,7 @@ describe('UserService', () => {
     id: 1,
     email: 'test@example.com',
     password: 'hashedPassword',
+    openAiApiKey: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     sm15Parameters: {},
@@ -34,7 +35,7 @@ describe('UserService', () => {
     generateToken: jest.fn().mockResolvedValue('mocked-jwt-token'),
     verifyToken: jest
       .fn()
-      .mockResolvedValue({ sub: 1, email: 'test@example.com' }),
+      .mockResolvedValue({ id: 1, email: 'test@example.com' }),
   };
 
   beforeEach(async () => {

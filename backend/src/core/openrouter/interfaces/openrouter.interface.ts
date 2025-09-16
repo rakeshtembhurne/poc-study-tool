@@ -34,6 +34,9 @@ export interface OpenRouterResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+  // Extended fields for parsed flashcards
+  parsedFlashcards?: FlashCard[];
+  totalCards?: number;
 }
 
 export interface FlashCard {
