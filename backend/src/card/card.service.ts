@@ -30,7 +30,6 @@ export class CardService {
     }
   }
 
-  // inside your updateCard
   async updateCard(id: number, data: UpdateCardDto, userId: number) {
     const card = await this.prisma.card.findUnique({ where: { id } });
     if (!card) {

@@ -17,10 +17,6 @@ export class UpdateCardDto {
   @IsOptional()
   backContent?: string;
 
-  // @IsString()
-  // @IsOptional()
-  // deck?: string; // optional for updates
-
   @IsNumber()
   @IsOptional()
   deckId?: number;
