@@ -11,44 +11,49 @@ import {
   Card as CardType,
   FileValidationConfig,
   CreationMethod,
+  FileCardData,
 } from '@/types/card';
 import FileDropZone from './FileDropZone';
 import UploadProgress from './UploadProgress';
 import ViewCardsDialog from './ViewCardsDialog';
 
 export default function FileUpload() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [parsedCards, setParsedCards] = useState<CardType[]>([]);
+  const [fileCardData, setFileCardData] = useState<FileCardData[]>([]);
   const [deckName, setDeckName] = useState<string>('');
   const [creationMethod, setCreationMethod] = useState<CreationMethod>('file');
-  const [cardCount, setCardCount] = useState<number>(0);
+  const [totalCardCount, setTotalCardCount] = useState<number>(0);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showCards, setShowCards] = useState<boolean>(false);
 
-  const handleFileSelect = (selectedFile: File) => {
+  const handleFilesSelect = (selectedFiles: File[]) => {
     setError(null);
-    setFile(selectedFile);
-    setParsedCards([]);
-    setCardCount(0);
+    setFiles(selectedFiles);
+    setFileCardData([]);
+    setTotalCardCount(0);
     setShowCards(false);
     setProgress(0);
     setIsUploading(false);
     setUploadError(null);
   };
 
-  const handleFileRemove = () => {
-    setFile(null);
-    setError(null);
-    setParsedCards([]);
-    setCardCount(0);
-    setShowCards(false);
-    setProgress(0);
-    setUploadError(null);
-    setIsUploading(false);
+  const handleFileRemove = (index: number) => {
+    const updatedFiles = files.filter((_, i) => i !== index);
+    setFiles(updatedFiles);
+
+    if (updatedFiles.length === 0) {
+      setError(null);
+      setFileCardData([]);
+      setTotalCardCount(0);
+      setShowCards(false);
+      setProgress(0);
+      setUploadError(null);
+      setIsUploading(false);
+    }
   };
 
   const validationConfig: FileValidationConfig = {
@@ -91,8 +96,8 @@ export default function FileUpload() {
   };
 
   const handleUpload = async () => {
-    if (!file) {
-      setError('Please select a file first.');
+    if (files.length === 0) {
+      setError('Please select at least one file first.');
       return;
     }
     if (error) return;
@@ -107,10 +112,26 @@ export default function FileUpload() {
     setUploadError(null);
     setShowCards(false);
 
-    // read file
-    const cards = await parseFileContent(file);
-    setCardCount(cards.length);
-    setParsedCards(cards);
+    // Process all files
+    const allFileCardData: FileCardData[] = [];
+    let totalCards = 0;
+
+    for (const file of files) {
+      try {
+        const cards = await parseFileContent(file);
+        allFileCardData.push({ file, cards });
+        totalCards += cards.length;
+      } catch {
+        allFileCardData.push({
+          file,
+          cards: [],
+          error: `Failed to parse ${file.name}`,
+        });
+      }
+    }
+
+    setFileCardData(allFileCardData);
+    setTotalCardCount(totalCards);
 
     // simulate progress
     const interval = setInterval(() => {
@@ -160,7 +181,7 @@ export default function FileUpload() {
                 <Button
                   variant={creationMethod === 'manual' ? 'default' : 'outline'}
                   onClick={() => setCreationMethod('manual')}
-                  className="flex items-center gap-2 px-6 py-3"
+                  className="flex items-center gap-2"
                 >
                   <Edit className="h-4 w-4" />
                   Manual Form
@@ -168,7 +189,7 @@ export default function FileUpload() {
                 <Button
                   variant={creationMethod === 'file' ? 'default' : 'outline'}
                   onClick={() => setCreationMethod('file')}
-                  className="flex items-center gap-2 px-6 py-3"
+                  className="flex items-center gap-2"
                 >
                   <Upload className="h-4 w-4" />
                   File Upload
@@ -204,9 +225,9 @@ export default function FileUpload() {
               </div>
 
               <FileDropZone
-                file={file}
+                files={files}
                 isDragging={isDragging}
-                onFileSelect={handleFileSelect}
+                onFilesSelect={handleFilesSelect}
                 onFileRemove={handleFileRemove}
                 onDragStateChange={setIsDragging}
                 onError={setError}
@@ -219,7 +240,7 @@ export default function FileUpload() {
                 </Alert>
               )}
 
-              {file && !showCards && (
+              {files.length > 0 && !showCards && (
                 <div className="flex gap-3 pt-4">
                   <Button
                     onClick={handleUpload}
@@ -228,9 +249,15 @@ export default function FileUpload() {
                     className="flex-1 text-base font-medium"
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    {isUploading ? 'Uploading...' : 'Upload File'}
+                    {isUploading
+                      ? 'Processing Files...'
+                      : `Upload ${files.length} File${files.length > 1 ? 's' : ''}`}
                   </Button>
-                  <Button variant="outline" onClick={handleFileRemove}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setFiles([])}
+                    className="flex-1 text-base font-medium" // ✅ add same class here
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -244,13 +271,55 @@ export default function FileUpload() {
                 </Alert>
               )}
 
-              {showCards && cardCount > 0 && (
+              {showCards && totalCardCount > 0 && (
                 <div className="space-y-4">
-                  <ViewCardsDialog
-                    file={file}
-                    parsedCards={parsedCards}
-                    cardCount={cardCount}
-                  />
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <h3 className="font-medium text-foreground mb-3">
+                      Processing Results ({totalCardCount} total cards from{' '}
+                      {fileCardData.length} file
+                      {fileCardData.length > 1 ? 's' : ''})
+                    </h3>
+                    <div className="space-y-4">
+                      {fileCardData.map((data, index) => (
+                        <div
+                          key={index}
+                          className="bg-background rounded-lg p-4 border"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">
+                                {data.file.name}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {data.cards.length} cards
+                            </span>
+                          </div>
+
+                          {data.error && (
+                            <div className="mb-3">
+                              <p className="text-xs text-destructive">
+                                {data.error}
+                              </p>
+                            </div>
+                          )}
+
+                          {data.cards.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="text-sm text-muted-foreground">
+                                Preview:{' '}
+                                {data.cards[0].question.substring(0, 50)}...
+                              </div>
+                              <div className="flex justify-end">
+                                <ViewCardsDialog fileCardData={data} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>

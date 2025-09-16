@@ -5,7 +5,7 @@ export interface Card {
 }
 
 export interface FileUploadState {
-  file: File | null;
+  files: File[];
   error: string | null;
   isDragging: boolean;
   progress: number;
@@ -13,6 +13,12 @@ export interface FileUploadState {
   parsedCards: Card[];
   deckName: string;
   cardCount: number;
+}
+
+export interface FileCardData {
+  file: File;
+  cards: Card[];
+  error?: string;
 }
 
 export type CreationMethod = 'manual' | 'file';

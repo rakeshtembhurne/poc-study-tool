@@ -7,19 +7,19 @@ import { FileText, X } from 'lucide-react';
 import { FileValidationConfig } from '@/types/card';
 
 interface FileDropZoneProps {
-  file: File | null;
+  files: File[];
   isDragging: boolean;
-  onFileSelect: (file: File) => void;
-  onFileRemove: () => void;
+  onFilesSelect: (files: File[]) => void;
+  onFileRemove: (index: number) => void;
   onDragStateChange: (isDragging: boolean) => void;
   onError: (error: string | null) => void;
   validationConfig: FileValidationConfig;
 }
 
 export default function FileDropZone({
-  file,
+  files,
   isDragging,
-  onFileSelect,
+  onFilesSelect,
   onFileRemove,
   onDragStateChange,
   onError,
@@ -46,14 +46,27 @@ export default function FileDropZone({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files?.length) {
-      const selectedFile = event.target.files[0];
-      const validationError = validateFile(selectedFile);
+      const selectedFiles = Array.from(event.target.files);
+      const validFiles: File[] = [];
+      const errors: string[] = [];
 
-      if (validationError) {
-        onError(validationError);
+      selectedFiles.forEach((file) => {
+        const validationError = validateFile(file);
+        if (validationError) {
+          errors.push(`${file.name}: ${validationError}`);
+        } else {
+          validFiles.push(file);
+        }
+      });
+
+      if (errors.length > 0) {
+        onError(errors.join(', '));
       } else {
-        onError(null); // Clear any previous errors
-        onFileSelect(selectedFile);
+        onError(null);
+      }
+
+      if (validFiles.length > 0) {
+        onFilesSelect([...files, ...validFiles]);
       }
     }
   };
@@ -63,16 +76,29 @@ export default function FileDropZone({
     event.stopPropagation();
     onDragStateChange(false);
 
-    const files = event.dataTransfer.files;
-    if (files && files.length > 0) {
-      const droppedFile = files[0];
-      const validationError = validateFile(droppedFile);
+    const droppedFiles = event.dataTransfer.files;
+    if (droppedFiles && droppedFiles.length > 0) {
+      const selectedFiles = Array.from(droppedFiles);
+      const validFiles: File[] = [];
+      const errors: string[] = [];
 
-      if (validationError) {
-        onError(validationError);
+      selectedFiles.forEach((file) => {
+        const validationError = validateFile(file);
+        if (validationError) {
+          errors.push(`${file.name}: ${validationError}`);
+        } else {
+          validFiles.push(file);
+        }
+      });
+
+      if (errors.length > 0) {
+        onError(errors.join(', '));
       } else {
-        onError(null); // Clear any previous errors
-        onFileSelect(droppedFile);
+        onError(null);
+      }
+
+      if (validFiles.length > 0) {
+        onFilesSelect([...files, ...validFiles]);
       }
     }
   };
@@ -125,42 +151,52 @@ export default function FileDropZone({
       >
         <div className="flex flex-col items-center space-y-4">
           <FileText className="h-12 w-12 text-muted-foreground" />
-          <div className="flex items-center gap-3">
-            {!file ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    openFilePicker();
-                  }}
-                >
-                  Choose File
-                </Button>
-                <span className="text-sm text-muted-foreground">
-                  No file chosen
-                </span>
-              </>
+          <div className="flex flex-col items-center gap-3 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={(e: React.MouseEvent) => {
+                e.stopPropagation();
+                openFilePicker();
+              }}
+            >
+              Choose Files
+            </Button>
+            {files.length === 0 ? (
+              <span className="text-sm text-muted-foreground">
+                No files chosen
+              </span>
             ) : (
-              <div className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
-                <FileText className="h-4 w-4 text-primary" />
-                <span className="text-sm text-primary font-medium">
-                  {file.name}
+              <div className="w-full space-y-2">
+                <span className="text-sm text-muted-foreground">
+                  {files.length} file{files.length > 1 ? 's' : ''} selected
                 </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    onFileRemove();
-                  }}
-                  className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2"
+                    >
+                      <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                      <span className="text-sm text-primary font-medium truncate flex-1">
+                        {file.name}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          onFileRemove(index);
+                        }}
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 flex-shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -170,14 +206,14 @@ export default function FileDropZone({
       {/* Instructions */}
       <div className="text-center space-y-1">
         <p className="text-sm text-muted-foreground">
-          Select a .txt file with your cards
+          Select .txt or .pdf files with your cards
         </p>
         <p className="text-xs text-muted-foreground">
           Format: Question|Answer|Difficulty (one card per line)
         </p>
-        <p className="text-xs text-muted-foreground/80">
+        {/* <p className="text-xs text-muted-foreground/80">
           Example: What is 2+2?|4|Easy
-        </p>
+        </p> */}
       </div>
 
       {/* Hidden File Input */}
@@ -187,6 +223,7 @@ export default function FileDropZone({
         className="hidden"
         onChange={handleFileChange}
         accept=".txt,.pdf"
+        multiple
       />
     </div>
   );
