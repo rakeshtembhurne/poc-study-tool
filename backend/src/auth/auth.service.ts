@@ -84,7 +84,7 @@ export class AuthService {
     }
   }
 
-  async generateToken(userId: string | number, email: string): Promise<string> {
+  async generateToken(userId: number | string, email: string): Promise<string> {
     try {
       const payload: AuthPayload = { id: String(userId), email }; // convert to string
       return this.jwtService.sign(payload);
