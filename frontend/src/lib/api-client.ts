@@ -137,10 +137,9 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
   if (typeof window === 'undefined') return null;
 
   const refreshToken = getRefreshToken();
-  const userId = getUserIdFromStorage();
 
-  if (!refreshToken || !userId) {
-    throw new Error('No refresh token or user ID available');
+  if (!refreshToken) {
+    throw new Error('No refresh token available');
   }
 
   try {
@@ -150,7 +149,6 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        userId,
         refreshToken,
       }),
     });
@@ -177,20 +175,6 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
     console.error('Token refresh failed:', error);
     throw error;
   }
-};
-
-// Helper function to get user ID from storage
-const getUserIdFromStorage = (): string | null => {
-  try {
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
-      const user = JSON.parse(userStr);
-      return user.id;
-    }
-  } catch (error) {
-    console.error('Failed to get user ID from storage:', error);
-  }
-  return null;
 };
 
 export default apiClient;

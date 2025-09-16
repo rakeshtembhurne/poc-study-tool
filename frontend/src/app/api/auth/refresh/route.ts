@@ -4,22 +4,21 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, refreshToken } = body;
+    const { refreshToken } = body;
 
     // Validate required fields
-    if (!userId || !refreshToken) {
+    if (!refreshToken) {
       return NextResponse.json(
-        { success: false, message: 'UserId and refreshToken are required' },
+        { success: false, message: 'refreshToken is required' },
         { status: 400 }
       );
     }
 
     // Call backend API
     const backendResponse = await apiClient.post(`/api/v1/auth/refresh-token`, {
-      userId,
       refreshToken,
     });
-    console.log('backendResponse Data: ', backendResponse.data);
+    // console.log('backendResponse Data: ', backendResponse.data);
 
     if (backendResponse.status !== 201) {
       return NextResponse.json(
@@ -38,9 +37,8 @@ export async function POST(request: NextRequest) {
       message: backendResponse.data.message || 'Tokens refreshed successfully',
       accessToken: backendResponse.data.accessToken,
       refreshToken: backendResponse.data.refreshToken,
-      expiresIn: 3600 // 1 hour default, adjust based on your JWT config
+      expiresIn: 3600, // 1 hour default, adjust based on your JWT config
     });
-
   } catch (error: any) {
     console.error('Refresh token API error:', {
       message: error.message,

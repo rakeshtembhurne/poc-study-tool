@@ -45,7 +45,6 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-    reset,
   } = useForm<LoginFormData>({
     resolver: yupResolver(loginSchema),
   });
@@ -70,7 +69,9 @@ export default function LoginPage() {
 
       if (result.success) {
         console.log('Login successful!');
-        setSubmitMessage(resultData.message || 'Login successful!');
+        setSubmitMessage(
+          resultData.message || 'Login successful! Redirecting to dashboard...'
+        );
 
         // Use AuthContext login method with secure token storage
         if (resultData.accessToken) {
