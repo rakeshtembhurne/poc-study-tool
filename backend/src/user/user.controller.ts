@@ -20,7 +20,6 @@ import { User } from '@/auth/decorators/user.decorator';
 @UseGuards(JwtAuthGuard)
 export class UserController {
   private readonly logger = new Logger(UserController.name);
-
   constructor(private readonly userService: UserService) {}
 
   @Post()
@@ -49,6 +48,7 @@ export class UserController {
     @User('id') userId: number,
     @Body() dto: UpdatePasswordDto
   ) {
+    this.logger.log(`updated password via controller`);
     return this.userService.updatePassword(+userId, dto);
   }
 
