@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call backend API
-    const backendResponse = await apiClient.post(`/api/v1/auth/login`, {
+    const backendResponse = await apiClient.post(`/auth/login`, {
       email: body.email,
       password: body.password,
     });

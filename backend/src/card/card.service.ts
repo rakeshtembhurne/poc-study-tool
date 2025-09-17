@@ -57,6 +57,95 @@ export class CardService {
       updatedCard,
     };
   }
+  async getCardsByUserId(
+    userId: number,
+    page: number,
+    limit: number,
+    search?: string,
+    deckId?: number
+  ) {
+    try {
+      // Ensure all numeric values are properly converted
+      const numericUserId = Number(userId);
+      const numericPage = Number(page);
+      const numericLimit = Number(limit);
+      const numericDeckId = deckId ? Number(deckId) : undefined;
+
+      console.log(
+        'Getting cards for userId:',
+        numericUserId,
+        'page:',
+        numericPage,
+        'limit:',
+        numericLimit,
+        'search:',
+        search,
+        'deckId:',
+        numericDeckId
+      );
+
+      const skip = (numericPage - 1) * numericLimit;
+
+      const where: Prisma.CardWhereInput = {
+        userId: numericUserId,
+      };
+
+      // Add optional deck filter
+      if (numericDeckId) {
+        where.deckId = numericDeckId;
+      }
+
+      // Add search functionality
+      if (search && search.trim()) {
+        where.OR = [
+          { frontContent: { contains: search.trim(), mode: 'insensitive' } },
+          { backContent: { contains: search.trim(), mode: 'insensitive' } },
+        ];
+      }
+
+      console.log('Prisma where clause:', JSON.stringify(where, null, 2));
+
+      const [cards, total] = await Promise.all([
+        this.prisma.card.findMany({
+          where,
+          skip,
+          take: numericLimit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            deck: {
+              select: {
+                id: true,
+                title: true,
+                description: true,
+              },
+            },
+          },
+        }),
+        this.prisma.card.count({ where }),
+      ]);
+
+      console.log('Found cards count:', cards.length, 'total:', total);
+
+      // Return empty result instead of throwing error when no cards found
+      return {
+        data: cards,
+        meta: {
+          total,
+          page: numericPage,
+          limit: numericLimit,
+          totalPages: total > 0 ? Math.ceil(total / numericLimit) : 0,
+        },
+      };
+    } catch (error) {
+      console.error('Error in getCardsByUserId:', error);
+
+      throw new InternalServerErrorException({
+        message: `Failed to fetch cards for user`,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+    }
+  }
 
   async getByDeckId(
     deckId: number,
