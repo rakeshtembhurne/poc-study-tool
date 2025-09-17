@@ -141,3 +141,16 @@ npx shadcn@latest add card
 # Add multiple components at once
 npx shadcn@latest add button card input label
 ```
+
+### Troubleshooting
+
+```bash
+# Clear Next.js cache
+rm -rf .next
+npm run dev
+
+# Clean reinstall
+rm -rf node_modules .next
+npm install
+npm run dev
+```

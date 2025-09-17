@@ -23,6 +23,7 @@ const eslintConfig = [
       'unused-imports': unusedImports,
     },
     ignores: [
+      'scripts/**/*',
       'node_modules/**',
       '.next/**',
       'out/**',
