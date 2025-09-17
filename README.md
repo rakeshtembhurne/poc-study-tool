@@ -154,6 +154,13 @@ This project uses a unified husky setup located in `backend/.husky` that handles
 git config core.hooksPath backend/.husky
 ```
 
+## Manual Font Setup 
+
+```bash
+
+# Or setup everything
+npm run font-setup
+```
 ## Environment Variables
 
 ### Backend (.env)
