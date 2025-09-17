@@ -100,7 +100,7 @@ export class UserService {
       throw new UnauthorizedException('Old password is incorrect');
     }
 
-    if (dto.currentPassword === dto.newPassword) {
+    if (currentPassword === newPassword) {
       throw new BadRequestException(
         'New password cannot be the same as current password'
       );
