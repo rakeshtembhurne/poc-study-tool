@@ -11,6 +11,7 @@ import {
 import authStorage from '@/lib/auth-storage';
 import { AxiosRequestConfig } from 'axios';
 import apiClient from '@/lib/api-client';
+import { API_ENDPOINTS } from '@/utils/apiEndponits';
 
 type User = {
   id: string;
@@ -182,27 +183,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return false;
       }
 
-      const response = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const response = await apiClient.post(
+        API_ENDPOINTS.v1.auth.refreshToken,
+        {
           refreshToken,
-        }),
-      });
+        }
+      );
 
-      const data = await response.json();
+      const result = response.data;
 
-      if (response.ok && data.success && isMountedRef.current) {
+      if (result.success && isMountedRef.current) {
         const success = authStorage.setToken(
-          data.accessToken,
-          data.expiresIn,
-          data.refreshToken
+          result.data.accessToken,
+          result.data.expiresIn,
+          result.data.refreshToken
         );
 
         if (success) {
-          setToken(data.accessToken);
+          setToken(result.data.accessToken);
 
           // Restore user data if we don't have it
           if (!user && userStr) {
@@ -215,8 +213,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       return false;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Token refresh failed:', error);
+
+      // Handle different types of errors
+      if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 401:
+            console.error('Refresh token expired or invalid');
+            // Clear invalid tokens
+            authStorage.clearAll();
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+            break;
+          case 404:
+            console.error('Refresh endpoint not found');
+            break;
+          case 429:
+            console.error('Too many refresh attempts');
+            break;
+          case 500:
+          case 502:
+          case 503:
+            console.error('Server error during token refresh');
+            break;
+          default:
+            console.error(
+              `Token refresh failed with status ${status}:`,
+              data?.message
+            );
+        }
+      } else if (error.request) {
+        console.error('Network error during token refresh');
+      } else if (error.code === 'ECONNABORTED') {
+        console.error('Token refresh request timed out');
+      }
+
       return false;
     }
   };

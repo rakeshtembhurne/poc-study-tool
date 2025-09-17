@@ -6,6 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff } from 'lucide-react';
 import { redirectAfterLogin } from '@/lib/redirect-utils';
+import { API_ENDPOINTS } from '@/utils/apiEndponits';
 
 // Validation schema
 const resetPasswordSchema = yup.object({
@@ -81,21 +83,14 @@ export default function ResetPasswordPage() {
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/auth/reset-password/confirm', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          resetToken: token,
-          newPassword: data.newPassword,
-        }),
+      const url = API_ENDPOINTS.v1.auth.resetPasswordConfirm;
+      const response = await apiClient.post(url, {
+        resetToken: token,
+        newPassword: data.newPassword,
       });
 
-      const result = await response.json();
-      //   console.log('Reset password response result:', result);
-      //   const resultData = result?.data?.data;
-      //   console.log('Reset password response resultData:', resultData);
+      const result = response.data;
+      console.log('Reset password response result:', result);
 
       if (result.success) {
         setSubmitMessage('Password reset successful! Redirecting to login...');
@@ -111,7 +106,54 @@ export default function ResetPasswordPage() {
       }
     } catch (error: any) {
       console.error('Reset password error:', error);
-      setSubmitMessage('An unexpected error occurred. Please try again.');
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage =
+              data?.message || 'Invalid reset token or password format.';
+            break;
+          case 401:
+            errorMessage =
+              data?.message || 'Reset token has expired or is invalid.';
+            break;
+          case 404:
+            errorMessage =
+              'Reset token not found. Please request a new password reset.';
+            break;
+          case 422:
+            errorMessage =
+              data?.message || 'Please check your password requirements.';
+            break;
+          case 429:
+            errorMessage = 'Too many reset attempts. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message || `Reset failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      }
+
+      setSubmitMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
