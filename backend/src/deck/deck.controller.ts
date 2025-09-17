@@ -16,8 +16,6 @@ import {
   ParseIntPipe,
   UseGuards,
   Query,
-  Request,
-  Req,
 } from '@nestjs/common';
 
 @Controller('decks')
@@ -38,8 +36,7 @@ export class DecksController {
   @Get('By/:id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @User() user: AuthPayload,
-    @Req() req: Request
+    @User() user: AuthPayload
   ) {
     const deck = await this.decksService.findOne(id, parseInt(user.id));
 

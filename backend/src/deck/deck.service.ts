@@ -172,7 +172,7 @@ export class DecksService {
       throw new ForbiddenException('You can only delete your own decks');
     }
 
-    const result = await this.prisma.$transaction([
+    await this.prisma.$transaction([
       this.prisma.card.deleteMany({
         where: { deckId: id },
       }),
