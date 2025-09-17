@@ -26,8 +26,11 @@ export class CardController {
   ) {}
 
   @Post()
-  async createCard(@Body() createCardDto: CreateCardDto) {
-    return this.cardService.createCard(createCardDto);
+  async createCard(
+    @Body() createCardDto: CreateCardDto,
+    @User('id') userId: number
+  ) {
+    return this.cardService.createCard(createCardDto, userId);
   }
 
   @Put(':id')
@@ -47,7 +50,6 @@ export class CardController {
     @Query('search') search?: string,
     @Query('deckId') deckId?: number
   ) {
-    console.log('----------------------------------');
     return this.cardService.getCardsByUserId(
       userId,
       page,
@@ -79,5 +81,13 @@ export class CardController {
     @User('id') userId: number
   ) {
     return this.cardService.deleteById(id, userId);
+  }
+
+  @Get('card/:id')
+  async getCardById(
+    @Param('id', ParseIntPipe) id: number,
+    @User('id') userId: number
+  ) {
+    return this.cardService.getCardById(id, userId);
   }
 }

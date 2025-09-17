@@ -4,7 +4,6 @@ interface CardPayload {
   frontContent: string;
   backContent: string;
   deckId: number;
-  userId: number;
 }
 
 // Create a new card
@@ -39,6 +38,17 @@ export const deleteCard = async (id: number) => {
     return response.data;
   } catch (error) {
     console.error(`Failed to delete card with id ${id}:`, error);
+    throw error;
+  }
+};
+
+// Get a single card by ID
+export const getCardById = async (id: number) => {
+  try {
+    const response = await apiClient.get(`/cards/card/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Failed to fetch card with id ${id}:`, error);
     throw error;
   }
 };
