@@ -12,7 +12,10 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "config:validate": "eslint --print-config src/app/page.tsx > /dev/null && prettier --check package.json",
     "type-check": "tsc --noEmit",
-    "prepare": "husky"
+    "prepare": "husky",
+    "setup-fonts": "node scripts/font-setup.js",
+    "postinstall": "npm run setup-fonts",
+    "font-setup": "npm install && npm run setup-fonts && echo '✅ Font setup complete! Run npm run dev to start application.'"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
