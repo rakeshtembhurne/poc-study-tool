@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { redirectAfterLogin } from '@/lib/redirect-utils';
+import apiClient from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff } from 'lucide-react';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
 
 // Validation schema
 const loginSchema = yup.object({
@@ -54,33 +56,29 @@ export default function LoginPage() {
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      const url = API_ENDPOINTS.v1.auth.login;
+      const response = await apiClient.post(url, data);
 
-      const result = await response.json();
-      // console.log('Login response result:', result);
-      const resultData = result?.data?.data;
-      // console.log('Login response resultData:', resultData);
+      const result = response.data;
+      console.log('Login response result:', result);
 
       if (result.success) {
         console.log('Login successful!');
         setSubmitMessage(
-          resultData.message || 'Login successful! Redirecting to dashboard...'
+          result.message || 'Login successful! Redirecting to dashboard...'
         );
 
         // Use AuthContext login method with secure token storage
-        if (resultData.accessToken) {
+        if (result.data?.accessToken) {
           try {
             login(
-              resultData.accessToken,
-              { id: resultData.userId, email: data.email }, // Use user data from backend or fallback
-              resultData.expiresIn, // Token expiration in seconds from backend
-              resultData.refreshToken // Optional refresh token
+              result.data.accessToken,
+              {
+                id: result.data.user?.id || result.data.userId,
+                email: result.data.user?.email || data.email,
+              },
+              result.data.expiresIn, // Token expiration in seconds from backend
+              result.data.refreshToken // Optional refresh token
             );
             // Redirect to intended page or dashboard after successful login
             redirectAfterLogin('/dashboard');
@@ -91,14 +89,57 @@ export default function LoginPage() {
             );
             return;
           }
+        } else {
+          setSubmitMessage(
+            'Login response missing access token. Please try again.'
+          );
         }
       } else {
         setSubmitMessage(result.message || 'Login failed. Please try again.');
       }
     } catch (error: any) {
-      // console.error('Login error:', error.message);
-      // Handle axios error responses
-      setSubmitMessage(error.message);
+      // console.error('Login error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage = data?.message || 'Invalid email or password format.';
+            break;
+          case 401:
+            errorMessage = data?.message || 'Invalid email or password.';
+            break;
+          case 404:
+            errorMessage = 'Login service not found. Please contact support.';
+            break;
+          case 429:
+            errorMessage = 'Too many login attempts. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message || `Login failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      }
+
+      setSubmitMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
