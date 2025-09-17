@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
-import { redirectAfterLogin } from '@/lib/redirect-utils';
+import { useSearchParams } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,85 +20,140 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff } from 'lucide-react';
+import { redirectAfterLogin } from '@/lib/redirect-utils';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
 
 // Validation schema
-const loginSchema = yup.object({
-  email: yup
+const resetPasswordSchema = yup.object({
+  newPassword: yup
     .string()
-    .required('Email is required')
-    .email('Please enter a valid email address'),
-  password: yup
+    .required('New password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+    ),
+  confirmPassword: yup
     .string()
-    .required('Password is required')
-    .min(1, 'Password is required'),
+    .required('Please confirm your password')
+    .oneOf([yup.ref('newPassword')], 'Passwords must match'),
 });
 
-type LoginFormData = yup.InferType<typeof loginSchema>;
+type ResetPasswordFormData = yup.InferType<typeof resetPasswordSchema>;
 
-export default function LoginPage() {
+export default function ResetPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitMessage, setSubmitMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const searchParams = useSearchParams();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: yupResolver(loginSchema),
+    reset,
+  } = useForm<ResetPasswordFormData>({
+    resolver: yupResolver(resetPasswordSchema),
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  useEffect(() => {
+    // Get token from URL parameters
+    const tokenParam = searchParams.get('token');
+    if (tokenParam) {
+      setToken(tokenParam);
+    } else {
+      // If no token, redirect to forgot password page
+      setSubmitMessage(
+        'Invalid or missing reset token. Please request a new password reset.'
+      );
+    }
+  }, [searchParams]);
+
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    if (!token) {
+      setSubmitMessage(
+        'Invalid or missing reset token. Please request a new password reset.'
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+      const url = API_ENDPOINTS.v1.auth.resetPasswordConfirm;
+      const response = await apiClient.post(url, {
+        resetToken: token,
+        newPassword: data.newPassword,
       });
 
-      const result = await response.json();
-      // console.log('Login response result:', result);
-      const resultData = result?.data?.data;
-      // console.log('Login response resultData:', resultData);
+      const result = response.data;
+      console.log('Reset password response result:', result);
 
       if (result.success) {
-        console.log('Login successful!');
-        setSubmitMessage(
-          resultData.message || 'Login successful! Redirecting to dashboard...'
-        );
-
-        // Use AuthContext login method with secure token storage
-        if (resultData.accessToken) {
-          try {
-            login(
-              resultData.accessToken,
-              { id: resultData.userId, email: data.email }, // Use user data from backend or fallback
-              resultData.expiresIn, // Token expiration in seconds from backend
-              resultData.refreshToken // Optional refresh token
-            );
-            // Redirect to intended page or dashboard after successful login
-            redirectAfterLogin('/dashboard');
-          } catch (error) {
-            console.error('Failed to store authentication token:', error);
-            setSubmitMessage(
-              'Login successful but failed to save session. Please try again.'
-            );
-            return;
-          }
-        }
+        setSubmitMessage('Password reset successful! Redirecting to login...');
+        reset();
+        // Redirect to login page after successful reset
+        setTimeout(() => {
+          redirectAfterLogin('/login');
+        }, 1000);
       } else {
-        setSubmitMessage(result.message || 'Login failed. Please try again.');
+        setSubmitMessage(
+          result.message || 'Password reset failed. Please try again.'
+        );
       }
     } catch (error: any) {
-      // console.error('Login error:', error.message);
-      // Handle axios error responses
-      setSubmitMessage(error.message);
+      console.error('Reset password error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage =
+              data?.message || 'Invalid reset token or password format.';
+            break;
+          case 401:
+            errorMessage =
+              data?.message || 'Reset token has expired or is invalid.';
+            break;
+          case 404:
+            errorMessage =
+              'Reset token not found. Please request a new password reset.';
+            break;
+          case 422:
+            errorMessage =
+              data?.message || 'Please check your password requirements.';
+            break;
+          case 429:
+            errorMessage = 'Too many reset attempts. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message || `Reset failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      }
+
+      setSubmitMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -112,7 +167,7 @@ export default function LoginPage() {
             Super-Memo
           </CardTitle>
           <CardDescription className="text-gray-600">
-            Sign in to your account
+            Reset your password
           </CardDescription>
         </CardHeader>
 
@@ -120,82 +175,86 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="space-y-2">
               <Label
-                htmlFor="email"
+                htmlFor="newPassword"
                 className="text-gray-900 text-sm font-medium"
               >
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                {...register('email')}
-                placeholder="Enter your email address"
-                className={`bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:ring-gray-500 ${
-                  errors.email
-                    ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                    : ''
-                }`}
-              />
-              {errors.email && (
-                <p className="text-red-500 text-xs mt-1">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label
-                htmlFor="password"
-                className="text-gray-900 text-sm font-medium"
-              >
-                Password
+                New Password
               </Label>
               <div className="relative">
                 <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  {...register('password')}
-                  placeholder="Enter your password"
+                  id="newPassword"
+                  type={showNewPassword ? 'text' : 'password'}
+                  {...register('newPassword')}
+                  placeholder="Enter your new password"
                   className={`bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:ring-gray-500 pr-10 ${
-                    errors.password
+                    errors.newPassword
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : ''
                   }`}
                 />
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowNewPassword(!showNewPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? (
+                  {showNewPassword ? (
                     <EyeOff className="h-4 w-4" />
                   ) : (
                     <Eye className="h-4 w-4" />
                   )}
                 </button>
               </div>
-              {errors.password && (
+              {errors.newPassword && (
                 <p className="text-red-500 text-xs mt-1">
-                  {errors.password.message}
+                  {errors.newPassword.message}
                 </p>
               )}
             </div>
 
-            <div className="flex justify-end py-2">
-              <Link
-                href="/forgot-password"
-                className="text-sm text-gray-900 hover:text-gray-700 hover:underline transition-colors"
+            <div className="space-y-2">
+              <Label
+                htmlFor="confirmPassword"
+                className="text-gray-900 text-sm font-medium"
               >
-                Forgot password?
-              </Link>
+                Confirm New Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  {...register('confirmPassword')}
+                  placeholder="Confirm your new password"
+                  className={`bg-white border-gray-300 text-gray-900 placeholder:text-gray-500 focus:border-gray-500 focus:ring-gray-500 pr-10 ${
+                    errors.confirmPassword
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                      : ''
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
 
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !token}
               className="w-full bg-gray-900 !text-white !cursor-pointer hover:bg-gray-800 font-semibold py-3 transition-all duration-200 hover:-translate-y-0.5 disabled:bg-gray-400 disabled:text-white disabled:transform-none disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Signing In...' : 'Sign In'}
+              {isSubmitting ? 'Resetting Password...' : 'Reset Password'}
             </Button>
 
             {submitMessage && (
@@ -216,12 +275,12 @@ export default function LoginPage() {
 
         <CardFooter className="border-t border-gray-200 pt-6">
           <p className="text-center text-sm text-gray-600 w-full">
-            Don&apos;t have an account?{' '}
+            Remember your password?{' '}
             <Link
-              href="/signup"
+              href="/login"
               className="text-gray-900 hover:text-gray-700 hover:underline font-medium transition-colors"
             >
-              Create one here
+              Sign in here
             </Link>
           </p>
         </CardFooter>

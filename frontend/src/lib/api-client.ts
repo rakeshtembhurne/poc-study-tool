@@ -4,16 +4,10 @@ import axios, {
   AxiosResponse,
   InternalAxiosRequestConfig,
 } from 'axios';
-import {
-  getToken,
-  getRefreshToken,
-  setToken,
-  removeToken,
-  willExpireSoon,
-} from './auth-storage';
+import authStorage from './auth-storage';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -44,18 +38,18 @@ const processQueue = (error: any, token: string | null = null) => {
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // Get token from secure storage
-    const token = typeof window !== 'undefined' ? getToken() : null;
+    const token = typeof window !== 'undefined' ? authStorage.getToken() : null;
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
 
       // Check if token will expire soon and refresh proactively
-      if (typeof window !== 'undefined' && willExpireSoon(5)) {
+      if (typeof window !== 'undefined' && authStorage.willExpireSoon(5)) {
         // 5 minutes before expiry
         try {
           await refreshTokenIfNeeded();
           // Get the new token after refresh
-          const newToken = getToken();
+          const newToken = authStorage.getToken();
           if (newToken) {
             config.headers.Authorization = `Bearer ${newToken}`;
           }
@@ -80,6 +74,14 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't redirect if this is an auth endpoint (login, signup, etc.)
+      const isAuthEndpoint = originalRequest.url?.includes('/auth/');
+
+      if (isAuthEndpoint) {
+        // For auth endpoints, just return the error without redirect
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -110,7 +112,7 @@ apiClient.interceptors.response.use(
         processQueue(refreshError, null);
         // Refresh failed, redirect to login
         if (typeof window !== 'undefined') {
-          removeToken();
+          authStorage.removeToken();
           window.location.href = '/login';
         }
         return Promise.reject(refreshError);
@@ -136,7 +138,7 @@ apiClient.interceptors.response.use(
 const refreshTokenIfNeeded = async (): Promise<string | null> => {
   if (typeof window === 'undefined') return null;
 
-  const refreshToken = getRefreshToken();
+  const refreshToken = authStorage.getRefreshToken();
 
   if (!refreshToken) {
     throw new Error('No refresh token available');
@@ -160,7 +162,7 @@ const refreshTokenIfNeeded = async (): Promise<string | null> => {
     }
 
     // Store new tokens
-    const success = setToken(
+    const success = authStorage.setToken(
       data.accessToken,
       data.expiresIn,
       data.refreshToken
