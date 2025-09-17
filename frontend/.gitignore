@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+package-lock.json
+
+# Option 1: Include fonts in repo (recommended for small teams)
+# Comment out the line below to commit fonts to repo
+/public/fonts/
+
+# Option 2: Exclude fonts (they'll be downloaded automatically)
+# Uncomment the line below if you want to exclude fonts from repo
+# /public/fonts/
