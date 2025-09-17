@@ -126,7 +126,6 @@ export class UserService {
         throw new NotFoundException('User not found');
       }
       const updateData = { ...dto };
-      console.log(updateData);
 
       const updatedUser = await this.prisma.user.update({
         where: { id },
