@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import Link from 'next/link';
+import apiClient from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,6 +19,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Mail, ArrowLeft } from 'lucide-react';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
 
 // Validation schema
 const forgotPasswordSchema = yup.object({
@@ -42,34 +44,63 @@ export default function ForgotPasswordPage() {
     resolver: yupResolver(forgotPasswordSchema),
   });
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: ForgotPasswordFormData) => {
     setIsSubmitting(true);
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+      const url = API_ENDPOINTS.v1.auth.resetPassword;
+      const response = await apiClient.post(url, data);
 
-      const result = await response.json();
-      // console.log('Login response result:', result);
-      const resultData = result?.data?.data;
-      // console.log('Login response resultData:', resultData);
+      const result = response.data;
+      console.log('Reset password response result:', result);
 
-      if (result.data.success) {
-        setSubmitMessage(resultData.message || 'Email sent successfully');
+      if (result.success) {
+        setSubmitMessage(result.message || 'Email sent successfully');
         setIsEmailSent(true);
       } else {
         setSubmitMessage(result.message || 'Failed to send reset email');
       }
     } catch (error: any) {
-      // console.error('Login error:', error.message);
-      // Handle axios error responses
-      setSubmitMessage(error.message);
+      console.error('Reset password error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage = data?.message || 'Invalid email address format.';
+            break;
+          case 404:
+            errorMessage = data?.message || 'Email address not found.';
+            break;
+          case 429:
+            errorMessage = 'Too many reset attempts. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message || `Reset failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      }
+
+      setSubmitMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
