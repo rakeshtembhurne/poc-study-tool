@@ -4,11 +4,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { AuthService } from '@/auth/auth.service';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
-import {
-  BadRequestException,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { UpdatePasswordDto } from '../dto/update-password.dto';
 import * as bcrypt from 'bcrypt';
 
@@ -76,11 +72,8 @@ describe('UserService', () => {
         email: 'test@example.com',
         password: 'password123',
       };
-
       jest.spyOn(prisma.user, 'create').mockResolvedValueOnce(mockUser);
-
       const result = await service.create(dto);
-
       expect(mockAuthService.hashPassword).toHaveBeenCalledWith(dto.password);
       expect(result).toEqual(mockUser);
     });
@@ -154,7 +147,7 @@ describe('UserService', () => {
       );
       expect(bcrypt.hash).toHaveBeenCalledWith(
         updatePasswordDto.newPassword,
-        10
+        12
       );
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: 1 },
@@ -174,7 +167,7 @@ describe('UserService', () => {
 
       await expect(
         service.updatePassword(1, updatePasswordDto)
-      ).rejects.toThrow(UnauthorizedException);
+      ).rejects.toThrow('Old password is incorrect');
       expect(bcrypt.compare).toHaveBeenCalledWith(
         updatePasswordDto.currentPassword,
         mockUser.password
@@ -205,10 +198,8 @@ describe('UserService', () => {
         confirmPassword: 'samePassword',
       };
 
-      jest.spyOn(prisma.user, 'findUnique').mockResolvedValueOnce({
-        ...mockUser,
-        password: 'hashedSamePassword',
-      });
+      jest.spyOn(prisma.user, 'findUnique').mockResolvedValueOnce(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true); // ✅ ensure old password check passes
 
       await expect(
         service.updatePassword(1, updatePasswordDto)
@@ -217,7 +208,6 @@ describe('UserService', () => {
         service.updatePassword(1, updatePasswordDto)
       ).rejects.toThrow('New password cannot be the same as current password');
     });
-
     it('should throw NotFoundException if user is not found', async () => {
       const updatePasswordDto: UpdatePasswordDto = {
         currentPassword: 'oldPassword123',

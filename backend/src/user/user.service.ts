@@ -86,11 +86,6 @@ export class UserService {
   async updatePassword(userId: number, dto: UpdatePasswordDto) {
     const { currentPassword, newPassword, confirmPassword } = dto;
 
-    if (dto.currentPassword === dto.newPassword) {
-      throw new BadRequestException(
-        'New password cannot be the same as current password'
-      );
-    }
     if (newPassword !== confirmPassword) {
       throw new BadRequestException('Passwords do not match');
     }
@@ -105,7 +100,12 @@ export class UserService {
       throw new UnauthorizedException('Old password is incorrect');
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException(
+        'New password cannot be the same as current password'
+      );
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
     await this.prisma.user.update({
       where: { id: userId },
       data: { password: hashedPassword },
