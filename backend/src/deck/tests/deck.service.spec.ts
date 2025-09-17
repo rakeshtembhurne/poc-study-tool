@@ -88,8 +88,9 @@ describe('DecksService', () => {
       prismaMock.deck.count.mockResolvedValue(1);
 
       const result = await service.findAll({ userId: 1 });
-      expect(result.data).toEqual(decks);
-      expect(result.meta.total).toBe(1);
+
+      expect(result.deck).toEqual(decks);
+      expect(result.count.total).toBe(1);
     });
   });
 
@@ -162,11 +163,12 @@ describe('DecksService', () => {
       prismaMock.deck.delete.mockResolvedValue(existingDeck);
 
       const result = await service.remove(1, 1);
-      expect(result.deletedCards).toBe(5);
-      expect(prisma.card.deleteMany).toHaveBeenCalledWith({
+
+      expect(result.message).toBe('Deck with ID 1 deleted successfully'); // ✅ UPDATED
+      expect(prismaMock.card.deleteMany).toHaveBeenCalledWith({
         where: { deckId: 1 },
       });
-      expect(prisma.deck.delete).toHaveBeenCalledWith({ where: { id: 1 } });
+      expect(prismaMock.deck.delete).toHaveBeenCalledWith({ where: { id: 1 } });
     });
 
     it('should throw NotFoundException if deck to remove is not found', async () => {

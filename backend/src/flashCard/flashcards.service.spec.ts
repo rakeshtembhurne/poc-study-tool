@@ -60,7 +60,7 @@ describe('FlashcardsService', () => {
         requestingUserId: 10,
       });
 
-      expect(result.data).toHaveLength(2);
+      expect(result.flashCards).toHaveLength(2);
       expect(prismaMock.deck.findFirst).toHaveBeenCalledWith({
         where: { id: 1, userId: 10 },
       });
@@ -85,7 +85,7 @@ describe('FlashcardsService', () => {
         requestingUserId: 10,
       });
 
-      expect(result.data).toHaveLength(2);
+      expect(result.flashCards).toHaveLength(2);
     });
 
     it('should throw NotFoundException if deck is private and not owner', async () => {

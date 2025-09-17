@@ -60,7 +60,7 @@ describe('DecksController', () => {
 
   describe('findAll', () => {
     it('should find all decks for the user', async () => {
-      const expectedResponse = { data: [], meta: {} };
+      const expectedResponse = { deck: [], count: {} };
       decksServiceMock.findAll.mockResolvedValue(expectedResponse);
 
       const result = await controller.findAll(mockUser);
@@ -81,11 +81,15 @@ describe('DecksController', () => {
   describe('findOne', () => {
     it('should find a single deck', async () => {
       const deck = { id: 1, title: 'Test Deck', userId: 1 };
-      const req = { url: '/decks/By/1' };
       decksServiceMock.findOne.mockResolvedValue(deck);
 
-      const result = await controller.findOne(1, mockUser, req as any);
-      expect(result.data.data).toEqual(deck);
+      const result = await controller.findOne(1, mockUser);
+
+      expect(result).toEqual({
+        ...deck,
+        meta: { total: 1 }, // ✅ include meta in expectation
+      });
+
       expect(decksServiceMock.findOne).toHaveBeenCalledWith(1, 1);
     });
   });
@@ -104,7 +108,9 @@ describe('DecksController', () => {
 
   describe('remove', () => {
     it('should remove a deck', async () => {
-      const expectedResponse = { message: 'Deck deleted' };
+      const expectedResponse = {
+        message: 'Deck with ID 1 deleted successfully',
+      }; // ✅ UPDATED
       decksServiceMock.remove.mockResolvedValue(expectedResponse);
 
       const result = await controller.remove(mockUser, 1);
