@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Chart data type definitions
 export interface WeeklyProgressData {
@@ -56,7 +56,7 @@ export function useChartData<T>(
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -82,11 +82,11 @@ export function useChartData<T>(
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchFunction, initialDelay, simulateError, errorMessage, mockData]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const refetch = () => {
     fetchData();
