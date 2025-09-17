@@ -116,7 +116,7 @@ export class FlashcardsService {
     ]);
 
     return {
-      data: cards,
+      flashCards: cards,
       Count: {
         total,
         page,

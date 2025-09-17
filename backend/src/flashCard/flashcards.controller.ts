@@ -33,13 +33,8 @@ export class FlashcardsController {
     );
 
     return {
-      success: true,
-      statusCode: 201,
-      message: `Successfully created ${result.length} flashcards`,
-      data: {
-        data: result,
-        Count: { total: result.length },
-      },
+      flashCards: result,
+      total: result.length,
     };
   }
 

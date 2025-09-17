@@ -99,8 +99,8 @@ export class DecksService {
     ]);
 
     return {
-      data: decks,
-      meta: {
+      deck: decks,
+      count: {
         total,
         page,
         limit,
@@ -182,9 +182,7 @@ export class DecksService {
     ]);
 
     return {
-      message: `Deck and its cards deleted successfully`,
-      deletedCards: result[0].count,
-      deletedDeck: result[1],
+      message: `Deck with ID ${id} deleted successfully`,
     };
   }
 }
