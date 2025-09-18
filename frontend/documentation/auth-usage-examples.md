@@ -10,7 +10,7 @@ The authentication system provides secure token storage with encryption, automat
 ✅ **Automatic Token Refresh**: Proactive refresh before expiration + 401 error handling  
 ✅ **Route Protection**: Layout-based protection for user routes  
 ✅ **Axios Integration**: Automatic token attachment and error handling  
-✅ **User Data Storage**: Encrypted access tokens + plain user data in localStorage  
+✅ **User Data Storage**: Encrypted access tokens + plain user data in localStorage
 
 ## Architecture
 
@@ -30,9 +30,7 @@ export default function RootLayout({ children }) {
   return (
     <html>
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
@@ -73,17 +71,14 @@ Create protected routes using the `(user)` route group:
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function UserLayout({ children }) {
-  return (
-    <ProtectedRoute>
-      {children}
-    </ProtectedRoute>
-  );
+  return <ProtectedRoute>{children}</ProtectedRoute>;
 }
 ```
 
 Any page in `app/(user)/` is automatically protected:
+
 - `app/(user)/dashboard/page.tsx` ✅ Protected
-- `app/(user)/cards/page.tsx` ✅ Protected  
+- `app/(user)/cards/page.tsx` ✅ Protected
 - `app/(user)/learning/page.tsx` ✅ Protected
 
 ### 4. Individual Component Protection (Alternative)
@@ -163,7 +158,8 @@ function TokenStatus() {
   const { isTokenExpiringSoon } = useAuth();
 
   useEffect(() => {
-    if (isTokenExpiringSoon(10)) { // Check if expires in 10 minutes
+    if (isTokenExpiringSoon(10)) {
+      // Check if expires in 10 minutes
       console.warn('Token expiring soon!');
       // Token will be automatically refreshed by axios interceptor
     }
@@ -196,7 +192,6 @@ authStorage.extendTokenExpiration(3600); // Add 1 hour
 // Clear all auth data
 authStorage.clearAll();
 ```
-
 
 ### Custom API Calls with Authentication
 
@@ -234,15 +229,17 @@ function CustomApiComponent() {
 ## Storage Structure
 
 ### localStorage Keys:
+
 - `auth_token_data`: Encrypted token data with expiration
 - `user`: Plain JSON user data `{ id: string, email: string }`
 
 ### Encrypted Token Data Structure:
+
 ```typescript
 interface TokenData {
-  token: string;           // JWT access token
-  expiresAt: number;       // Timestamp
-  refreshToken?: string;   // JWT refresh token
+  token: string; // JWT access token
+  expiresAt: number; // Timestamp
+  refreshToken?: string; // JWT refresh token
 }
 ```
 
@@ -260,7 +257,7 @@ interface TokenData {
 ```tsx
 function DebugAuth() {
   const { user, token, isAuthenticated, isLoading } = useAuth();
-  
+
   return (
     <div>
       <p>Loading: {isLoading.toString()}</p>
