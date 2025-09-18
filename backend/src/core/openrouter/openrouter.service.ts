@@ -42,12 +42,12 @@ export class OpenRouterService {
       );
     }
 
-    if (text.trim().length > 50000) {
-      throw new HttpException(
-        'Input text is too long. Please provide text under 50,000 characters.',
-        HttpStatus.BAD_REQUEST
-      );
-    }
+    // if (text.trim().length > 50000) {
+    //   throw new HttpException(
+    //     'Input text is too long. Please provide text under 50,000 characters.',
+    //     HttpStatus.BAD_REQUEST
+    //   );
+    // }
 
     // Ensure models are initialized
     try {

@@ -12,8 +12,6 @@ const apiClient = axios.create({
   },
 });
 
-// console.log('config: ', apiClient);
-
 // Flag to prevent multiple refresh attempts
 let isRefreshing = false;
 let failedQueue: Array<{

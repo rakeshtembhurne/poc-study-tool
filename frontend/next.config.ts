@@ -1,10 +1,10 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
 
-  // enables `next export` static export mode
-  output: 'export',
+  // Disable static export for dynamic routes
+  output: 'export', // Commented out to allow dynamic routes
 };
 
 module.exports = nextConfig;
