@@ -3,9 +3,10 @@ import { ReviewController } from './review.controller';
 import { ReviewService } from './review.service';
 import { AlgorithmModule } from '../algorithm/algorithm.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, AlgorithmModule],
+  imports: [PrismaModule, AlgorithmModule, AuthModule],
   controllers: [ReviewController],
   providers: [ReviewService],
   exports: [ReviewService],

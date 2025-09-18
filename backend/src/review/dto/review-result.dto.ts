@@ -67,6 +67,47 @@ export class ReviewResultDto {
   recallMatrixUpdate: RecallMatrixUpdateDto;
 }
 
+export class SM15MetricsDto {
+  @ApiProperty({ description: 'Average A-Factor across all cards' })
+  averageAFactor: number;
+
+  @ApiProperty({
+    description: 'Overall retention rate (successful reviews / total reviews)',
+  })
+  retentionRate: number;
+
+  @ApiProperty({ description: 'Number of OF Matrix personalizations made' })
+  matrixOptimizations: number;
+
+  @ApiProperty({
+    description: 'Percentage of cards using personalized factors',
+  })
+  personalizedFactors: number;
+
+  @ApiProperty({ description: 'Current study streak (consecutive days)' })
+  currentStreak: number;
+
+  @ApiProperty({ description: 'Average interval growth rate' })
+  avgIntervalGrowth: number;
+}
+
+export class LearningProgressDto {
+  @ApiProperty({ description: 'New cards (repetition count 0)' })
+  newCards: number;
+
+  @ApiProperty({ description: 'Learning cards (repetition count 1-4)' })
+  learningCards: number;
+
+  @ApiProperty({ description: 'Mature cards (repetition count 5+)' })
+  matureCards: number;
+
+  @ApiProperty({ description: 'Cards due for review today' })
+  dueToday: number;
+
+  @ApiProperty({ description: 'Overdue cards' })
+  overdueCards: number;
+}
+
 export class BasicStatsDto {
   @ApiProperty({ description: 'Total number of reviews completed' })
   totalReviews: number;
@@ -79,4 +120,10 @@ export class BasicStatsDto {
 
   @ApiProperty({ description: 'Number of cards currently being learned' })
   cardsLearning: number;
+
+  @ApiProperty({ description: 'SM-15 algorithm specific metrics' })
+  sm15Metrics: SM15MetricsDto;
+
+  @ApiProperty({ description: 'Learning progress breakdown' })
+  learningProgress: LearningProgressDto;
 }

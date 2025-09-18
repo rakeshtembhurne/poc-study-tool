@@ -14,7 +14,7 @@ CREATE TABLE cards (
     front_content TEXT NOT NULL,
     back_content TEXT NOT NULL,
     a_factor DECIMAL(3,2) NOT NULL
-        CHECK (a_factor >= 1.1 AND a_factor <= 2.5),
+        CHECK (a_factor >= 1.2 AND a_factor <= 6.9),
     interval_days INTEGER NOT NULL
         CHECK (interval_days >= 0),
     next_review_date TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -93,7 +93,7 @@ WITH NO DATA;
 
 ### PostgreSQL Features Utilized
 - **JSONB Storage**: `sm15Parameters` and `preferences` use JSONB for flexible schema
-- **Check Constraints**: Grade validation (1-5) and A-Factor range (1.1-2.5)
+- **Check Constraints**: Grade validation (0-5) and A-Factor range (1.2-6.9)
 - **Composite Indexes**: Optimized multi-column queries for performance
 - **Foreign Key Cascades**: Automatic cleanup of related records
 - **Partial Indexes**: Targeted indexing for common query patterns
@@ -143,7 +143,7 @@ WITH NO DATA;
 ### Card
 - Individual flashcards with SM-15 algorithm data
 - **Critical Fields**:
-  - `aFactor` : Learning difficulty factor (1.1–2.5). Higher = harder.
+  - `aFactor` : Learning difficulty factor (1.2–6.9). Higher = easier.
   - `intervalDays`: Current review interval in days.
   - `nextReviewDate`: When this card should next appear for review.
   - `repetitionCount`: Number of successful reviews (used for OF Matrix lookups).
@@ -162,7 +162,7 @@ WITH NO DATA;
 ### Review
 - Individual review sessions and algorithm decisions
 - **Critical Fields**:
-  - `grade` (1-5): User performance rating
+  - `grade` (0-5): User performance rating (0=blackout, 3=pass threshold)
   - `responseTimeMs`: Time taken to recall
   - `previousInterval`, `newInterval`: Interval tracking
   - `aFactorBefore`, `aFactorAfter`: Difficulty adjustments
@@ -171,7 +171,7 @@ WITH NO DATA;
 - Optimal factors matrix for interval calculations
 - **Critical Fields**:
   - `repetitionNumber`: Matrix row (review number)
-  - `difficultyCategory`: Matrix column (A-Factor range)
+  - `difficultyCategory`: Matrix column (A-Factor range 1.2-6.9 mapped to 0-19 categories)
   - `optimalFactor`: Multiplier for interval calculation
   - `usageCount`: Times this entry was used
 
@@ -298,8 +298,8 @@ COMMIT;
 
 ### Validation
 
-- Grade validation (1-5) handled at application level
-- A-Factor range (1.1-2.5) enforced by application
+- Grade validation (0-5) handled at application level
+- A-Factor range (1.2-6.9) enforced by application
 - Date formats standardized (YYYY-MM-DD)
 
 ## Best Practices
@@ -504,4 +504,11 @@ WHERE schemaname = 'public';
 - Connection pooling with PgBouncer
 - Regular VACUUM and maintenance windows
 - Monitoring with pg_stat_statements
+
+## Related Documentation
+
+- 🧮 [SM-15 Algorithm Implementation](../algorithm/SM15_IMPLEMENTATION.md) - How the algorithm uses database tables
+- 🌱 [Database Seeding Guide](./database-seeding-guide.md) - Populate database with SM-15 test data
+- 🔌 [Review API Endpoints](../api/sm15-review-endpoints.md) - API endpoints that interact with these tables
+- 🏠 [Backend Overview](../../README.md) - Main backend documentation and setup
 ```

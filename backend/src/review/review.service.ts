@@ -8,7 +8,12 @@ import {
   DueCardsResponseDto,
   DueCardDto,
 } from './dto/due-cards.dto';
-import { ReviewResultDto, BasicStatsDto } from './dto/review-result.dto';
+import {
+  ReviewResultDto,
+  BasicStatsDto,
+  SM15MetricsDto,
+  LearningProgressDto,
+} from './dto/review-result.dto';
 
 @Injectable()
 export class ReviewService {
@@ -145,6 +150,7 @@ export class ReviewService {
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
+    // Basic stats
     const [totalReviews, todayReviews, averageGrade, cardsLearning] =
       await Promise.all([
         this.prisma.review.count({ where: { userId } }),
@@ -161,11 +167,19 @@ export class ReviewService {
         this.getCardsInLearning(userId),
       ]);
 
+    // Get advanced SM-15 metrics and learning progress
+    const [sm15Metrics, learningProgress] = await Promise.all([
+      this.getSM15Metrics(userId),
+      this.getLearningProgress(userId),
+    ]);
+
     return {
       totalReviews,
       todayReviews,
       averageGrade: averageGrade._avg.grade || 0,
       cardsLearning,
+      sm15Metrics,
+      learningProgress,
     };
   }
 
@@ -194,5 +208,160 @@ export class ReviewService {
         repetitionCount: { lt: 5 },
       },
     });
+  }
+
+  private async getSM15Metrics(userId: number): Promise<SM15MetricsDto> {
+    const [
+      avgAFactor,
+      retentionStats,
+      matrixOptimizations,
+      personalizedCount,
+      totalCards,
+      studyStreak,
+      intervalGrowth,
+    ] = await Promise.all([
+      // Average A-Factor across all cards
+      this.prisma.card.aggregate({
+        where: { userId },
+        _avg: { aFactor: true },
+      }),
+      // Retention rate calculation
+      this.prisma.review.aggregate({
+        where: { userId },
+        _avg: { grade: true },
+        _count: { grade: true },
+      }),
+      // Count OF Matrix entries with usage > 0 (personalizations)
+      this.prisma.oFMatrix.count({
+        where: { userId, usageCount: { gt: 0 } },
+      }),
+      // Count cards using personalized factors
+      this.prisma.oFMatrix.count({
+        where: { userId, usageCount: { gt: 0 } },
+      }),
+      // Total cards for percentage calculation
+      this.prisma.card.count({ where: { userId } }),
+      // Calculate study streak
+      this.calculateStudyStreak(userId),
+      // Calculate average interval growth
+      this.calculateAvgIntervalGrowth(userId),
+    ]);
+
+    const retentionRate =
+      retentionStats._count.grade > 0
+        ? (retentionStats._avg.grade || 0) / 5.0 // Convert 0-5 scale to 0-1
+        : 0;
+
+    const personalizedFactors =
+      totalCards > 0 ? (personalizedCount / totalCards) * 100 : 0;
+
+    return {
+      averageAFactor: avgAFactor._avg.aFactor || 4.0,
+      retentionRate,
+      matrixOptimizations,
+      personalizedFactors,
+      currentStreak: studyStreak,
+      avgIntervalGrowth: intervalGrowth,
+    };
+  }
+
+  private async getLearningProgress(
+    userId: number
+  ): Promise<LearningProgressDto> {
+    const now = new Date();
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const [newCards, learningCards, matureCards, dueToday, overdueCards] =
+      await Promise.all([
+        // New cards (never reviewed)
+        this.prisma.card.count({
+          where: { userId, repetitionCount: 0 },
+        }),
+        // Learning cards (1-4 repetitions)
+        this.prisma.card.count({
+          where: { userId, repetitionCount: { gte: 1, lt: 5 } },
+        }),
+        // Mature cards (5+ repetitions)
+        this.prisma.card.count({
+          where: { userId, repetitionCount: { gte: 5 } },
+        }),
+        // Due today
+        this.prisma.card.count({
+          where: {
+            userId,
+            nextReviewDate: { gte: startOfToday, lte: endOfToday },
+          },
+        }),
+        // Overdue cards
+        this.prisma.card.count({
+          where: {
+            userId,
+            nextReviewDate: { lt: now },
+          },
+        }),
+      ]);
+
+    return {
+      newCards,
+      learningCards,
+      matureCards,
+      dueToday,
+      overdueCards,
+    };
+  }
+
+  private async calculateStudyStreak(userId: number): Promise<number> {
+    // Get reviews in reverse chronological order
+    const reviews = await this.prisma.review.findMany({
+      where: { userId },
+      select: { reviewDate: true },
+      orderBy: { reviewDate: 'desc' },
+      take: 100, // Limit for performance
+    });
+
+    if (reviews.length === 0) return 0;
+
+    let streak = 0;
+    const currentDate = new Date();
+    currentDate.setHours(0, 0, 0, 0);
+
+    const reviewDates = new Set(
+      reviews.map((r) => {
+        const date = new Date(r.reviewDate);
+        date.setHours(0, 0, 0, 0);
+        return date.getTime();
+      })
+    );
+
+    // Check consecutive days
+    while (reviewDates.has(currentDate.getTime())) {
+      streak++;
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+
+    return streak;
+  }
+
+  private async calculateAvgIntervalGrowth(userId: number): Promise<number> {
+    const reviews = await this.prisma.review.aggregate({
+      where: {
+        userId,
+        newInterval: { gt: 0 },
+        previousInterval: { gt: 0 },
+      },
+      _avg: {
+        newInterval: true,
+        previousInterval: true,
+      },
+    });
+
+    if (!reviews._avg.newInterval || !reviews._avg.previousInterval) {
+      return 1.0; // No growth data available
+    }
+
+    return reviews._avg.newInterval / reviews._avg.previousInterval;
   }
 }

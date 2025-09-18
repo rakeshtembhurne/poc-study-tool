@@ -411,3 +411,10 @@ The database seeding system provides:
 - ✅ **Beginner Friendly**: Clear commands and documentation
 
 Now you're ready to develop and test Space Rep features with confidence! 🚀
+
+## Related Documentation
+
+- 📖 [Database Schema Documentation](./database-docs.md) - Complete database structure and relationships
+- 🧮 [SM-15 Algorithm Implementation](../algorithm/SM15_IMPLEMENTATION.md) - Complete algorithm documentation
+- 🔌 [Review API Endpoints](../api/sm15-review-endpoints.md) - API documentation for review system
+- 🏠 [Backend Overview](../../README.md) - Main backend documentation
