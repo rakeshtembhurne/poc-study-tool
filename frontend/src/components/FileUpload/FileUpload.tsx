@@ -98,12 +98,12 @@ export default function FileUpload() {
       });
 
       const result = response.data;
-      console.log('Fetch decks response result:', result);
+      console.log('Fetch decks response result:', JSON.stringify(result));
 
       if (result.success) {
         console.log('Decks fetched successfully!');
-        const decksArray = result.data?.data || [];
-
+        const decksArray = result.data?.deck || [];
+        console.log('Decks array:', JSON.stringify(decksArray));
         if (Array.isArray(decksArray)) {
           setDecks(decksArray.map((deck: Deck) => deck.title));
         } else {
