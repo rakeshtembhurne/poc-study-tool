@@ -3,7 +3,7 @@ import apiClient from './api-client';
 
 export const getDecks = async (params = {}) => {
   try {
-    const response = await apiClient.get('/decks', { params });
+    const response = await apiClient.get('/api/v1/decks', { params });
     return response.data;
   } catch (error) {
     console.error('Failed to fetch decks:', error);
@@ -13,7 +13,7 @@ export const getDecks = async (params = {}) => {
 
 export const getDeckById = async (id: string | number) => {
   try {
-    const response = await apiClient.get(`/decks/By/${id}`);
+    const response = await apiClient.get(`/api/v1/decks/By/${id}`);
     return response.data;
   } catch (error) {
     console.error(`Failed to fetch deck with id ${id}:`, error);
@@ -27,7 +27,7 @@ export const createDeck = async (deckData: {
   isPublic?: boolean;
 }) => {
   try {
-    const response = await apiClient.post('/decks', deckData);
+    const response = await apiClient.post('/api/v1/decks', deckData);
     toast.success(response.data.message || 'Deck created successfully!');
     return response.data;
   } catch (error: any) {
@@ -42,7 +42,7 @@ export const updateDeck = async (
   deckData: { title?: string; description?: string; isPublic?: boolean }
 ) => {
   try {
-    const response = await apiClient.patch(`/decks/${id}`, deckData);
+    const response = await apiClient.patch(`/api/v1/decks/${id}`, deckData);
     toast.success(response.data.message || 'Deck updated successfully!');
     return response.data;
   } catch (error: any) {
@@ -54,7 +54,7 @@ export const updateDeck = async (
 
 export const deleteDeck = async (id: string | number) => {
   try {
-    const response = await apiClient.delete(`/decks/${id}`);
+    const response = await apiClient.delete(`/api/v1/decks/${id}`);
     toast.success(response.data.data.message || 'Deck deleted successfully!');
     return response.data;
   } catch (error: any) {
