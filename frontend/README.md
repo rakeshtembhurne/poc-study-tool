@@ -1,51 +1,103 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Space Rep Frontend
+
+A modern React frontend for the Space Rep spaced repetition application, built with Next.js, TypeScript, and Tailwind CSS.
+
+## Overview
+
+The frontend provides a responsive, accessible user interface for the Space Rep spaced repetition system, featuring:
+
+- **Authentication**: JWT-based login and registration
+- **Review System**: Interactive spaced repetition review sessions
+- **Dashboard**: Learning progress tracking and analytics
+- **Deck Management**: Create and organize flashcard collections
+- **Modern UI**: Built with shadcn/ui components and Tailwind CSS
+
+## Tech Stack
+
+- **Next.js 14** with App Router
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **shadcn/ui** for UI components
+- **React Context** for state management
+- **Fetch API** for backend communication
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js (v22+)
+- Backend server running on http://localhost:3000
+
+### Installation
 
 ```bash
+# Install dependencies
+npm install
+
+# Start development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Copy the environment file:
 
-## Learn More
+```bash
+cp .env.example .env.local
+```
 
-To learn more about Next.js, take a look at the following resources:
+Configure your environment variables:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3000
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Project Structure
 
-## Deploy on Vercel
+```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── (auth)/            # Authentication pages
+│   ├── dashboard/         # Dashboard and main app
+│   └── review/            # Review session pages
+├── components/
+│   ├── ui/                # shadcn/ui components
+│   ├── auth/              # Authentication components
+│   ├── review/            # Review session components
+│   └── dashboard/         # Dashboard components
+├── lib/
+│   ├── api/               # API client functions
+│   ├── auth/              # Authentication utilities
+│   └── utils.ts           # General utilities
+├── types/                 # TypeScript type definitions
+└── contexts/              # React context providers
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Implementation Status
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### ✅ **Completed Features**
 
-### Setup Environment Variables
+- ✅ Project setup with Next.js and TypeScript
+- ✅ Tailwind CSS and shadcn/ui configuration
+- ✅ Code quality tools (ESLint, Prettier)
+- ✅ Environment configuration
 
-Copy `.env.example` files into `.env`:
+### 🚧 **In Development**
 
-- **From the project root** (run this if you are in the main folder):
+- 🚧 Authentication pages and components
+- 🚧 Review session interface
+- 🚧 Dashboard and analytics
+- 🚧 API integration with backend
 
-  ```bash
-  cp frontend/.env.example frontend/.env # Copies frontend env file
+### 📋 **Planned Features**
 
-  cp .env.example .env      # run this if you are in respective folder
-  ```
+- Review session UI with grade buttons
+- Progress tracking and statistics
+- Deck management interface
+- Responsive mobile design
+- Dark mode support
 
 ## Code Quality and Standards
 
@@ -104,6 +156,55 @@ type(scope): subject #123, #456  // Multiple issues supported
 ```
 
 For detailed commit message guidelines and examples, see the [main project README](../README.md#commit-message-guidelines).
+
+## API Integration
+
+The frontend communicates with the Space Rep backend API for all data operations.
+
+### Authentication Flow
+
+```typescript
+// Login example
+const response = await fetch(`${API_URL}/api/auth/login`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ email, password }),
+});
+const { accessToken } = await response.json();
+```
+
+### Review Session Integration
+
+```typescript
+// Get due cards
+const dueCards = await fetch(`${API_URL}/api/review/due`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+// Submit review with SM-15 algorithm
+const result = await fetch(`${API_URL}/api/review/submit`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    cardId: 1,
+    grade: 4, // 0-5 scale (0=blackout, 3=pass, 5=perfect)
+    responseTimeMs: 3500,
+  }),
+});
+```
+
+### Backend Integration Status
+
+- ✅ **Backend Ready**: Complete SM-15 algorithm implementation
+- ✅ **Authentication**: JWT-protected endpoints
+- ✅ **Review API**: Full spaced repetition functionality
+- ✅ **Analytics**: Advanced performance tracking
+- 🚧 **Frontend**: Currently implementing UI components
+
+For complete API documentation, see [Backend API Documentation](../backend/documentation/api/sm15-review-endpoints.md).
 
 ## UI Components (shadcn/ui)
 
