@@ -4,11 +4,14 @@ import {
   BadRequestException,
   Logger,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AuthService } from '@/auth/auth.service';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -80,6 +83,41 @@ export class UserService {
     }
   }
 
+  async updatePassword(userId: number, dto: UpdatePasswordDto) {
+    const { currentPassword, newPassword, confirmPassword } = dto;
+
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedException('Old password is incorrect');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException(
+        'New password cannot be the same as current password'
+      );
+    }
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    return {
+      success: true,
+      statusCode: 200,
+      message: 'Password updated successfully',
+    };
+  }
+
   async update(id: number, dto: UpdateUserDto) {
     try {
       const user = await this.prisma.user.findUnique({ where: { id } });
@@ -88,9 +126,6 @@ export class UserService {
         throw new NotFoundException('User not found');
       }
       const updateData = { ...dto };
-      if (dto.password) {
-        updateData.password = await this.authService.hashPassword(dto.password);
-      }
 
       const updatedUser = await this.prisma.user.update({
         where: { id },
