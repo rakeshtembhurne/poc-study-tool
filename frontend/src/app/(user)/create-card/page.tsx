@@ -1,5 +1,5 @@
+import FileUpload from '@/components/FileUpload';
 import { Metadata } from 'next';
-import FileUpload from '@/components/FileUpload/FileUpload';
 
 export const metadata: Metadata = {
   title: 'Create Card - Spaced Repetition',

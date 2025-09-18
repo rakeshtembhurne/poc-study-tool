@@ -1,3 +1,9 @@
+export type FileValidationConfig = {
+  maxSize: number;
+  allowedTypes: string[];
+};
+
+export type CreationMethod = 'file' | 'manual' | 'ai' | 'prompt';
 export interface Card {
   question: string;
   answer: string;
@@ -21,11 +27,4 @@ export interface FileCardData {
   file: File;
   cards: Card[];
   error?: string;
-}
-
-export type CreationMethod = 'manual' | 'file';
-
-export interface FileValidationConfig {
-  allowedTypes: string[];
-  maxSize: number;
 }

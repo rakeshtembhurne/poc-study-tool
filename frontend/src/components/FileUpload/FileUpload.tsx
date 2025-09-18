@@ -21,7 +21,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Upload, ArrowLeft, Edit, FileText, ChevronDown } from 'lucide-react';
+import {
+  Upload,
+  ArrowLeft,
+  Edit,
+  FileText,
+  ChevronDown,
+  Sparkles,
+} from 'lucide-react';
 import {
   Card as CardType,
   FileValidationConfig,
@@ -34,6 +41,7 @@ import ViewCardsDialog from './ViewCardsDialog';
 import authStorage from '@/lib/auth-storage';
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+import PromptInput from './PromptInput';
 // import { log } from 'console';
 
 // Deck interface (for API response typing)
@@ -447,6 +455,14 @@ export default function FileUpload() {
                   <Upload className="h-4 w-4" />
                   File Upload
                 </Button>
+
+                <Button
+                  variant={creationMethod === 'prompt' ? 'default' : 'outline'}
+                  onClick={() => setCreationMethod('prompt')}
+                  className="flex items-center gap-2 px-6 py-3"
+                >
+                  <Sparkles className="h-4 w-4" /> Input Text{' '}
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -591,8 +607,7 @@ export default function FileUpload() {
                   <div className="bg-muted/50 rounded-lg p-4">
                     <h3 className="font-medium text-foreground mb-3">
                       Processing Results ({totalCardCount} total cards from{' '}
-                      {fileCardData.length} file
-                      {fileCardData.length > 1 ? 's' : ''})
+                      {fileCardData.length} file&apos;s)
                     </h3>
                     <div className="space-y-4">
                       {fileCardData.map((data, index) => (
@@ -640,6 +655,8 @@ export default function FileUpload() {
             </CardContent>
           </Card>
         )}
+
+        {creationMethod === 'prompt' && <PromptInput />}
 
         {/* Instructions */}
         <Card className="mt-6">

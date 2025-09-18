@@ -1,16 +1,10 @@
 'use client';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileText, Plus } from 'lucide-react';
-import FilePreview from './FilePreview';
+import { FileText } from 'lucide-react';
 import { FileCardData } from '@/types/card';
+import CardWizard from './CardWizard';
 
 interface ViewCardsDialogProps {
   fileCardData: FileCardData;
@@ -19,46 +13,40 @@ interface ViewCardsDialogProps {
 export default function ViewCardsDialog({
   fileCardData,
 }: ViewCardsDialogProps) {
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+
   if (!fileCardData || fileCardData.cards.length === 0) return null;
 
-  return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          variant="default"
-          className="flex items-center gap-2 px-6 py-3 !cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          Create {fileCardData.cards.length} Cards
-        </Button>
-      </DialogTrigger>
+  const parsedCards = fileCardData.cards;
+  const file = fileCardData.file;
+  const cardCount = parsedCards.length;
 
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-background">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="text-xl font-semibold text-foreground">
-            Card Preview & Creation
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Review {fileCardData.cards.length} cards from{' '}
-            {fileCardData.file.name} before creating them
-          </p>
-        </DialogHeader>
-        <div className="overflow-y-auto flex-1 pr-2">
-          <FilePreview fileCardData={[fileCardData]} />
-        </div>
-        <div className="flex justify-end gap-3 pt-4 border-t border-border">
-          <Button variant="outline" className="!cursor-pointer">
-            Cancel
-          </Button>
-          <Button
-            variant="default"
-            className="flex items-center gap-2 !cursor-pointer"
-          >
-            <FileText className="h-4 w-4" />
-            Create All Cards
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+  return (
+    <>
+      {/* Trigger Button */}
+      <Button
+        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+        onClick={() => setIsWizardOpen(true)}
+      >
+        <FileText className="h-4 w-4" />
+        Create {cardCount} Cards
+      </Button>
+
+      {/* Card Wizard */}
+      <CardWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        file={file}
+        parsedCards={parsedCards}
+        cardCount={cardCount}
+        deckName="My Deck"
+        onConfirmUpload={async (cards) => {
+          console.log('Confirmed cards:', cards);
+          setIsWizardOpen(false);
+        }}
+        progress={100}
+        isUploading={false}
+      />
+    </>
   );
 }
