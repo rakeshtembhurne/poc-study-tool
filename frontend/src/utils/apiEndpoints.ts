@@ -13,5 +13,10 @@ export const API_ENDPOINTS = {
     fileUpload: {
       upload: '/api/v1/file-processing/upload/multiple',
     },
+    user: {
+      updateEmail: '/api/v1/users/:id',
+      updatePassword: '/api/v1/users/password',
+      updateApiKey: '/api/v1/users/:id',
+    },
   },
 };

@@ -87,9 +87,9 @@ export default function FilePreview({ fileCardData }: FilePreviewProps) {
                           </div>
                           <Badge
                             variant={
-                              card.difficulty.toLowerCase() === 'easy'
+                              card.difficulty?.toLowerCase() === 'easy'
                                 ? 'secondary'
-                                : card.difficulty.toLowerCase() === 'hard'
+                                : card.difficulty?.toLowerCase() === 'hard'
                                   ? 'destructive'
                                   : 'default'
                             }

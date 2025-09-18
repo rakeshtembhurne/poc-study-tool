@@ -52,7 +52,7 @@ function TopNavigation() {
     { href: '/create-card', label: 'Create Card', icon: SquarePlus },
     { href: '/study', label: 'Study', icon: BookOpen },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-    { href: '/settings', label: 'Settings', icon: Settings },
+    // { href: '/settings', label: 'Settings', icon: Settings },
   ];
 
   return (
@@ -114,6 +114,14 @@ function TopNavigation() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <Link href="/settings">
+                <DropdownMenuItem className="!cursor-pointer">
+                  <div className="flex items-center space-x-2">
+                    <Settings className="h-4 w-4" />
+                    <span className="text-md">Settings</span>
+                  </div>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuItem
                 onClick={handleLogout}
                 disabled={isLoggingOut}

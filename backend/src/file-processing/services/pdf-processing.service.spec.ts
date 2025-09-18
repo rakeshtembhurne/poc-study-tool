@@ -8,7 +8,7 @@ jest.mock('fs');
 jest.mock('pdf-parse');
 
 const mockFs = fs as jest.Mocked<typeof fs>;
-const mockPdfParse = pdfParse as jest.MockedFunction<typeof pdfParse>;
+const mockPdfParse = pdfParse;
 
 describe('PdfProcessingService', () => {
   let service: PdfProcessingService;
