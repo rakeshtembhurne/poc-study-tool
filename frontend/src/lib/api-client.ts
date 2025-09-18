@@ -6,7 +6,7 @@ import axios, {
 import authStorage from './auth-storage';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -73,6 +73,14 @@ apiClient.interceptors.response.use(
 
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't redirect if this is an auth endpoint (login, signup, etc.)
+      const isAuthEndpoint = originalRequest.url?.includes('/auth/');
+
+      if (isAuthEndpoint) {
+        // For auth endpoints, just return the error without redirect
+        return Promise.reject(error);
+      }
+
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {

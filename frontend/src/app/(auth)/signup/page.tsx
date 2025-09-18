@@ -7,6 +7,7 @@ import * as yup from 'yup';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/api-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff } from 'lucide-react';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
 
 // Validation schema
 const signupSchema = yup.object({
@@ -65,39 +67,35 @@ export default function SignupPage() {
     setSubmitMessage('');
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: data.email,
-          password: data.password,
-        }),
+      const url = API_ENDPOINTS.v1.auth.signup;
+      const response = await apiClient.post(url, {
+        email: data.email,
+        password: data.password,
       });
 
-      const result: any = await response.json();
-      // console.log('\n\n\nresult:', result);
-      const resultData = result?.data?.data;
-      // console.log('Signup response:', resultData);
+      const result = response.data;
+      console.log('Signup response result:', result);
 
       if (result.success) {
-        setSubmitMessage(resultData.message || 'Account created successfully!');
+        setSubmitMessage(result.message || 'Account created successfully!');
 
         // Auto-login user after successful signup if token is provided
-        if (resultData.accessToken) {
+        if (result.data?.accessToken) {
           try {
             login(
-              resultData.accessToken,
-              { id: resultData.userId, email: data.email }, // Use user data from backend or form data
-              resultData.expiresIn, // Token expiration in seconds from backend
-              resultData.refreshToken // Optional refresh token
+              result.data.accessToken,
+              {
+                id: result.data.user?.id || result.data.userId,
+                email: result.data.user?.email || data.email,
+              },
+              result.data.expiresIn, // Token expiration in seconds from backend
+              result.data.refreshToken // Optional refresh token
             );
 
             // Redirect to dashboard or home page after successful signup and login
             router.push('/dashboard');
           } catch (error) {
-            // console.error('Failed to store authentication token:', error);
+            console.error('Failed to store authentication token:', error);
             setSubmitMessage(
               'Account created successfully but failed to save session. Please log in manually.'
             );
@@ -113,10 +111,53 @@ export default function SignupPage() {
         );
       }
     } catch (error: any) {
-      // console.error('Signup error:', error.message);
+      console.error('Signup error:', error);
 
-      // Handle axios error responses
-      setSubmitMessage(error.message);
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage =
+              data?.message ||
+              'Invalid signup data. Please check your information.';
+            break;
+          case 409:
+            errorMessage =
+              data?.message || 'An account with this email already exists.';
+            break;
+          case 422:
+            errorMessage =
+              data?.message ||
+              'Please check your email and password requirements.';
+            break;
+          case 429:
+            errorMessage = 'Too many signup attempts. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message || `Signup failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      }
+
+      setSubmitMessage(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
