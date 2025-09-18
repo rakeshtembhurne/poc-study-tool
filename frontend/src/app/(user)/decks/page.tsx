@@ -46,7 +46,6 @@ export default function DecksPage() {
     try {
       setLoading(true);
       const response = await getDecks();
-      console.log('API Response for getDecks:', response);
       // The actual deck data is in response.data.data
       setDecks(response.data.deck || []);
       setError(null);

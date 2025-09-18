@@ -22,8 +22,6 @@ export default function EditDeckPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const deckId = searchParams.get('id');
-  console.log('deckId from searchParams:', deckId);
-
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingDeck, setIsLoadingDeck] = useState(true);
   const [formData, setFormData] = useState({
@@ -55,8 +53,8 @@ export default function EditDeckPage() {
 
         if (deck) {
           setFormData({
-            title: deck.title || 'axbc',
-            description: deck.description || 'abc',
+            title: deck.title,
+            description: deck.description,
             isPublic: deck.isPublic,
           });
         } else {
