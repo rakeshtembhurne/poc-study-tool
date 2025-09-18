@@ -221,6 +221,8 @@ This project enforces code quality and consistency using ESLint, Prettier, Jest,
 
 **Why Different from Frontend?**: The backend uses more strict enterprise rules suitable for server-side applications, while the frontend uses Next.js optimized rules for client-side React development. This ensures each codebase follows patterns most appropriate for its runtime environment.
 
+### ESLint now includes Airbnb style guide and unused-imports plugin for better code consistency.
+
 ### Jest Testing
 
 Jest is configured with strict coverage thresholds:

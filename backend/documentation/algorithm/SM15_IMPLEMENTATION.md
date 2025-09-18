@@ -679,6 +679,16 @@ When contributing to SM-15 implementation:
 
 ---
 
-**Last Updated**: September 2024
-**Version**: 1.0.0
+## Related Documentation
+
+- 📖 [Database Schema Documentation](../database/database-docs.md) - Complete database structure and SM-15 tables
+- 🌱 [Database Seeding Guide](../database/database-seeding-guide.md) - Test data setup for SM-15 development
+- 🔌 [Review API Endpoints](../api/sm15-review-endpoints.md) - REST API documentation for SM-15 system
+- 🏠 [Backend Overview](../../README.md) - Main backend documentation and setup
+- 🎨 [Frontend Integration](../../../frontend/README.md) - Frontend implementation guide
+
+---
+
+**Last Updated**: September 2024  
+**Version**: 1.0.0  
 **Author**: SM-15 Implementation Team

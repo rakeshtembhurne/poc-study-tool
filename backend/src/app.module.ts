@@ -11,6 +11,7 @@ import { FileProcessingModule } from '@/file-processing/file-processing.module';
 import { DeckModule } from '@/deck/deck.module';
 import { AlgorithmModule } from './algorithm/algorithm.module';
 import { ReviewModule } from './review/review.module';
+import { FlashcardsModule } from '@/flashCard/flashcards.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { ReviewModule } from './review/review.module';
     DeckModule,
     AlgorithmModule,
     ReviewModule,
+    FlashcardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
