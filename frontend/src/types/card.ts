@@ -1,7 +1,9 @@
 export interface Card {
   question: string;
   answer: string;
-  difficulty: string;
+  difficulty?: string;
+  deckName?: string;
+  createdAt?: string;
 }
 
 export interface FileUploadState {
