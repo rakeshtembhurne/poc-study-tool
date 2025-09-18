@@ -1,8 +1,8 @@
 'use client';
 
-// import ProtectedRoute from '@/components/ProtectedRoute';
-// import { useAuth } from '@/context/AuthContext';
-// import { redirectAfterLogout } from '@/lib/redirect-utils';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/context/AuthContext';
+import { redirectAfterLogout } from '@/lib/redirect-utils';
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -28,27 +28,23 @@ import {
   Mail,
 } from 'lucide-react';
 
-const user = {
-  email: 'user@example.com',
-};
-
 function TopNavigation() {
-  // const { user, logout } = useAuth();
+  const { user, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const pathname = usePathname();
 
-  // const handleLogout = async () => {
-  //   setIsLoggingOut(true);
-  //   try {
-  //     await logout();
-  //     setTimeout(() => {
-  //       redirectAfterLogout();
-  //     }, 500);
-  //   } catch (error) {
-  //     console.error('Logout failed:', error);
-  //     setIsLoggingOut(false);
-  //   }
-  // };
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setTimeout(() => {
+        redirectAfterLogout();
+      }, 500);
+    } catch (error) {
+      console.error('Logout failed:', error);
+      setIsLoggingOut(false);
+    }
+  };
 
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -127,7 +123,7 @@ function TopNavigation() {
                 </DropdownMenuItem>
               </Link>
               <DropdownMenuItem
-                // onClick={handleLogout}
+                onClick={handleLogout}
                 disabled={isLoggingOut}
                 className=" !cursor-pointer"
               >
@@ -160,7 +156,7 @@ function TopNavigation() {
                   }
                 >
                   <Icon className="h-4 w-4" />
-                  {/* <span className="text-xs">{item.label}</span> */}
+                  <span className="text-xs">{item.label}</span>
                 </Button>
               </Link>
             );
@@ -177,11 +173,11 @@ export default function UserLayout({
   children: React.ReactNode;
 }) {
   return (
-    // <ProtectedRoute>
-    <div className="min-h-screen bg-background">
-      <TopNavigation />
-      <main className="flex-1">{children}</main>
-    </div>
-    // </ProtectedRoute>
+    <ProtectedRoute>
+      <div className="min-h-screen bg-background">
+        <TopNavigation />
+        <main className="flex-1">{children}</main>
+      </div>
+    </ProtectedRoute>
   );
 }
