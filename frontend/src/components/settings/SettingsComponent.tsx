@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -17,9 +17,12 @@ import {
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Key, Check, X } from 'lucide-react';
+import apiClient from '@/lib/api-client';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+import { useAuth } from '@/context/AuthContext';
 
 const formSchema = yup.object({
-  openRouterApiKey: yup
+  openAiApiKey: yup
     .string()
     .required('API key is required')
     .min(10, 'API key must be at least 10 characters long')
@@ -35,6 +38,7 @@ const formSchema = yup.object({
 type FormValues = yup.InferType<typeof formSchema>;
 
 export default function ProfileSettingsComponent() {
+  const { user } = useAuth();
   const [showApiKey, setShowApiKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState<
     'idle' | 'saving' | 'success' | 'error'
@@ -44,55 +48,106 @@ export default function ProfileSettingsComponent() {
   const form = useForm<FormValues>({
     resolver: yupResolver(formSchema),
     defaultValues: {
-      openRouterApiKey: '',
+      openAiApiKey: '',
     },
   });
 
-  // Load saved data from localStorage on component mount
-  useEffect(() => {
-    try {
-      const savedApiKeys = localStorage.getItem('apiKeys');
-      if (savedApiKeys) {
-        const parsedKeys = JSON.parse(savedApiKeys);
-        if (parsedKeys.openRouterApiKey) {
-          form.setValue(
-            'openRouterApiKey',
-            parsedKeys.openRouterApiKey as string
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Error loading API keys from localStorage:', error);
-    }
-  }, [form]);
+  // No localStorage loading - just for updating API key
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (data: FormValues) => {
     setSaveStatus('saving');
     setSaveMessage('');
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      if (!user?.id) {
+        throw new Error('User ID not found. Please login again.');
+      }
 
-      // Save to localStorage (in a real app, this would be an API call)
-      localStorage.setItem('apiKeys', JSON.stringify(values));
+      const url = API_ENDPOINTS.v1.user.updateApiKey.replace(':id', user.id);
+      const response = await apiClient.patch(url, data);
 
-      setSaveStatus('success');
-      setSaveMessage('Settings saved successfully!');
+      const result = response.data;
+      console.log('API key update response result:', result);
 
-      // Reset status after 3 seconds
-      setTimeout(() => {
-        setSaveStatus('idle');
-        setSaveMessage('');
-      }, 3000);
-    } catch (error) {
+      if (result.success || response.status === 200) {
+        console.log('API key update successful!');
+        setSaveStatus('success');
+        setSaveMessage(result?.message || 'API key updated successfully!');
+
+        // Save to localStorage if successful
+        localStorage.setItem('apiKeys', JSON.stringify(data));
+
+        // Reset status after 3 seconds
+        setTimeout(() => {
+          setSaveStatus('idle');
+          setSaveMessage('');
+        }, 3000);
+      } else {
+        setSaveStatus('error');
+        setSaveMessage(
+          result?.message || 'API key update failed. Please try again.'
+        );
+      }
+    } catch (error: any) {
+      console.error('API key update error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage = data?.message || 'Invalid API key format.';
+            break;
+          case 401:
+            errorMessage = 'Unauthorized. Please login again.';
+            break;
+          case 404:
+            errorMessage = 'User not found. Please contact support.';
+            break;
+          case 409:
+            errorMessage =
+              'API key already exists. Please use a different key.';
+            break;
+          case 429:
+            errorMessage = 'Too many requests. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message ||
+              `API key update failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      } else {
+        errorMessage =
+          error.message || 'Failed to update API key. Please try again.';
+      }
+
       setSaveStatus('error');
-      setSaveMessage('Failed to save settings. Please try again.');
-
+      setSaveMessage(errorMessage);
+    } finally {
+      // Reset error status after 5 seconds
       setTimeout(() => {
-        setSaveStatus('idle');
-        setSaveMessage('');
-      }, 3000);
+        if (saveStatus === 'error') {
+          setSaveStatus('idle');
+          setSaveMessage('');
+        }
+      }, 5000);
     }
   };
 
@@ -145,7 +200,7 @@ export default function ProfileSettingsComponent() {
 
             <FormField
               control={form.control}
-              name="openRouterApiKey"
+              name="openAiApiKey"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>OpenRouter API Key</FormLabel>

@@ -16,14 +16,20 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Check, X, Mail, Lock } from 'lucide-react';
+import { ArrowLeft, Check, X, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import apiClient from '@/lib/api-client';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+import { useAuth } from '@/context/AuthContext';
 
-const formSchema = yup.object({
+const emailFormSchema = yup.object({
   email: yup
     .string()
     .email('Please enter a valid email address')
     .required('Email is required'),
+});
+
+const passwordFormSchema = yup.object({
   currentPassword: yup.string().required('Current password is required'),
   newPassword: yup
     .string()
@@ -35,25 +41,34 @@ const formSchema = yup.object({
     .required('Please confirm your new password'),
 });
 
-type FormValues = yup.InferType<typeof formSchema>;
-
-interface UserProfile {
-  email: string;
-  name?: string;
-  [key: string]: unknown; // Allow additional properties with unknown type
-}
+type EmailFormValues = yup.InferType<typeof emailFormSchema>;
+type PasswordFormValues = yup.InferType<typeof passwordFormSchema>;
 
 export default function EditEmailPage() {
   const router = useRouter();
-  const [saveStatus, setSaveStatus] = useState<
+  const { user } = useAuth();
+  const [emailSaveStatus, setEmailSaveStatus] = useState<
     'idle' | 'saving' | 'success' | 'error'
   >('idle');
-  const [saveMessage, setSaveMessage] = useState('');
+  const [emailSaveMessage, setEmailSaveMessage] = useState('');
+  const [passwordSaveStatus, setPasswordSaveStatus] = useState<
+    'idle' | 'saving' | 'success' | 'error'
+  >('idle');
+  const [passwordSaveMessage, setPasswordSaveMessage] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: yupResolver(formSchema),
+  const emailForm = useForm<EmailFormValues>({
+    resolver: yupResolver(emailFormSchema),
     defaultValues: {
       email: '',
+    },
+  });
+
+  const passwordForm = useForm<PasswordFormValues>({
+    resolver: yupResolver(passwordFormSchema),
+    defaultValues: {
       currentPassword: '',
       newPassword: '',
       confirmPassword: '',
@@ -63,50 +78,214 @@ export default function EditEmailPage() {
   // Load current email from localStorage on component mount
   useEffect(() => {
     try {
-      const savedProfile = localStorage.getItem('userProfile');
+      const savedProfile = localStorage.getItem('user');
       if (savedProfile) {
-        const parsedProfile = JSON.parse(savedProfile) as UserProfile;
-        form.setValue('email', parsedProfile.email || '');
+        console.log('Raw user data from localStorage:', savedProfile);
+        const parsedProfile = JSON.parse(savedProfile);
+        console.log('Parsed user data:', parsedProfile);
+        console.log('Email from parsed data:', parsedProfile.email);
+        emailForm.setValue('email', parsedProfile.email || '');
       }
     } catch (error) {
       console.error('Error loading profile from localStorage:', error);
     }
-  }, [form]);
+  }, [emailForm]);
 
-  const onSubmit = async (values: FormValues) => {
-    setSaveStatus('saving');
-    setSaveMessage('');
+  const onEmailSubmit = async (data: EmailFormValues) => {
+    setEmailSaveStatus('saving');
+    setEmailSaveMessage('');
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Update email in localStorage (in a real app, this would be an API call)
-      const savedProfile = localStorage.getItem('userProfile');
-      if (savedProfile) {
-        const parsedProfile = JSON.parse(savedProfile) as UserProfile;
-        const updatedProfile: UserProfile = {
-          ...parsedProfile,
-          email: values.email,
-        };
-        localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
+      if (!user?.id) {
+        throw new Error('User ID not found. Please login again.');
       }
 
-      setSaveStatus('success');
-      setSaveMessage('Email and password updated successfully!');
+      const url = API_ENDPOINTS.v1.user.updateEmail.replace(':id', user.id);
+      const response = await apiClient.patch(url, data);
 
-      // Redirect back to profile after 2 seconds
-      setTimeout(() => {
-        router.push('/settings/profile');
-      }, 2000);
-    } catch {
-      setSaveStatus('error');
-      setSaveMessage('Failed to update email and password. Please try again.');
+      const result = response.data;
+      console.log('Email update response result:', result);
 
+      if (result.success || response.status === 200) {
+        console.log('Email update successful!');
+        setEmailSaveStatus('success');
+        setEmailSaveMessage(result?.message || 'Email updated successfully!');
+
+        // Update email in localStorage if successful
+        const savedProfile = localStorage.getItem('user');
+        if (savedProfile) {
+          const parsedProfile = JSON.parse(savedProfile);
+          const updatedProfile = {
+            ...parsedProfile,
+            email: data.email,
+          };
+          localStorage.setItem('user', JSON.stringify(updatedProfile));
+        }
+
+        // Reset status after 3 seconds
+        setTimeout(() => {
+          setEmailSaveStatus('idle');
+          setEmailSaveMessage('');
+        }, 3000);
+      } else {
+        setEmailSaveStatus('error');
+        setEmailSaveMessage(
+          result?.message || 'Email update failed. Please try again.'
+        );
+      }
+    } catch (error: any) {
+      console.error('Email update error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage = data?.message || 'Invalid email format.';
+            break;
+          case 401:
+            errorMessage = 'Unauthorized. Please login again.';
+            break;
+          case 404:
+            errorMessage = 'User not found. Please contact support.';
+            break;
+          case 409:
+            errorMessage =
+              'Email already exists. Please use a different email.';
+            break;
+          case 429:
+            errorMessage = 'Too many requests. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message ||
+              `Email update failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      } else {
+        errorMessage =
+          error.message || 'Failed to update email. Please try again.';
+      }
+
+      setEmailSaveStatus('error');
+      setEmailSaveMessage(errorMessage);
+    } finally {
+      // Reset error status after 5 seconds
       setTimeout(() => {
-        setSaveStatus('idle');
-        setSaveMessage('');
-      }, 3000);
+        if (emailSaveStatus === 'error') {
+          setEmailSaveStatus('idle');
+          setEmailSaveMessage('');
+        }
+      }, 5000);
+    }
+  };
+
+  const onPasswordSubmit = async (data: PasswordFormValues) => {
+    setPasswordSaveStatus('saving');
+    setPasswordSaveMessage('');
+
+    try {
+      const url = API_ENDPOINTS.v1.user.updatePassword;
+      const response = await apiClient.patch(url, data);
+
+      const result = response.data;
+      console.log('Password update response result:', result);
+
+      if (result.success || response.status === 200) {
+        console.log('Password update successful!');
+        setPasswordSaveStatus('success');
+        setPasswordSaveMessage(
+          result?.message || 'Password updated successfully!'
+        );
+
+        // Clear password fields after successful update
+        passwordForm.reset();
+
+        // Reset status after 3 seconds
+        setTimeout(() => {
+          setPasswordSaveStatus('idle');
+          setPasswordSaveMessage('');
+        }, 3000);
+      } else {
+        setPasswordSaveStatus('error');
+        setPasswordSaveMessage(
+          result?.message || 'Password update failed. Please try again.'
+        );
+      }
+    } catch (error: any) {
+      console.error('Password update error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage =
+              data?.message ||
+              'Invalid password format or passwords do not match.';
+            break;
+          case 401:
+            errorMessage = data?.message || 'Current password is incorrect.';
+            break;
+          case 404:
+            errorMessage = 'User not found. Please contact support.';
+            break;
+          case 429:
+            errorMessage = 'Too many requests. Please try again later.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message ||
+              `Password update failed (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      } else {
+        errorMessage =
+          error.message || 'Failed to update password. Please try again.';
+      }
+
+      setPasswordSaveStatus('error');
+      setPasswordSaveMessage(errorMessage);
+    } finally {
+      // Reset error status after 5 seconds
+      setTimeout(() => {
+        if (passwordSaveStatus === 'error') {
+          setPasswordSaveStatus('idle');
+          setPasswordSaveMessage('');
+        }
+      }, 5000);
     }
   };
 
@@ -135,36 +314,65 @@ export default function EditEmailPage() {
         </div>
       </div>
 
-      {/* Status Messages */}
-      {saveMessage && (
+      {/* Email Status Messages */}
+      {emailSaveMessage && (
         <Alert
           className={
-            saveStatus === 'success'
+            emailSaveStatus === 'success'
               ? 'border-green-200 bg-green-50'
               : 'border-red-200 bg-red-50'
           }
         >
           <div className="flex items-center gap-2">
-            {saveStatus === 'success' ? (
+            {emailSaveStatus === 'success' ? (
               <Check className="h-4 w-4 text-green-600" />
             ) : (
               <X className="h-4 w-4 text-red-600" />
             )}
             <AlertDescription
               className={
-                saveStatus === 'success' ? 'text-green-800' : 'text-red-800'
+                emailSaveStatus === 'success'
+                  ? 'text-green-800'
+                  : 'text-red-800'
               }
             >
-              {saveMessage}
+              {emailSaveMessage}
             </AlertDescription>
           </div>
         </Alert>
       )}
 
-      {/* Form */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          {/* Email Section */}
+      {/* Password Status Messages */}
+      {passwordSaveMessage && (
+        <Alert
+          className={
+            passwordSaveStatus === 'success'
+              ? 'border-green-200 bg-green-50'
+              : 'border-red-200 bg-red-50'
+          }
+        >
+          <div className="flex items-center gap-2">
+            {passwordSaveStatus === 'success' ? (
+              <Check className="h-4 w-4 text-green-600" />
+            ) : (
+              <X className="h-4 w-4 text-red-600" />
+            )}
+            <AlertDescription
+              className={
+                passwordSaveStatus === 'success'
+                  ? 'text-green-800'
+                  : 'text-red-800'
+              }
+            >
+              {passwordSaveMessage}
+            </AlertDescription>
+          </div>
+        </Alert>
+      )}
+
+      {/* Email Form */}
+      <Form {...emailForm}>
+        <div className="space-y-6">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
@@ -175,25 +383,60 @@ export default function EditEmailPage() {
             </p>
 
             <FormField
-              control={form.control}
+              control={emailForm.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Email Address</FormLabel>
+                  <FormLabel>Current Email Address</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="Enter your new email address"
-                      {...field}
-                    />
+                    <div className="flex gap-2">
+                      <Input
+                        id="email-input"
+                        type="email"
+                        placeholder="Enter your new email address"
+                        {...field}
+                        className="flex-1"
+                      />
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
 
-          {/* Password Section */}
+            {/* Email Submit Button */}
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                onClick={async () => {
+                  const emailValue = emailForm.getValues('email');
+                  if (emailValue) {
+                    await onEmailSubmit({ email: emailValue });
+                  }
+                }}
+                disabled={emailSaveStatus === 'saving'}
+                className="min-w-[120px]"
+              >
+                {emailSaveStatus === 'saving' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Updating...
+                  </div>
+                ) : (
+                  'Update Email'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Form>
+
+      {/* Password Form */}
+      <Form {...passwordForm}>
+        <form
+          onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+          className="space-y-6"
+        >
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <Lock className="h-5 w-5" />
@@ -204,17 +447,35 @@ export default function EditEmailPage() {
             </p>
 
             <FormField
-              control={form.control}
+              control={passwordForm.control}
               name="currentPassword"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Current Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your current password"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        placeholder="Enter your current password"
+                        {...field}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() =>
+                          setShowCurrentPassword(!showCurrentPassword)
+                        }
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -222,17 +483,33 @@ export default function EditEmailPage() {
             />
 
             <FormField
-              control={form.control}
+              control={passwordForm.control}
               name="newPassword"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Enter your new password"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showNewPassword ? 'text' : 'password'}
+                        placeholder="Enter your new password"
+                        {...field}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormDescription>
                     Password must be at least 8 characters long
@@ -243,48 +520,65 @@ export default function EditEmailPage() {
             />
 
             <FormField
-              control={form.control}
+              control={passwordForm.control}
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Confirm New Password</FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder="Confirm your new password"
-                      {...field}
-                    />
+                    <div className="relative">
+                      <Input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        placeholder="Confirm your new password"
+                        {...field}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() =>
+                          setShowConfirmPassword(!showConfirmPassword)
+                        }
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleCancel}
-              disabled={saveStatus === 'saving'}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={saveStatus === 'saving'}
-              className="min-w-[120px]"
-            >
-              {saveStatus === 'saving' ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Saving...
-                </div>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
+            {/* Password Submit Button */}
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancel}
+                disabled={passwordSaveStatus === 'saving'}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={passwordSaveStatus === 'saving'}
+                className="min-w-[120px]"
+              >
+                {passwordSaveStatus === 'saving' ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    Updating...
+                  </div>
+                ) : (
+                  'Update Password'
+                )}
+              </Button>
+            </div>
           </div>
         </form>
       </Form>

@@ -31,19 +31,21 @@ export default function ProfileComponent() {
     email: '',
     bio: '',
   });
-
   // Load saved data from localStorage on component mount
   useEffect(() => {
     try {
-      const savedProfile = localStorage.getItem('userProfile');
+      const savedProfile = localStorage.getItem('user');
       if (savedProfile) {
+        console.log('Raw user data from localStorage:', savedProfile);
         const parsedProfile = JSON.parse(savedProfile);
-        setProfile({
-          name: parsedProfile.name || '',
+        console.log('Parsed user data:', parsedProfile);
+        console.log('Email from parsed data:', parsedProfile.email);
+
+        setProfile((prev) => ({
+          ...prev,
           email: parsedProfile.email || '',
-          bio: parsedProfile.bio || '',
           avatar: parsedProfile.avatar || '',
-        });
+        }));
       }
     } catch (error) {
       console.error('Error loading profile from localStorage:', error);
@@ -87,17 +89,6 @@ export default function ProfileComponent() {
 
           {/* Form Fields */}
           <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                type="text"
-                value={profile.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                placeholder="Enter your full name"
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email Address</Label>
               <div className="flex gap-2">
