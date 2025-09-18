@@ -558,6 +558,13 @@ export default function FileUpload() {
               {files.length > 0 && !showCards && (
                 <div className="flex gap-3 pt-4">
                   <Button
+                    variant="outline"
+                    onClick={() => setFiles([])}
+                    className="flex-1 text-base font-medium" // ✅ add same class here
+                  >
+                    Cancel
+                  </Button>
+                  <Button
                     onClick={handleUpload}
                     disabled={isUploading}
                     variant="default"
@@ -567,13 +574,6 @@ export default function FileUpload() {
                     {isUploading
                       ? 'Processing Files...'
                       : `Upload ${files.length} File${files.length > 1 ? 's' : ''}`}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setFiles([])}
-                    className="flex-1 text-base font-medium" // ✅ add same class here
-                  >
-                    Cancel
                   </Button>
                 </div>
               )}
