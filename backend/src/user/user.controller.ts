@@ -13,12 +13,13 @@ import { UserService } from '@/user/user.service';
 import { CreateUserDto } from '@/user/dto/create-user.dto';
 import { UpdateUserDto } from '@/user/dto/update-user.dto';
 import { JwtAuthGuard } from '@/auth/jwt-auth.guard';
+import { UpdatePasswordDto } from './dto/update-password.dto';
+import { User } from '@/auth/decorators/user.decorator';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard)
 export class UserController {
   private readonly logger = new Logger(UserController.name);
-
   constructor(private readonly userService: UserService) {}
 
   @Post()
@@ -40,6 +41,15 @@ export class UserController {
     const user = await this.userService.findOne(+id);
     this.logger.log(`Fetched user via controller: ${user.email}`);
     return user;
+  }
+
+  @Patch('password')
+  async updatePassword(
+    @User('id') userId: number,
+    @Body() dto: UpdatePasswordDto
+  ) {
+    this.logger.log(`updated password via controller`);
+    return this.userService.updatePassword(+userId, dto);
   }
 
   @Patch(':id')
