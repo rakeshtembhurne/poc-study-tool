@@ -74,9 +74,9 @@ export default function UploadConfirmDialog({
                       </span>
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          card.difficulty.toLowerCase() === 'easy'
+                          card.difficulty?.toLowerCase() === 'easy'
                             ? 'bg-green-100 text-green-700'
-                            : card.difficulty.toLowerCase() === 'hard'
+                            : card.difficulty?.toLowerCase() === 'hard'
                               ? 'bg-red-100 text-red-700'
                               : 'bg-orange-100 text-orange-700'
                         }`}

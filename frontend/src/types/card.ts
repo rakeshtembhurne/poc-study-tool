@@ -1,11 +1,13 @@
 export interface Card {
   question: string;
   answer: string;
-  difficulty: string;
+  difficulty?: string;
+  deckName?: string;
+  createdAt?: string;
 }
 
 export interface FileUploadState {
-  file: File | null;
+  files: File[];
   error: string | null;
   isDragging: boolean;
   progress: number;
@@ -13,6 +15,12 @@ export interface FileUploadState {
   parsedCards: Card[];
   deckName: string;
   cardCount: number;
+}
+
+export interface FileCardData {
+  file: File;
+  cards: Card[];
+  error?: string;
 }
 
 export type CreationMethod = 'manual' | 'file';

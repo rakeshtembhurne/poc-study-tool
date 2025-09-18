@@ -16,8 +16,6 @@ import {
   ParseIntPipe,
   UseGuards,
   Query,
-  Request,
-  Req,
 } from '@nestjs/common';
 
 @Controller('decks')
@@ -38,21 +36,13 @@ export class DecksController {
   @Get('By/:id')
   async findOne(
     @Param('id', ParseIntPipe) id: number,
-    @User() user: AuthPayload,
-    @Req() req: Request
+    @User() user: AuthPayload
   ) {
     const deck = await this.decksService.findOne(id, parseInt(user.id));
 
     return {
-      success: true,
-      statusCode: 200,
-      message: 'Request successful',
-      data: {
-        data: deck,
-        meta: { total: 1 },
-      },
-      timestamp: new Date().toISOString(),
-      path: req.url,
+      ...deck,
+      meta: { total: 1 },
     };
   }
 
@@ -67,8 +57,6 @@ export class DecksController {
     @Query('sortOrder') sortOrder?: string,
     @Query('search') search?: string
   ) {
-    // If userId is not provided in query, use the authenticated user's ID
-    // If userId IS provided, you might want to check if the user has permission to view other users' decks
     const targetUserId =
       userId && userId.trim() !== '' ? Number(userId) : parseInt(user.id);
 

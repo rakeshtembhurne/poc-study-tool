@@ -1,54 +1,211 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Upload, ArrowLeft, Edit, FileText } from 'lucide-react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Upload, ArrowLeft, Edit, FileText, ChevronDown } from 'lucide-react';
 import {
   Card as CardType,
   FileValidationConfig,
   CreationMethod,
+  FileCardData,
 } from '@/types/card';
 import FileDropZone from './FileDropZone';
 import UploadProgress from './UploadProgress';
 import ViewCardsDialog from './ViewCardsDialog';
+import authStorage from '@/lib/auth-storage';
+import apiClient from '@/lib/api-client';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+// import { log } from 'console';
+
+// Deck interface (for API response typing)
+interface Deck {
+  id: number;
+  title: string;
+  description?: string;
+  isPublic: boolean;
+  userId: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Yup validation schema
+const deckFormSchema = yup.object({
+  deckName: yup.string().required('Deck selection is required'),
+});
+
+type DeckFormData = yup.InferType<typeof deckFormSchema>;
 
 export default function FileUpload() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [fetchDecksError, setFetchDecksError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [parsedCards, setParsedCards] = useState<CardType[]>([]);
-  const [deckName, setDeckName] = useState<string>('');
+  const [fileCardData, setFileCardData] = useState<FileCardData[]>([]);
   const [creationMethod, setCreationMethod] = useState<CreationMethod>('file');
-  const [cardCount, setCardCount] = useState<number>(0);
+  const [totalCardCount, setTotalCardCount] = useState<number>(0);
+  const [decks, setDecks] = useState<string[]>([]);
+  const [isLoadingDecks, setIsLoadingDecks] = useState<boolean>(false);
+  const [selectedDeck, setSelectedDeck] = useState<string>('');
+
+  // Initialize form with Yup resolver
+  const form = useForm<DeckFormData>({
+    resolver: yupResolver(deckFormSchema),
+    defaultValues: {
+      deckName: '',
+    },
+  });
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showCards, setShowCards] = useState<boolean>(false);
 
-  const handleFileSelect = (selectedFile: File) => {
+  // Fetch existing decks with comprehensive error handling
+  const fetchDecks = async () => {
+    setIsLoadingDecks(true);
+    setFetchDecksError(null);
+
+    try {
+      const authToken = authStorage.getToken();
+      if (!authToken) {
+        setFetchDecksError(
+          'Authentication required. Please login to view your decks.'
+        );
+        return;
+      }
+
+      const url = API_ENDPOINTS.v1.decks.fetch;
+      const response = await apiClient.get(url, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      const result = response.data;
+      console.log('Fetch decks response result:', JSON.stringify(result));
+
+      if (result.success) {
+        console.log('Decks fetched successfully!');
+        const decksArray = result.data?.deck || [];
+        console.log('Decks array:', JSON.stringify(decksArray));
+        if (Array.isArray(decksArray)) {
+          setDecks(decksArray.map((deck: Deck) => deck.title));
+        } else {
+          setDecks([]);
+          setFetchDecksError(
+            'No decks found. Create your first deck to get started.'
+          );
+        }
+      } else {
+        setFetchDecksError(
+          result.message || 'Failed to fetch decks. Please try again.'
+        );
+      }
+    } catch (error: any) {
+      console.error('Fetch decks error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred while fetching decks.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage = data?.message || 'Invalid request format.';
+            break;
+          case 401:
+            errorMessage =
+              'Session expired. Please login again to view your decks.';
+            // Clear invalid token
+            authStorage.removeToken();
+            break;
+          case 403:
+            errorMessage =
+              'Access denied. You do not have permission to view decks.';
+            break;
+          case 404:
+            errorMessage = 'Deck service not found. Please contact support.';
+            break;
+          case 429:
+            errorMessage =
+              'Too many requests. Please wait a moment and try again.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message ||
+              `Failed to fetch decks (${status}). Please try again.`;
+        }
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.message?.includes('token')) {
+        errorMessage = 'Authentication error. Please login again.';
+        authStorage.removeToken();
+      }
+
+      setFetchDecksError(errorMessage);
+    } finally {
+      setIsLoadingDecks(false);
+    }
+  };
+
+  // Load decks on component mount
+  useEffect(() => {
+    fetchDecks();
+  }, []);
+
+  const handleFilesSelect = (selectedFiles: File[]) => {
     setError(null);
-    setFile(selectedFile);
-    setParsedCards([]);
-    setCardCount(0);
+    setFiles(selectedFiles);
+    setFileCardData([]);
+    setTotalCardCount(0);
     setShowCards(false);
     setProgress(0);
     setIsUploading(false);
     setUploadError(null);
   };
 
-  const handleFileRemove = () => {
-    setFile(null);
-    setError(null);
-    setParsedCards([]);
-    setCardCount(0);
-    setShowCards(false);
-    setProgress(0);
-    setUploadError(null);
-    setIsUploading(false);
+  const handleFileRemove = (index: number) => {
+    const updatedFiles = files.filter((_, i) => i !== index);
+    setFiles(updatedFiles);
+
+    if (updatedFiles.length === 0) {
+      setError(null);
+      setFileCardData([]);
+      setTotalCardCount(0);
+      setShowCards(false);
+      setProgress(0);
+      setUploadError(null);
+      setIsUploading(false);
+    }
   };
 
   const validationConfig: FileValidationConfig = {
@@ -56,76 +213,193 @@ export default function FileUpload() {
     maxSize: 10 * 1024 * 1024,
   };
 
-  const parseFileContent = async (file: File): Promise<CardType[]> => {
-    if (
-      file.type === 'application/pdf' ||
-      file.name.toLowerCase().endsWith('.pdf')
-    ) {
-      return [
-        {
-          question: 'PDF File Uploaded',
-          answer: `File Name: ${file.name}`,
-          difficulty: 'Medium',
-        },
-      ];
-    } else {
-      const text = await file.text();
-      const lines = text.split('\n').filter((line) => line.trim());
-      return lines.map((line, index) => {
-        const parts = line.split('|');
-        if (parts.length >= 2) {
-          return {
-            question: parts[0].trim(),
-            answer: parts[1].trim(),
-            difficulty: parts[2]?.trim() || 'Medium',
-          };
-        } else {
-          return {
-            question: `Paragraph ${index + 1}`,
-            answer: line.trim(),
-            difficulty: 'Medium',
-          };
-        }
-      });
-    }
-  };
+  // parseFileContent function removed as we now use backend API for processing
 
   const handleUpload = async () => {
-    if (!file) {
-      setError('Please select a file first.');
-      return;
-    }
-    if (error) return;
-    if (!deckName.trim()) {
-      setError('Please enter a deck name.');
+    if (files.length === 0) return;
+
+    // Get the current form values
+    const formValues = form.getValues();
+    const deckNameValue = formValues.deckName?.trim();
+
+    if (!deckNameValue) {
+      setUploadError('Please select a deck before uploading.');
+      setIsUploading(false);
       return;
     }
 
     setIsUploading(true);
-    setProgress(0);
-    setError(null);
     setUploadError(null);
-    setShowCards(false);
+    setProgress(0);
 
-    // read file
-    const cards = await parseFileContent(file);
-    setCardCount(cards.length);
-    setParsedCards(cards);
+    try {
+      // Get auth token first
+      const authToken = authStorage.getToken();
+      if (!authToken) {
+        setUploadError(
+          'Authentication required. Please login to upload files.'
+        );
+        setIsUploading(false);
+        return;
+      }
 
-    // simulate progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        const newProgress = prev + 10;
-        if (newProgress >= 100) {
-          clearInterval(interval);
+      // Create FormData for API call
+      const formData = new FormData();
+
+      // Add files to FormData (backend expects 'files' field name)
+      files.forEach((file) => {
+        formData.append('files', file);
+      });
+
+      // Note: deckName removed - we're selecting existing decks, not creating new ones
+
+      // Call backend API using the new endpoint
+      const url = API_ENDPOINTS.v1.fileUpload.upload;
+      const response = await apiClient.post(url, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${authToken}`,
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round(
+              (progressEvent.loaded * 100) / progressEvent.total
+            );
+            setProgress(percent);
+          }
+        },
+      });
+
+      const result = response.data;
+      console.log('Upload response result:', result);
+
+      if (result.success) {
+        console.log('Files uploaded successfully!');
+
+        // Transform backend response to match frontend expectations
+        const backendFiles = result.data || [];
+        const newFileCardData: FileCardData[] = [];
+        const allCards: CardType[] = [];
+
+        // Process each file response from backend
+        backendFiles.forEach((backendFile: any, index: number) => {
+          const originalFile = files[index];
+          const cards: CardType[] = [];
+          let fileError: string | undefined;
+
+          // Check if flashcard generation was successful
+          if (
+            backendFile.flashcardGenerationStatus === 'success' &&
+            backendFile.flashcards?.parsedFlashcards
+          ) {
+            backendFile.flashcards.parsedFlashcards.forEach(
+              (flashcard: any) => {
+                cards.push({
+                  question: flashcard.question,
+                  answer: flashcard.answer,
+                  deckName: deckNameValue,
+                  createdAt: new Date().toISOString(),
+                  difficulty: flashcard.difficulty || 'Medium',
+                });
+              }
+            );
+          } else if (backendFile.flashcardGenerationStatus === 'failed') {
+            fileError =
+              backendFile.flashcardError ||
+              'Failed to generate cards from file';
+          } else {
+            fileError = 'No cards generated from file';
+          }
+
+          allCards.push(...cards);
+          newFileCardData.push({
+            file: originalFile,
+            cards,
+            error: fileError,
+          });
+        });
+
+        setFileCardData(newFileCardData);
+        setTotalCardCount(allCards.length);
+
+        // Complete progress and show results
+        setProgress(100);
+        setTimeout(() => {
           setIsUploading(false);
           setShowCards(true);
-          return 100;
+        }, 500);
+      } else {
+        setUploadError(result.message || 'Upload failed. Please try again.');
+        setIsUploading(false);
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+
+      // Handle different types of errors
+      let errorMessage = 'An unexpected error occurred during upload.';
+
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status;
+        const data = error.response.data;
+
+        switch (status) {
+          case 400:
+            errorMessage = data?.message || 'Invalid file format or request.';
+            break;
+          case 401:
+            errorMessage =
+              'Session expired. Please login again to upload files.';
+            // Clear invalid token
+            authStorage.removeToken();
+            break;
+          case 403:
+            errorMessage =
+              'Access denied. You do not have permission to upload files.';
+            break;
+          case 404:
+            errorMessage = 'Upload service not found. Please contact support.';
+            break;
+          case 413:
+            errorMessage =
+              'File size too large. Please reduce file size and try again.';
+            break;
+          case 415:
+            errorMessage =
+              'Unsupported file type. Please upload PDF or TXT files only.';
+            break;
+          case 429:
+            errorMessage =
+              'Too many upload requests. Please wait a moment and try again.';
+            break;
+          case 500:
+          case 502:
+          case 503:
+            errorMessage = 'Server error. Please try again later.';
+            break;
+          default:
+            errorMessage =
+              data?.message || `Upload failed (${status}). Please try again.`;
         }
-        return newProgress;
-      });
-    }, 300);
+      } else if (error.request) {
+        // Network error
+        errorMessage =
+          'Unable to connect to server. Please check your internet connection.';
+      } else if (error.code === 'ECONNABORTED') {
+        // Timeout error
+        errorMessage = 'Upload timed out. Please try again with smaller files.';
+      } else if (error.message?.includes('token')) {
+        errorMessage = 'Authentication error. Please login again.';
+        authStorage.removeToken();
+      }
+
+      setUploadError(errorMessage);
+      setIsUploading(false);
+      setProgress(0);
+    }
   };
+
+  // Remove simulateProgress function as we now use real upload progress
 
   return (
     <div className="min-h-screen bg-background">
@@ -160,7 +434,7 @@ export default function FileUpload() {
                 <Button
                   variant={creationMethod === 'manual' ? 'default' : 'outline'}
                   onClick={() => setCreationMethod('manual')}
-                  className="flex items-center gap-2 px-6 py-3"
+                  className="flex items-center gap-2"
                 >
                   <Edit className="h-4 w-4" />
                   Manual Form
@@ -168,7 +442,7 @@ export default function FileUpload() {
                 <Button
                   variant={creationMethod === 'file' ? 'default' : 'outline'}
                   onClick={() => setCreationMethod('file')}
-                  className="flex items-center gap-2 px-6 py-3"
+                  className="flex items-center gap-2"
                 >
                   <Upload className="h-4 w-4" />
                   File Upload
@@ -187,26 +461,88 @@ export default function FileUpload() {
               </CardTitle>
             </CardHeader>
             <CardContent className="px-6 pb-6 space-y-6">
-              {/* Deck Name */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="deckName"
-                  className="text-sm font-medium text-foreground"
-                >
-                  Deck Name
-                </Label>
-                <Input
-                  id="deckName"
-                  placeholder="Enter name for the new deck..."
-                  value={deckName}
-                  onChange={(e) => setDeckName(e.target.value)}
+              {/* Deck Selection Form */}
+              <Form {...form}>
+                <FormField
+                  control={form.control}
+                  name="deckName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium text-foreground">
+                        Select Deck
+                      </FormLabel>
+                      <FormControl>
+                        <div className="space-y-3">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-between text-left font-normal"
+                                disabled={isLoadingDecks}
+                              >
+                                {isLoadingDecks
+                                  ? 'Loading decks...'
+                                  : selectedDeck
+                                    ? selectedDeck
+                                    : 'Select a deck...'}
+                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </DropdownMenuTrigger>
+
+                            <DropdownMenuContent className="w-full">
+                              {Array.isArray(decks) && decks.length > 0 ? (
+                                decks.map((title, idx) => (
+                                  <DropdownMenuItem
+                                    key={idx}
+                                    onClick={() => {
+                                      setSelectedDeck(title);
+                                      field.onChange(title);
+                                    }}
+                                  >
+                                    {title}
+                                  </DropdownMenuItem>
+                                ))
+                              ) : (
+                                <DropdownMenuItem disabled>
+                                  {isLoadingDecks
+                                    ? 'Loading...'
+                                    : fetchDecksError
+                                      ? 'Failed to load decks'
+                                      : 'No decks available'}
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+
+                          {fetchDecksError && (
+                            <div className="flex items-center justify-between bg-destructive/10 border border-destructive/20 rounded-md p-3">
+                              <p className="text-sm text-destructive">
+                                {fetchDecksError}
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={fetchDecks}
+                                disabled={isLoadingDecks}
+                                className="ml-2 h-8 px-3 text-xs"
+                              >
+                                {isLoadingDecks ? 'Retrying...' : 'Retry'}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </FormControl>
+
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
+              </Form>
 
               <FileDropZone
-                file={file}
+                files={files}
                 isDragging={isDragging}
-                onFileSelect={handleFileSelect}
+                onFilesSelect={handleFilesSelect}
                 onFileRemove={handleFileRemove}
                 onDragStateChange={setIsDragging}
                 onError={setError}
@@ -219,8 +555,15 @@ export default function FileUpload() {
                 </Alert>
               )}
 
-              {file && !showCards && (
+              {files.length > 0 && !showCards && (
                 <div className="flex gap-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setFiles([])}
+                    className="flex-1 text-base font-medium" // ✅ add same class here
+                  >
+                    Cancel
+                  </Button>
                   <Button
                     onClick={handleUpload}
                     disabled={isUploading}
@@ -228,10 +571,9 @@ export default function FileUpload() {
                     className="flex-1 text-base font-medium"
                   >
                     <Upload className="h-4 w-4 mr-2" />
-                    {isUploading ? 'Uploading...' : 'Upload File'}
-                  </Button>
-                  <Button variant="outline" onClick={handleFileRemove}>
-                    Cancel
+                    {isUploading
+                      ? 'Processing Files...'
+                      : `Upload ${files.length} File${files.length > 1 ? 's' : ''}`}
                   </Button>
                 </div>
               )}
@@ -244,13 +586,55 @@ export default function FileUpload() {
                 </Alert>
               )}
 
-              {showCards && cardCount > 0 && (
+              {showCards && totalCardCount > 0 && (
                 <div className="space-y-4">
-                  <ViewCardsDialog
-                    file={file}
-                    parsedCards={parsedCards}
-                    cardCount={cardCount}
-                  />
+                  <div className="bg-muted/50 rounded-lg p-4">
+                    <h3 className="font-medium text-foreground mb-3">
+                      Processing Results ({totalCardCount} total cards from{' '}
+                      {fileCardData.length} file
+                      {fileCardData.length > 1 ? 's' : ''})
+                    </h3>
+                    <div className="space-y-4">
+                      {fileCardData.map((data, index) => (
+                        <div
+                          key={index}
+                          className="bg-background rounded-lg p-4 border"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4 text-primary" />
+                              <span className="text-sm font-medium">
+                                {data.file.name}
+                              </span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {data.cards.length} cards
+                            </span>
+                          </div>
+
+                          {data.error && (
+                            <div className="mb-3">
+                              <p className="text-xs text-destructive">
+                                {data.error}
+                              </p>
+                            </div>
+                          )}
+
+                          {data.cards.length > 0 && (
+                            <div className="space-y-3">
+                              <div className="text-sm text-muted-foreground">
+                                Preview:{' '}
+                                {data.cards[0].question.substring(0, 50)}...
+                              </div>
+                              <div className="flex justify-end">
+                                <ViewCardsDialog fileCardData={data} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </CardContent>

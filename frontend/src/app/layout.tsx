@@ -3,10 +3,12 @@ import '../app/font.css';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from 'next-themes';
+import './globals.css';
+import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-  title: 'Spaced Repetition',
-  description: 'A powerful study tool for spaced repetition learning',
+  title: 'Super-Memo',
+  description: 'Intelligent flashcard learning system',
 };
 
 export default function RootLayout({
@@ -24,6 +26,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>{children}</AuthProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

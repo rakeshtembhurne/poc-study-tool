@@ -1,76 +1,124 @@
 'use client';
 
 import { FileText } from 'lucide-react';
-import { Card } from '@/types/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { FileCardData } from '@/types/card';
 
 interface FilePreviewProps {
-  file: File | null;
-  parsedCards: Card[];
+  fileCardData: FileCardData[];
 }
 
-export default function FilePreview({ file, parsedCards }: FilePreviewProps) {
+export default function FilePreview({ fileCardData }: FilePreviewProps) {
   const formatFileSize = (bytes: number): string => {
     return (bytes / 1024).toFixed(2) + ' KB';
   };
 
-  if (!file) return null;
+  if (!fileCardData || fileCardData.length === 0) return null;
+
+  const totalCards = fileCardData.reduce(
+    (sum, data) => sum + data.cards.length,
+    0
+  );
 
   return (
-    <div className="space-y-4">
-      {/* File Details */}
-      <div className="bg-gray-50 border rounded-lg p-4">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-blue-500" />
-          <span className="text-sm font-medium">{file.name}</span>
-        </div>
-        <div className="text-xs text-gray-500 mt-1">
-          File size: {formatFileSize(file.size)}
-        </div>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h3 className="text-lg font-semibold text-foreground">File Preview</h3>
+        <p className="text-sm text-muted-foreground">
+          {totalCards} total cards from {fileCardData.length} file
+          {fileCardData.length > 1 ? 's' : ''}
+        </p>
       </div>
 
-      {/* Preview Cards */}
-      {parsedCards.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="font-medium text-gray-900">
-            Preview ({parsedCards.length} cards found)
-          </h3>
-          <div className="max-h-80 overflow-y-auto border rounded-lg bg-white">
-            {parsedCards.slice(0, 5).map((card, index) => (
-              <div
-                key={index}
-                className={`p-4 text-sm ${
-                  index !== parsedCards.length - 1 && index !== 4
-                    ? 'border-b border-gray-100'
-                    : ''
-                }`}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <span className="font-medium text-gray-900">
-                    Q: {card.question}
-                  </span>
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      card.difficulty.toLowerCase() === 'easy'
-                        ? 'bg-green-100 text-green-700'
-                        : card.difficulty.toLowerCase() === 'hard'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-orange-100 text-orange-700'
-                    }`}
-                  >
-                    {card.difficulty}
-                  </span>
+      {fileCardData.map((data, fileIndex) => (
+        <Card key={fileIndex}>
+          <CardContent className="p-6 space-y-4">
+            {/* File Details */}
+            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                  <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="text-gray-600">A: {card.answer}</div>
+                <div className="space-y-1">
+                  <h4 className="font-medium text-foreground">
+                    {data.file.name}
+                  </h4>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-muted-foreground">
+                      {formatFileSize(data.file.size)}
+                    </span>
+                    <Badge variant="secondary">{data.cards.length} cards</Badge>
+                  </div>
+                </div>
               </div>
-            ))}
-            {parsedCards.length > 5 && (
-              <div className="text-center text-sm text-gray-500 py-3 border-t border-gray-100">
-                ... and {parsedCards.length - 5} more cards
+              {data.error && (
+                <Badge variant="destructive" className="text-xs">
+                  Error
+                </Badge>
+              )}
+            </div>
+
+            {data.error && (
+              <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                {data.error}
               </div>
             )}
-          </div>
-        </div>
-      )}
+
+            {/* Preview Cards */}
+            {data.cards.length > 0 && (
+              <div className="space-y-3">
+                <h5 className="text-sm font-medium text-foreground">
+                  Card Preview
+                </h5>
+                <div className="max-h-60 overflow-y-auto space-y-3">
+                  {data.cards.slice(0, 3).map((card, cardIndex) => (
+                    <div key={cardIndex}>
+                      <div className="p-4 bg-background border rounded-lg space-y-3">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="space-y-1 flex-1">
+                            <p className="text-sm font-medium text-foreground">
+                              Q: {card.question}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              A: {card.answer}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              card.difficulty?.toLowerCase() === 'easy'
+                                ? 'secondary'
+                                : card.difficulty?.toLowerCase() === 'hard'
+                                  ? 'destructive'
+                                  : 'default'
+                            }
+                            className="shrink-0"
+                          >
+                            {card.difficulty}
+                          </Badge>
+                        </div>
+                      </div>
+                      {cardIndex < Math.min(data.cards.length - 1, 2) && (
+                        <Separator className="my-2" />
+                      )}
+                    </div>
+                  ))}
+                  {data.cards.length > 3 && (
+                    <>
+                      <Separator />
+                      <div className="text-center text-sm text-muted-foreground py-2">
+                        ... and {data.cards.length - 3} more cards from this
+                        file
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ))}
     </div>
   );
 }

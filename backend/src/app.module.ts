@@ -9,6 +9,7 @@ import { OpenRouterModule } from './core/openrouter/openrouter.module';
 import { CardModule } from './card/card.module';
 import { FileProcessingModule } from '@/file-processing/file-processing.module';
 import { DeckModule } from '@/deck/deck.module';
+import { FlashcardsModule } from '@/flashCard/flashcards.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DeckModule } from '@/deck/deck.module';
     CardModule,
     FileProcessingModule,
     DeckModule,
+    FlashcardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
