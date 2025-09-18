@@ -1,0 +1,45 @@
+/* Local font definitions */
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('../../public/fonts/geist-sans/GeistVF.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  font-feature-settings: normal;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('../../public/fonts/geist-mono/GeistMonoVF.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  font-feature-settings: normal;
+}
+
+/* CSS Variables for easy use */
+:root {
+  --font-geist-sans:
+    'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-geist-mono:
+    'Geist Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas,
+    'Courier New', monospace;
+}
+
+/* Base font application */
+body {
+  font-family: var(--font-geist-sans);
+  font-feature-settings:
+    'rlig' 1,
+    'calt' 1;
+}
+
+/* Utility classes */
+.font-sans {
+  font-family: var(--font-geist-sans);
+}
+
+.font-mono {
+  font-family: var(--font-geist-mono);
+}
