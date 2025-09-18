@@ -18,7 +18,6 @@ import { Trash2, AlertTriangle } from 'lucide-react';
 interface DeleteDeckDialogProps {
   deckId: string | number;
   deckTitle: string;
-  cardCount?: number;
   onDelete?: (deckId: string | number) => void;
   trigger?: React.ReactNode;
 }
@@ -26,7 +25,6 @@ interface DeleteDeckDialogProps {
 export function DeleteDeckDialog({
   deckId,
   deckTitle,
-  cardCount = 0,
   onDelete,
   trigger,
 }: DeleteDeckDialogProps) {
@@ -36,12 +34,6 @@ export function DeleteDeckDialog({
     setIsDeleting(true);
 
     try {
-      // TODO: Replace with actual API call when backend is ready
-      console.log('Deleting deck:', deckId);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       // Call the onDelete callback if provided
       if (onDelete) {
         onDelete(deckId);
@@ -72,27 +64,15 @@ export function DeleteDeckDialog({
             <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
               <AlertTriangle className="w-5 h-5 text-red-600" />
             </div>
-            <AlertDialogTitle className="text-lg font-semibold text-gray-900">
+            <AlertDialogTitle className="text-lg font-semibold text-gray-900 dark:text-gray-100">
               Delete Deck
             </AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-gray-600 space-y-3">
+          <AlertDialogDescription className="text-gray-600 dark:text-gray-400 space-y-3">
             <p>
               Are you sure you want to delete{' '}
               <strong>{`"${deckTitle}"`}</strong>?
             </p>
-            {cardCount > 0 && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span className="font-medium">Warning</span>
-                </div>
-                <p className="text-sm text-amber-700 mt-1">
-                  This deck contains <strong>{cardCount} cards</strong>. All
-                  cards and study progress will be permanently lost.
-                </p>
-              </div>
-            )}
             <p className="text-sm">
               This action cannot be undone. The deck and all associated data
               will be permanently removed.

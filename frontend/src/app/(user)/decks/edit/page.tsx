@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Plus } from 'lucide-react';
-import { createDeck } from '@/lib/deck-service';
+import { ArrowLeft, Edit3 } from 'lucide-react';
+import { getDeckById, updateDeck } from '@/lib/deck-service';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -18,20 +18,62 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export default function AddDeckPage() {
+export default function EditDeckPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const deckId = searchParams.get('id');
+  console.log('deckId from searchParams:', deckId);
+
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingDeck, setIsLoadingDeck] = useState(true);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     isPublic: false,
   });
-
   const [errors, setErrors] = useState({
     title: '',
     description: '',
     api: '', // For API errors
   });
+
+  const truncateText = (text: string, maxLength: number) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
+  // Load deck data
+  useEffect(() => {
+    const loadDeck = async () => {
+      try {
+        if (!deckId) {
+          router.push('/decks');
+          return;
+        }
+        const response = await getDeckById(deckId);
+        const deck = response.data; // The deck data is nested
+
+        if (deck) {
+          setFormData({
+            title: deck.title || 'axbc',
+            description: deck.description || 'abc',
+            isPublic: deck.isPublic,
+          });
+        } else {
+          // Deck not found, redirect to decks page
+          router.push('/decks');
+        }
+      } catch (error) {
+        console.error('Error loading deck:', error);
+        setErrors((prev) => ({ ...prev, api: 'Failed to load deck data.' }));
+        // Optionally redirect or show a more prominent error message
+      } finally {
+        setIsLoadingDeck(false);
+      }
+    };
+
+    loadDeck();
+  }, [deckId, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +81,16 @@ export default function AddDeckPage() {
     setErrors({ title: '', description: '', api: '' });
 
     try {
+      if (!deckId) {
+        return;
+      }
       const { title, description, isPublic } = formData;
-      await createDeck({ title, description, isPublic });
+      await updateDeck(deckId, { title, description, isPublic });
 
+      // Redirect back to decks page
       router.push('/decks');
     } catch (error: any) {
-      console.error('Error creating deck:', error);
+      console.error('Error updating deck:', error);
       setErrors((prev) => ({
         ...prev,
         api: error.response?.data?.message || 'An unexpected error occurred.',
@@ -85,51 +131,61 @@ export default function AddDeckPage() {
     }));
   };
 
-  const truncateText = (text: string, maxLength: number) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  };
+  if (isLoadingDeck) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading deck...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-background p-8">
         <div className="max-w-[80vw] mx-auto space-y-8">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.back()}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Create New Deck
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Add a new flashcard deck to your collection
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.back()}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back
+              </Button>
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-foreground">
+                  Edit Deck
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Update your flashcard deck information
+                </p>
+              </div>
             </div>
           </div>
 
+          {errors.api && (
+            <div className="bg-destructive/10 text-destructive p-3 rounded-md">
+              {errors.api}
+            </div>
+          )}
+
           <div className="grid lg:grid-cols-3 gap-6">
+            {/* Form */}
             <div className="lg:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-foreground">
-                    <Plus className="w-5 h-5" />
+                    <Edit3 className="w-5 h-5" />
                     Deck Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    {errors.api && (
-                      <p className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
-                        {errors.api}
-                      </p>
-                    )}
                     {/* Title */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -247,7 +303,7 @@ export default function AddDeckPage() {
                         disabled={isLoading || !formData.title}
                         className="flex-1"
                       >
-                        {isLoading ? 'Creating...' : 'Create Deck'}
+                        {isLoading ? 'Saving...' : 'Save Changes'}
                       </Button>
                     </div>
                   </form>
