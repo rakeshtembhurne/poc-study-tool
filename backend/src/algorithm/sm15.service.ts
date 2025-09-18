@@ -186,20 +186,22 @@ export class SM15Service {
   }
 
   private estimateAFactorFromGrade(grade: Grade): number {
-    // Map grade to estimated A-Factor
+    // Map grade to estimated A-Factor (1.2-6.9 range)
     switch (grade) {
       case 5:
-        return 2.5; // Perfect recall - easiest
+        return 6.9; // Perfect recall - easiest
       case 4:
-        return 2.2; // Easy recall
+        return 5.5; // Good recall - easy
       case 3:
-        return 1.8; // Good recall
+        return 4.0; // Pass threshold - moderate
       case 2:
-        return 1.4; // Hard recall
+        return 2.5; // Poor recall - hard
       case 1:
-        return 1.1; // Failed recall - hardest
+        return 1.5; // Failed recall - harder
+      case 0:
+        return 1.2; // Complete blackout - hardest
       default:
-        return 2.0;
+        return 4.0; // Default to middle value
     }
   }
 

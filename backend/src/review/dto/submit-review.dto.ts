@@ -7,12 +7,13 @@ export class SubmitReviewDto {
   cardId: number;
 
   @ApiProperty({
-    description: 'Grade from 1-5 (1=Failed, 2=Hard, 3=Good, 4=Easy, 5=Perfect)',
-    minimum: 1,
+    description:
+      'Grade from 0-5 (0=Blackout, 1=Failed, 2=Hard, 3=Good, 4=Easy, 5=Perfect)',
+    minimum: 0,
     maximum: 5,
   })
   @IsInt()
-  @Min(1)
+  @Min(0)
   @Max(5)
   grade: number;
 

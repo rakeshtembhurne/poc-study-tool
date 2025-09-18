@@ -1,12 +1,12 @@
 export const SM15_CONSTANTS = {
   GRADE_SCALE: {
-    MIN: 1,
+    MIN: 0, // Complete blackout
     MAX: 5,
   },
   A_FACTOR: {
-    MIN: 1.1,
-    MAX: 2.5,
-    DEFAULT: 2.5,
+    MIN: 1.2, // Hardest items
+    MAX: 6.9, // Easiest items
+    DEFAULT: 4.0, // Middle value for unknown difficulty
   },
   INTERVALS: {
     MIN_DAYS: 1,
@@ -15,9 +15,10 @@ export const SM15_CONSTANTS = {
     OVERDUE_THRESHOLD: 1.5, // 150%
   },
   GRADE_PERFORMANCE_MAP: {
-    1: 0.0, // Complete failure
+    0: 0.0, // Complete blackout
+    1: 0.1, // Complete failure
     2: 0.3, // Poor recall
-    3: 0.6, // Moderate recall
+    3: 0.6, // Moderate recall (Pass threshold)
     4: 0.8, // Good recall
     5: 1.0, // Perfect recall
   },

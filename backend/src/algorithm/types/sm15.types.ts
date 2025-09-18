@@ -1,8 +1,8 @@
-export type Grade = 1 | 2 | 3 | 4 | 5;
+export type Grade = 0 | 1 | 2 | 3 | 4 | 5;
 
-export type AFactor = number; // 1.1 - 2.5
+export type AFactor = number; // 1.2 - 6.9
 
-export type DifficultyCategory = number; // 0 - 14
+export type DifficultyCategory = number; // 0 - 19
 
 export type IntervalDays = number; // 1 - 5475
 
