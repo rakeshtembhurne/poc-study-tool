@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +29,7 @@ const MAX_QUESTION_LENGTH = 150;
 const MAX_ANSWER_LENGTH = 300;
 
 export default function CreateNewCard() {
+  const router = useRouter();
   const [creationMethod, setCreationMethod] = useState('Manual Form');
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
   const [question, setQuestion] = useState('');
@@ -87,7 +90,7 @@ export default function CreateNewCard() {
       !isValidInput(answer) ||
       selectedDeckId === null
     ) {
-      alert('Please fill out all required fields.');
+      toast.error('Please fill out all required fields.');
       return;
     }
 
@@ -101,9 +104,10 @@ export default function CreateNewCard() {
       await createCard(newCardPayload);
       setQuestion('');
       setAnswer('');
-      alert('Card created successfully!');
+      toast.success('Card created successfully!');
+      router.push('/cards');
     } catch (err) {
-      alert('Failed to save card. Please try again.');
+      toast.error('Failed to save card. Please try again.');
       console.error(err);
     }
   };
@@ -170,22 +174,29 @@ export default function CreateNewCard() {
                       <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                  <DropdownMenuContent
+                    className="w-full min-w-[var(--radix-dropdown-menu-trigger-width)] max-w-none z-50"
+                    align="start"
+                    sideOffset={4}
+                  >
                     {loading ? (
-                      <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
+                      <DropdownMenuItem disabled className="w-full">
+                        Loading...
+                      </DropdownMenuItem>
                     ) : decks.length > 0 ? (
                       decks.map((deck) => (
                         <DropdownMenuItem
                           key={deck.id}
+                          className="w-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
                           onClick={() => {
                             setSelectedDeckId(deck.id);
                           }}
                         >
-                          {deck.title}
+                          <span className="truncate">{deck.title}</span>
                         </DropdownMenuItem>
                       ))
                     ) : (
-                      <DropdownMenuItem disabled>
+                      <DropdownMenuItem disabled className="w-full">
                         No decks found.
                       </DropdownMenuItem>
                     )}

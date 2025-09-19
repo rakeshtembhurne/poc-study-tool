@@ -325,21 +325,26 @@ export default function FileUpload() {
                           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-full">
+                      <DropdownMenuContent
+                        className="w-full min-w-[var(--radix-dropdown-menu-trigger-width)] max-w-none z-50"
+                        align="start"
+                        sideOffset={4}
+                      >
                         {Array.isArray(decks) && decks.length > 0 ? (
                           decks.map((title, idx) => (
                             <DropdownMenuItem
                               key={idx}
+                              className="w-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
                               onClick={() => {
                                 setSelectedDeck(title);
                                 field.onChange(title);
                               }}
                             >
-                              {title}
+                              <span className="truncate">{title}</span>
                             </DropdownMenuItem>
                           ))
                         ) : (
-                          <DropdownMenuItem disabled>
+                          <DropdownMenuItem disabled className="w-full">
                             {isLoadingDecks
                               ? 'Loading...'
                               : fetchDecksError
