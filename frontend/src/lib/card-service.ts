@@ -9,7 +9,7 @@ interface CardPayload {
 // Create a new card
 export const createCard = async (cardData: CardPayload) => {
   try {
-    const response = await apiClient.post('/cards', cardData);
+    const response = await apiClient.post('/api/v1/cards', cardData);
     return response.data;
   } catch (error) {
     console.error('Failed to create card:', error);
@@ -23,7 +23,7 @@ export const updateCard = async (
   cardData: Partial<CardPayload>
 ) => {
   try {
-    const response = await apiClient.put(`/cards/${id}`, cardData);
+    const response = await apiClient.put(`/api/v1/cards/${id}`, cardData);
     return response.data;
   } catch (error) {
     console.error(`Failed to update card with id ${id}:`, error);
@@ -34,7 +34,7 @@ export const updateCard = async (
 // Delete a card
 export const deleteCard = async (id: number) => {
   try {
-    const response = await apiClient.delete(`/cards/${id}`);
+    const response = await apiClient.delete(`/api/v1/cards/${id}`);
     return response.data;
   } catch (error) {
     console.error(`Failed to delete card with id ${id}:`, error);
@@ -45,7 +45,7 @@ export const deleteCard = async (id: number) => {
 // Get a single card by ID
 export const getCardById = async (id: number) => {
   try {
-    const response = await apiClient.get(`/cards/card/${id}`);
+    const response = await apiClient.get(`/api/v1/cards/card/${id}`);
     return response.data;
   } catch (error) {
     console.error(`Failed to fetch card with id ${id}:`, error);
@@ -67,7 +67,7 @@ export const getCardsByUserId = async (
     if (deckId) {
       params.deckId = deckId;
     }
-    const response = await apiClient.get('/cards', { params });
+    const response = await apiClient.get('/api/v1/cards', { params });
     return response.data;
   } catch (error) {
     console.error('Failed to fetch all cards:', error);
@@ -83,7 +83,7 @@ export const getCardsByDeckId = async (
   search?: string
 ) => {
   try {
-    const response = await apiClient.get(`/cards`, {
+    const response = await apiClient.get(`/api/v1/cards`, {
       params: { page, limit, search, deckId },
     });
     return response.data;

@@ -6,10 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, Pencil, Trash2, X } from 'lucide-react';
-import { getDecks } from '@/lib/deck-service';
+import { FileText, Pencil, Trash2, X, ChevronDown } from 'lucide-react';
 import { getCardsByUserId, deleteCard, updateCard } from '@/lib/card-service';
 import Link from 'next/link';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import apiClient from '@/lib/api-client';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+import authStorage from '@/lib/auth-storage';
 
 interface DeckData {
   id: number;
@@ -53,10 +61,28 @@ export default function ViewCards() {
 
   const fetchDecks = async () => {
     try {
-      const response = await getDecks();
-      setDecks(response.data.data || []);
-    } catch (err) {
-      console.error('Failed to fetch decks:', err);
+      const authToken = authStorage.getToken();
+      if (!authToken) {
+        setError('Authentication required to fetch decks.');
+        return;
+      }
+      const url = API_ENDPOINTS.v1.decks.fetch;
+      const response = await apiClient.get(url, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      const result = response.data;
+      if (result.success && result.data && Array.isArray(result.data.deck)) {
+        setDecks(result.data.deck);
+      } else {
+        setError(result.message || 'Could not parse decks data.');
+        setDecks([]);
+      }
+    } catch (err: any) {
+      console.error('Fetch decks error:', err);
+      setError(
+        err.response?.data?.message || err.message || 'Failed to fetch decks.'
+      );
+      setDecks([]);
     }
   };
 
@@ -82,7 +108,6 @@ export default function ViewCards() {
 
   useEffect(() => {
     fetchDecks();
-    fetchCardsWithPagination(page);
   }, []);
 
   useEffect(() => {
@@ -90,9 +115,11 @@ export default function ViewCards() {
   }, [selectedDeckId]);
 
   const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this card?')) {
+      return;
+    }
     try {
       await deleteCard(id);
-      // Re-fetch cards after deletion
       fetchCardsWithPagination(page);
     } catch (err) {
       setError('Failed to delete card. Please try again.');
@@ -137,18 +164,8 @@ export default function ViewCards() {
 
       await updateCard(editingCard.id, updatedCardPayload);
 
-      // Update the card in the local state
-      const updatedCards = cards.map((card) =>
-        card.id === editingCard.id
-          ? {
-              ...card,
-              frontContent: editQuestion,
-              backContent: editAnswer,
-              deckId: editDeckId,
-            }
-          : card
-      );
-      setCards(updatedCards);
+      // Re-fetch cards to show updated data
+      fetchCardsWithPagination(page);
 
       closeEditModal();
     } catch (err) {
@@ -181,22 +198,32 @@ export default function ViewCards() {
             Filter by Deck
           </h2>
           <div className="space-y-2">
-            <select
-              value={selectedDeckId || ''}
-              onChange={(e) =>
-                setSelectedDeckId(
-                  e.target.value ? Number(e.target.value) : null
-                )
-              }
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="">All Decks</option>
-              {decks.map((deck) => (
-                <option key={deck.id} value={deck.id}>
-                  {deck.title}
-                </option>
-              ))}
-            </select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full md:w-[280px] justify-between text-left font-normal"
+                >
+                  {selectedDeckId
+                    ? decks.find((d) => d.id === selectedDeckId)?.title
+                    : 'All Decks'}
+                  <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-full md:w-[280px]">
+                <DropdownMenuItem onSelect={() => setSelectedDeckId(null)}>
+                  All Decks
+                </DropdownMenuItem>
+                {decks.map((deck) => (
+                  <DropdownMenuItem
+                    key={deck.id}
+                    onSelect={() => setSelectedDeckId(deck.id)}
+                  >
+                    {deck.title}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -214,7 +241,11 @@ export default function ViewCards() {
           <div className="flex flex-col items-center justify-center p-20 text-center text-gray-500 dark:text-gray-400">
             <FileText className="h-16 w-16 mb-4" />
             <p className="text-lg font-medium">No flashcards found.</p>
-            <p className="mt-2">Create your first flashcard to get started!</p>
+            <p className="mt-2">
+              {selectedDeckId
+                ? 'No cards in this deck.'
+                : 'Create your first flashcard to get started!'}
+            </p>
             <Link href="/create-card" className="mt-4">
               <Button>Create New Card</Button>
             </Link>
@@ -223,36 +254,41 @@ export default function ViewCards() {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {cards.map((card) => (
-                <Card key={card.id} className="rounded-lg shadow-md">
+                <Card
+                  key={card.id}
+                  className="rounded-lg shadow-md flex flex-col"
+                >
                   <CardHeader>
                     <CardTitle className="text-lg font-medium text-gray-900 dark:text-gray-100 break-words">
                       {card.frontContent}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="flex-grow flex flex-col justify-between">
                     <p className="text-gray-600 dark:text-gray-400 mb-2 break-words">
                       {card.backContent}
                     </p>
-                    {card.deck && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                        Deck: {card.deck.title}
+                    <div>
+                      {card.deck && (
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                          Deck: {card.deck.title}
+                        </div>
+                      )}
+                      <div className="flex justify-end mt-4 space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => openEditModal(card)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => handleDelete(card.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                    )}
-                    <div className="flex justify-end mt-4 space-x-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => openEditModal(card)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleDelete(card.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -282,7 +318,6 @@ export default function ViewCards() {
         )}
       </div>
 
-      {/* Edit Modal */}
       {isEditModalOpen && editingCard && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -347,19 +382,29 @@ export default function ViewCards() {
                   >
                     Select Deck
                   </Label>
-                  <select
-                    id="edit-deck"
-                    value={editDeckId || ''}
-                    onChange={(e) => setEditDeckId(Number(e.target.value))}
-                    className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring focus:border-blue-300"
-                  >
-                    <option value="">Choose a deck...</option>
-                    {decks.map((deck) => (
-                      <option key={deck.id} value={deck.id}>
-                        {deck.title}
-                      </option>
-                    ))}
-                  </select>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between text-left font-normal"
+                      >
+                        {editDeckId
+                          ? decks.find((d) => d.id === editDeckId)?.title
+                          : 'Choose a deck...'}
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                      {decks.map((deck) => (
+                        <DropdownMenuItem
+                          key={deck.id}
+                          onSelect={() => setEditDeckId(deck.id)}
+                        >
+                          {deck.title}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
                 <div className="flex justify-end space-x-2 pt-4">

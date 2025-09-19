@@ -45,33 +45,21 @@ export class CardController {
   @Get()
   async getCardsByUserId(
     @User('id') userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('search') search?: string,
-    @Query('deckId') deckId?: number
+    @Query('deckId') deckId?: string
   ) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const deckIdNum = deckId ? parseInt(deckId, 10) : undefined;
+
     return this.cardService.getCardsByUserId(
       userId,
-      page,
-      limit,
+      pageNum,
+      limitNum,
       search,
-      deckId
-    );
-  }
-  @Get(':deckId')
-  async getByDeckId(
-    @Param('deckId') deckId: number,
-    @User('id') userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-    @Query('search') search?: string
-  ) {
-    return this.cardService.getByDeckId(
-      deckId,
-      Number(userId),
-      page,
-      limit,
-      search
+      deckIdNum
     );
   }
 
@@ -81,13 +69,5 @@ export class CardController {
     @User('id') userId: number
   ) {
     return this.cardService.deleteById(id, userId);
-  }
-
-  @Get('card/:id')
-  async getCardById(
-    @Param('id', ParseIntPipe) id: number,
-    @User('id') userId: number
-  ) {
-    return this.cardService.getCardById(id, userId);
   }
 }

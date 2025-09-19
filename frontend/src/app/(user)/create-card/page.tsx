@@ -5,23 +5,22 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { FileText, X } from 'lucide-react';
-import { getDecks } from '@/lib/deck-service';
 import { createCard } from '@/lib/card-service';
+import FileUpload from '@/components/FileUpload';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown } from 'lucide-react';
+import apiClient from '@/lib/api-client';
+import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+import authStorage from '@/lib/auth-storage';
 
 interface DeckData {
   id: number;
   title: string;
-}
-
-interface CardData {
-  id: number;
-  frontContent: string;
-  backContent: string;
-  difficulty: string;
-  deckId: number;
-  tags?: string;
-  userId: number;
 }
 
 const MAX_QUESTION_LENGTH = 150;
@@ -32,20 +31,43 @@ export default function CreateNewCard() {
   const [selectedDeckId, setSelectedDeckId] = useState<number | null>(null);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
-  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [decks, setDecks] = useState<DeckData[]>([]);
 
   const fetchDecks = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-      const response = await getDecks();
-      setDecks(response.data.data || []);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch decks. Please try again later.');
-      console.error(err);
+      const authToken = authStorage.getToken();
+      if (!authToken) {
+        setError('Authentication token not found. Please log in.');
+        setLoading(false);
+        return;
+      }
+
+      const url = API_ENDPOINTS.v1.decks.fetch;
+      const response = await apiClient.get(url, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+
+      const result = response.data;
+      if (result.success && result.data && Array.isArray(result.data.deck)) {
+        setDecks(result.data.deck);
+      } else {
+        setError(
+          result.message || 'No decks found or data in unexpected format.'
+        );
+        setDecks([]);
+      }
+    } catch (err: any) {
+      console.error('Fetch decks error:', err);
+      const errorMessage =
+        err.response?.data?.message ||
+        err.message ||
+        'An unexpected error occurred while fetching decks.';
+      setError(errorMessage);
+      setDecks([]);
     } finally {
       setLoading(false);
     }
@@ -76,68 +98,14 @@ export default function CreateNewCard() {
     };
 
     try {
-      const response = await createCard(newCardPayload);
+      await createCard(newCardPayload);
       setQuestion('');
       setAnswer('');
-      setError(null);
       alert('Card created successfully!');
     } catch (err) {
-      setError('Failed to save card. Please try again.');
+      alert('Failed to save card. Please try again.');
       console.error(err);
     }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setFile(null);
-  };
-
-  const handleBulkUpload = async () => {
-    if (!file || selectedDeckId === null) {
-      alert('Please select a file and a deck.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const content = e.target?.result as string;
-      const lines = content.split('\n');
-      const newCards = [];
-      let successCount = 0;
-      let errorCount = 0;
-
-      for (const line of lines) {
-        const [frontContent, backContent] = line
-          .split('|')
-          .map((item) => item.trim());
-        if (isValidInput(frontContent) && isValidInput(backContent)) {
-          const newCardPayload = {
-            frontContent,
-            backContent,
-            deckId: selectedDeckId,
-          };
-          try {
-            await createCard(newCardPayload);
-            successCount++;
-          } catch (err) {
-            console.error('Failed to upload a card:', err);
-            errorCount++;
-          }
-        }
-      }
-      setFile(null);
-      setError(null);
-      alert(
-        `Successfully created ${successCount} cards. ${errorCount} cards failed.`
-      );
-    };
-    reader.readAsText(file);
   };
 
   return (
@@ -176,38 +144,56 @@ export default function CreateNewCard() {
           </div>
         </div>
 
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8 shadow-sm">
-          <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
-            Select Deck
-          </h2>
-          <div className="space-y-2">
-            <Label
-              htmlFor="select-deck"
-              className="text-gray-700 dark:text-gray-300"
-            >
-              Choose an existing deck
-            </Label>
-            <select
-              id="select-deck"
-              value={selectedDeckId || ''}
-              onChange={(e) => setSelectedDeckId(Number(e.target.value))}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring focus:border-blue-300"
-            >
-              <option value="">Choose a deck...</option>
-              {decks.map((deck) => (
-                <option key={deck.id} value={deck.id}>
-                  {deck.title}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
         {creationMethod === 'Manual Form' && (
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
             <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
               Manual Card Creation
             </h2>
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8 shadow-sm">
+              <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
+                Select Deck
+              </h2>
+              <div className="space-y-2">
+                <Label className="text-gray-700 dark:text-gray-300">
+                  Choose an existing deck
+                </Label>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full justify-between text-left font-normal"
+                      disabled={loading}
+                    >
+                      {selectedDeckId
+                        ? decks.find((d) => d.id === selectedDeckId)?.title
+                        : 'Choose a deck...'}
+                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                    {loading ? (
+                      <DropdownMenuItem disabled>Loading...</DropdownMenuItem>
+                    ) : decks.length > 0 ? (
+                      decks.map((deck) => (
+                        <DropdownMenuItem
+                          key={deck.id}
+                          onClick={() => {
+                            setSelectedDeckId(deck.id);
+                          }}
+                        >
+                          {deck.title}
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      <DropdownMenuItem disabled>
+                        No decks found.
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
+              </div>
+            </div>
             <div className="space-y-6">
               <div className="space-y-2">
                 <Label
@@ -251,7 +237,7 @@ export default function CreateNewCard() {
               <div className="flex justify-end pt-4">
                 <Button
                   onClick={handleManualSave}
-                  disabled={selectedDeckId === null}
+                  disabled={selectedDeckId === null || loading}
                 >
                   Save Card
                 </Button>
@@ -259,78 +245,9 @@ export default function CreateNewCard() {
             </div>
           </div>
         )}
-        {/* File Upload Section */}
-        {creationMethod === 'File Upload' && (
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
-            <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
-              Bulk Upload from File
-            </h2>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="file-upload"
-                  className="text-gray-700 dark:text-gray-300"
-                >
-                  Upload File (.txt)
-                </Label>
-                <div className="p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md text-center">
-                  {!file ? (
-                    <>
-                      <FileText className="h-10 w-10 text-gray-400 dark:text-gray-500 mx-auto" />
-                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                        Select a .txt file with your cards
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        Format: Question|Answer (one card per line)
-                      </p>
-                      <p className="text-xs text-gray-400 dark:text-gray-500">
-                        Example: What is 2+2?|4
-                      </p>
-                      <label
-                        htmlFor="file-upload-input"
-                        className="mt-4 inline-flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 font-semibold border border-gray-300 dark:border-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
-                      >
-                        Choose file
-                      </label>
-                      <input
-                        id="file-upload-input"
-                        type="file"
-                        accept=".txt"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md">
-                      <div className="flex items-center">
-                        <FileText className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">
-                          {file.name}
-                        </span>
-                      </div>
-                      <button
-                        onClick={handleRemoveFile}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex justify-end pt-4">
-                <Button
-                  onClick={handleBulkUpload}
-                  disabled={!file || !selectedDeckId}
-                >
-                  Create Cards
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Instructions Section */}
+        {creationMethod === 'File Upload' && <FileUpload />}
+
         <div className="mt-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
           <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
             <span className="text-yellow-500 mr-2">💡</span>Instructions

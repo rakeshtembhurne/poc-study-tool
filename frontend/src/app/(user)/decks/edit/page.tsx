@@ -233,7 +233,7 @@ export default function EditDeckPage() {
                         >
                           Description
                         </Label>
-                        <span
+                        {/* <span
                           className={`text-xs ${
                             formData.description.length > 35
                               ? 'text-destructive'
@@ -241,7 +241,7 @@ export default function EditDeckPage() {
                           }`}
                         >
                           {formData.description.length}/40
-                        </span>
+                        </span> */}
                       </div>
                       <Textarea
                         id="description"
