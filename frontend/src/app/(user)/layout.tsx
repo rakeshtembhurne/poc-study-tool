@@ -49,6 +49,7 @@ function TopNavigation() {
   const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/decks', label: 'Decks', icon: FolderOpen },
+    { href: '/cards', label: 'Cards', icon: SquarePlus },
     { href: '/create-card', label: 'Create Card', icon: SquarePlus },
     { href: '/study', label: 'Study', icon: BookOpen },
     { href: '/analytics', label: 'Analytics', icon: BarChart3 },
