@@ -47,6 +47,15 @@ interface OFMatrixData {
   usageCount: number;
 }
 
+interface RecallMatrixData {
+  userEmail: string;
+  intervalDays: number;
+  difficultyCategory: number;
+  totalReviews: number;
+  successfulReviews: number;
+  retentionRate: number;
+}
+
 interface UserStatisticData {
   userEmail: string;
   date: string;
@@ -308,7 +317,54 @@ export async function seedDevelopment(prisma: PrismaClient) {
   }
   logSeedingProgress('OF Matrix entries', ofMatrixEntries.length);
 
-  // 5. SEED REVIEWS
+  // 5. SEED RECALL MATRIX (SM-15 Enhancement)
+  Logger.log('Creating Recall Matrix entries...');
+  const recallMatrixEntries = loadTemplateData<RecallMatrixData>(
+    'recall-matrix.json',
+    'development'
+  );
+  for (const recallData of recallMatrixEntries) {
+    const userId = createdUsers.get(recallData.userEmail);
+    if (!userId) {
+      Logger.warn(
+        `User ${recallData.userEmail} not found for Recall Matrix, skipping...`
+      );
+      continue;
+    }
+    try {
+      await prisma.recallMatrix.upsert({
+        where: {
+          userId_intervalDays_difficultyCategory: {
+            userId,
+            intervalDays: recallData.intervalDays,
+            difficultyCategory: recallData.difficultyCategory,
+          },
+        },
+        update: {
+          totalReviews: recallData.totalReviews,
+          successfulReviews: recallData.successfulReviews,
+          retentionRate: recallData.retentionRate,
+          lastUpdated: new Date(),
+        },
+        create: {
+          userId,
+          intervalDays: recallData.intervalDays,
+          difficultyCategory: recallData.difficultyCategory,
+          totalReviews: recallData.totalReviews,
+          successfulReviews: recallData.successfulReviews,
+          retentionRate: recallData.retentionRate,
+        },
+      });
+    } catch (error) {
+      Logger.error(
+        `❌ Recall Matrix entry creation failed for user ${recallData.userEmail}: interval ${recallData.intervalDays}, difficulty ${recallData.difficultyCategory}`,
+        error
+      );
+    }
+  }
+  logSeedingProgress('Recall Matrix entries', recallMatrixEntries.length);
+
+  // 6. SEED REVIEWS
   Logger.log('Creating review history...');
   const reviews = loadTemplateData<ReviewData>('reviews.json', 'development');
 

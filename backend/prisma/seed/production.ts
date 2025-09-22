@@ -11,7 +11,7 @@ interface CardData {
   userEmail: string;
   frontContent: string;
   backContent: string;
-  deckTitle: String;
+  deckTitle: string;
   aFactor: number;
   repetitionCount: number;
   intervalDays: number;
@@ -34,6 +34,15 @@ interface OFMatrixData {
   usageCount: number;
 }
 
+interface RecallMatrixData {
+  userEmail: string;
+  intervalDays: number;
+  difficultyCategory: number;
+  totalReviews: number;
+  successfulReviews: number;
+  retentionRate: number;
+}
+
 export async function seedProduction(prisma: PrismaClient) {
   Logger.log('🌅 Seeding production data...');
 
@@ -50,104 +59,105 @@ export async function seedProduction(prisma: PrismaClient) {
         },
       });
       createdUsers.set(userData.email, user.id);
-    } catch (error) {
+    } catch {
       const existingUser = await prisma.user.findUnique({
-        where: { email: userData.email }
+        where: { email: userData.email },
       });
       if (existingUser) {
         createdUsers.set(userData.email, existingUser.id);
       }
-      Logger.warn(`Production user ${userData.email} already exists, using existing...`);
+      Logger.warn(
+        `Production user ${userData.email} already exists, using existing...`
+      );
     }
   }
   logSeedingProgress('production users', users.length);
 
- // 2. SEED DECKS
- Logger.log('Creating decks...');
- const decksData = loadTemplateData<DeckData>('decks.json', 'production');
- const createdDecks = new Map<string, number>(); // Map "userEmail-deckTitle" to deckId
- 
- for (const deckData of decksData) {
-   const userId = createdUsers.get(deckData.userEmail);
-   if (!userId) {
-     Logger.warn(`User ${deckData.userEmail} not found for deck, skipping...`);
-     continue;
-   }
- 
-   try {
-     const deck = await prisma.deck.upsert({
-       where: { userId_title: { userId, title: deckData.title } },
-       update: {
-         description: deckData.description,
-         isPublic: deckData.isPublic,
-       },
-       create: {
-         userId,
-         title: deckData.title,
-         description: deckData.description,
-         isPublic: deckData.isPublic,
-       },
-     });
- 
-     const deckKey = `${deckData.userEmail}-${deckData.title}`;
-     createdDecks.set(deckKey, deck.id);
-   } catch (error) {
-     Logger.warn(`Deck "${deckData.title}" creation failed`, error);
-   }
- }
- 
- logSeedingProgress('decks', decksData.length);
- 
- // 3. SEED CARDS
- Logger.log('Creating flashcards...');
- const cards = loadTemplateData<CardData>('cards.json', 'production');
- const createdCards = new Map<string, number>();
- 
- for (const cardData of cards) {
-   const userId = createdUsers.get(cardData.userEmail);
-   if (!userId) {
-     Logger.warn(`User ${cardData.userEmail} not found for card, skipping...`);
-     continue;
-   }
- 
-   // Lookup deck by title instead of numeric id
-   const deckKey = `${cardData.userEmail}-${cardData.deckTitle}`;
-   const deckId = createdDecks.get(deckKey);
-   if (!deckId) {
-     Logger.warn(
-       `Deck "${cardData.deckTitle}" for user ${cardData.userEmail} not found, skipping card...`
-     );
-     continue;
-   }
- 
-   try {
-     const nextReviewDate = new Date();
-     nextReviewDate.setDate(nextReviewDate.getDate() + cardData.intervalDays);
- 
-     const card = await prisma.card.create({
-       data: {
-         userId,
-         deckId,
-         frontContent: cardData.frontContent,
-         backContent: cardData.backContent,
-         aFactor: cardData.aFactor,
-         repetitionCount: cardData.repetitionCount,
-         intervalDays: cardData.intervalDays,
-         lapsesCount: cardData.lapsesCount,
-         sourceType: cardData.sourceType,
-         reviewHistory: JSON.parse(cardData.reviewHistory),
-         nextReviewDate,
-       },
-     });
- 
-     createdCards.set(cardData.frontContent, card.id);
-   } catch (error) {
-     Logger.warn(`Card "${cardData.frontContent}" creation failed:`, error);
-   }
- }
- 
- logSeedingProgress('cards', cards.length);
+  // 2. SEED DECKS
+  Logger.log('Creating decks...');
+  const decksData = loadTemplateData<DeckData>('decks.json', 'production');
+  const createdDecks = new Map<string, number>(); // Map "userEmail-deckTitle" to deckId
 
+  for (const deckData of decksData) {
+    const userId = createdUsers.get(deckData.userEmail);
+    if (!userId) {
+      Logger.warn(`User ${deckData.userEmail} not found for deck, skipping...`);
+      continue;
+    }
+
+    try {
+      const deck = await prisma.deck.upsert({
+        where: { userId_title: { userId, title: deckData.title } },
+        update: {
+          description: deckData.description,
+          isPublic: deckData.isPublic,
+        },
+        create: {
+          userId,
+          title: deckData.title,
+          description: deckData.description,
+          isPublic: deckData.isPublic,
+        },
+      });
+
+      const deckKey = `${deckData.userEmail}-${deckData.title}`;
+      createdDecks.set(deckKey, deck.id);
+    } catch (error) {
+      Logger.warn(`Deck "${deckData.title}" creation failed`, error);
+    }
+  }
+
+  logSeedingProgress('decks', decksData.length);
+
+  // 3. SEED CARDS
+  Logger.log('Creating flashcards...');
+  const cards = loadTemplateData<CardData>('cards.json', 'production');
+  const createdCards = new Map<string, number>();
+
+  for (const cardData of cards) {
+    const userId = createdUsers.get(cardData.userEmail);
+    if (!userId) {
+      Logger.warn(`User ${cardData.userEmail} not found for card, skipping...`);
+      continue;
+    }
+
+    // Lookup deck by title instead of numeric id
+    const deckKey = `${cardData.userEmail}-${cardData.deckTitle}`;
+    const deckId = createdDecks.get(deckKey);
+    if (!deckId) {
+      Logger.warn(
+        `Deck "${cardData.deckTitle}" for user ${cardData.userEmail} not found, skipping card...`
+      );
+      continue;
+    }
+
+    try {
+      const nextReviewDate = new Date();
+      nextReviewDate.setDate(nextReviewDate.getDate() + cardData.intervalDays);
+
+      const card = await prisma.card.create({
+        data: {
+          userId,
+          deckId,
+          frontContent: cardData.frontContent,
+          backContent: cardData.backContent,
+          aFactor: cardData.aFactor,
+          repetitionCount: cardData.repetitionCount,
+          intervalDays: cardData.intervalDays,
+          lapsesCount: cardData.lapsesCount,
+          sourceType: cardData.sourceType,
+          reviewHistory: JSON.parse(cardData.reviewHistory),
+          nextReviewDate,
+        },
+      });
+
+      createdCards.set(cardData.frontContent, card.id);
+    } catch (error) {
+      Logger.warn(`Card "${cardData.frontContent}" creation failed:`, error);
+    }
+  }
+
+  logSeedingProgress('cards', cards.length);
 
   // 4. SEED OF MATRIX
   Logger.log('Creating OF Matrix entries...');
@@ -191,6 +201,17 @@ export async function seedProduction(prisma: PrismaClient) {
     }
   }
   logSeedingProgress('production OF Matrix entries', ofMatrixEntries.length);
+
+  // 5. SEED RECALL MATRIX (empty for production)
+  Logger.log('Creating Recall Matrix entries...');
+  const recallMatrixEntries = loadTemplateData<RecallMatrixData>(
+    'recall-matrix.json',
+    'production'
+  );
+  logSeedingProgress(
+    'production Recall Matrix entries',
+    recallMatrixEntries.length
+  );
 
   Logger.log('✅ Production data seeded successfully!');
 }

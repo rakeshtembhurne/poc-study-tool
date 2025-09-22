@@ -30,7 +30,7 @@ const prismaMock = {
 
 describe('DecksService', () => {
   let service: DecksService;
-  let prisma: PrismaService;
+  let _prisma: PrismaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -41,7 +41,7 @@ describe('DecksService', () => {
     }).compile();
 
     service = module.get<DecksService>(DecksService);
-    prisma = module.get<PrismaService>(PrismaService);
+    _prisma = module.get<PrismaService>(PrismaService);
     jest.clearAllMocks();
   });
 

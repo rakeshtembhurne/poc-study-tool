@@ -9,6 +9,8 @@ import { OpenRouterModule } from './core/openrouter/openrouter.module';
 import { CardModule } from './card/card.module';
 import { FileProcessingModule } from '@/file-processing/file-processing.module';
 import { DeckModule } from '@/deck/deck.module';
+import { AlgorithmModule } from './algorithm/algorithm.module';
+import { ReviewModule } from './review/review.module';
 import { FlashcardsModule } from '@/flashCard/flashcards.module';
 import { PromptProcessingModule } from './prompt-processing/prompt-processing.module';
 
@@ -22,6 +24,8 @@ import { PromptProcessingModule } from './prompt-processing/prompt-processing.mo
     CardModule,
     FileProcessingModule,
     DeckModule,
+    AlgorithmModule,
+    ReviewModule,
     FlashcardsModule,
     PromptProcessingModule
   ],

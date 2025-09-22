@@ -11,7 +11,7 @@ interface CardData {
   userEmail: string;
   frontContent: string;
   backContent: string;
-  deckTitle: String;
+  deckTitle: string;
   aFactor: number;
   repetitionCount: number;
   intervalDays: number;
@@ -45,6 +45,15 @@ interface OFMatrixData {
   difficultyCategory: number;
   optimalFactor: number;
   usageCount: number;
+}
+
+interface RecallMatrixData {
+  userEmail: string;
+  intervalDays: number;
+  difficultyCategory: number;
+  totalReviews: number;
+  successfulReviews: number;
+  retentionRate: number;
 }
 
 interface UserStatisticData {
@@ -81,7 +90,7 @@ export async function seedTest(prisma: PrismaClient) {
         },
       });
       createdUsers.set(userData.email, user.id);
-    } catch (error) {
+    } catch {
       const existingUser = await prisma.user.findUnique({
         where: { email: userData.email },
       });
@@ -180,7 +189,10 @@ export async function seedTest(prisma: PrismaClient) {
   logSeedingProgress('test cards', cards.length);
 
   // 3. SEED TEST OF MATRIX
-  const ofMatrixEntries = loadTemplateData<OFMatrixData>('ofmatrix.json', 'test');
+  const ofMatrixEntries = loadTemplateData<OFMatrixData>(
+    'ofmatrix.json',
+    'test'
+  );
   for (const ofData of ofMatrixEntries) {
     const userId = createdUsers.get(ofData.userEmail);
     if (!userId) continue;
@@ -201,7 +213,46 @@ export async function seedTest(prisma: PrismaClient) {
   }
   logSeedingProgress('test OF Matrix entries', ofMatrixEntries.length);
 
-  // 4. SEED TEST REVIEWS
+  // 4. SEED TEST RECALL MATRIX
+  const recallMatrixEntries = loadTemplateData<RecallMatrixData>(
+    'recall-matrix.json',
+    'test'
+  );
+  for (const recallData of recallMatrixEntries) {
+    const userId = createdUsers.get(recallData.userEmail);
+    if (!userId) continue;
+
+    try {
+      await prisma.recallMatrix.upsert({
+        where: {
+          userId_intervalDays_difficultyCategory: {
+            userId,
+            intervalDays: recallData.intervalDays,
+            difficultyCategory: recallData.difficultyCategory,
+          },
+        },
+        update: {
+          totalReviews: recallData.totalReviews,
+          successfulReviews: recallData.successfulReviews,
+          retentionRate: recallData.retentionRate,
+          lastUpdated: new Date(),
+        },
+        create: {
+          userId,
+          intervalDays: recallData.intervalDays,
+          difficultyCategory: recallData.difficultyCategory,
+          totalReviews: recallData.totalReviews,
+          successfulReviews: recallData.successfulReviews,
+          retentionRate: recallData.retentionRate,
+        },
+      });
+    } catch (error) {
+      Logger.warn(`Test Recall Matrix creation failed:`, error);
+    }
+  }
+  logSeedingProgress('test Recall Matrix entries', recallMatrixEntries.length);
+
+  // 6. SEED TEST REVIEWS
   const reviews = loadTemplateData<ReviewData>('reviews.json', 'test');
   for (const reviewData of reviews) {
     const userId = createdUsers.get(reviewData.userEmail);
@@ -229,8 +280,11 @@ export async function seedTest(prisma: PrismaClient) {
   }
   logSeedingProgress('test reviews', reviews.length);
 
-  // 5. SEED TEST USER STATISTICS
-  const userStats = loadTemplateData<UserStatisticData>('userstatistics.json', 'test');
+  // 7. SEED TEST USER STATISTICS
+  const userStats = loadTemplateData<UserStatisticData>(
+    'userstatistics.json',
+    'test'
+  );
   for (const statData of userStats) {
     const userId = createdUsers.get(statData.userEmail);
     if (!userId) continue;
