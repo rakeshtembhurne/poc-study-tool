@@ -61,12 +61,14 @@ npm run db:seed
 When you run `npm run db:seed`, you get:
 
 #### 👥 **4 Sample Users**
+
 - `admin@example.com` - Admin user with varied content
 - `user1@example.com` - Active learner with Spanish and Math cards
-- `user2@example.com` - Literature enthusiast 
+- `user2@example.com` - Literature enthusiast
 - `demo@example.com` - Programming learner
 
 #### 📚 **8 Flashcards** with Different Subjects
+
 - **Geography**: "What is the capital of France?"
 - **Math**: "What is 15 × 7?", "Area of a circle formula"
 - **Spanish**: "How to say 'hello'", "Conjugate 'ser'"
@@ -75,9 +77,18 @@ When you run `npm run db:seed`, you get:
 - **Programming**: "What does HTML stand for?"
 
 #### 📊 **Learning Progress Data**
+
 - **18 Review Sessions** showing learning progression
 - **14 Algorithm Optimization** entries (OF Matrix)
+- **12 Retention Tracking** entries (SM-15 Recall Matrix)
 - **17 Daily Statistics** with performance metrics
+
+#### 🧠 **SM-15 Algorithm Data**
+
+- **OF Matrix**: Personalized optimal factors for different difficulty/repetition combinations
+- **Recall Matrix**: Tracks actual retention rates to validate algorithm performance
+- **A-Factor Range**: Cards with difficulty factors from 1.1 (hardest) to 2.5 (easiest)
+- **Retention Tracking**: Real performance data used to optimize scheduling
 
 ## Understanding the Data Structure
 
@@ -87,46 +98,55 @@ When you run `npm run db:seed`, you get:
 👤 Users
     ↓
 📚 Cards (flashcards belonging to users)
-    ↓  
+    ↓
 📝 Reviews (performance history for each card)
     ↓
 📈 Statistics (daily learning analytics)
-    
-🧮 OF Matrix (algorithm optimization data)
+
+🧮 OF Matrix (SM-15 optimal factors)
+    ↓
+📊 Recall Matrix (SM-15 retention tracking)
 ```
 
 ### Sample Learning Journey
 
 Here's how the data tells a story:
 
-1. **New Card**: User creates "What is 15 × 7?"
-2. **First Review**: User struggles (Grade 2), gets it wrong
-3. **Second Review**: Improves (Grade 4), card interval increases
-4. **Progress Tracked**: Statistics show improvement over time
-5. **Algorithm Learns**: OF Matrix optimizes future scheduling
+1. **New Card**: User creates "What is 15 × 7?" (A-Factor 2.5, easy difficulty)
+2. **First Review**: User struggles (Grade 2), A-Factor drops to 2.1, interval = 1 day
+3. **Second Review**: Improves (Grade 4), A-Factor rises to 2.2, interval = 3 days
+4. **SM-15 Learning**: OF Matrix tracks optimal factors for this difficulty/repetition
+5. **Retention Tracking**: Recall Matrix records actual vs expected retention rates
+6. **Algorithm Optimization**: System adjusts OF Matrix based on real performance data
 
 ## Different Environments
 
 ### Development (Rich Data)
+
 ```bash
 npm run db:seed  # Default
 ```
+
 - Multiple users with varied learning histories
 - Different subjects and difficulty levels
 - Realistic review patterns and statistics
 
 ### Test (Minimal, Predictable)
+
 ```bash
 NODE_ENV=test npm run db:seed
 ```
+
 - Single test user
 - Simple, predictable flashcards
 - Perfect for automated testing
 
 ### Production (Welcome Content Only)
+
 ```bash
 NODE_ENV=production npm run db:seed
 ```
+
 - System admin account
 - Welcome flashcard explaining spaced repetition
 - Baseline algorithm data
@@ -134,6 +154,7 @@ NODE_ENV=production npm run db:seed
 ## Available Commands
 
 ### Core Commands
+
 ```bash
 # Seed with sample data
 npm run db:seed
@@ -149,6 +170,7 @@ npm run db:reset
 ```
 
 ### Advanced Commands
+
 ```bash
 # Seed specific environment
 NODE_ENV=test npm run db:seed
@@ -163,6 +185,7 @@ npx prisma studio  # Visual database browser
 ### Common Issues
 
 #### 1. "Can't reach database server"
+
 ```bash
 # Solution: Start your database
 docker compose up -d
@@ -171,12 +194,14 @@ npm run db:migrate
 ```
 
 #### 2. "User already exists" warnings
+
 ```bash
 # This is normal! The system detects existing users
 # and reuses them instead of creating duplicates
 ```
 
 #### 3. "Migration failed"
+
 ```bash
 # Solution: Reset and start fresh
 npm run db:reset --force
@@ -185,7 +210,9 @@ npm run db:seed
 ```
 
 #### 4. Port conflicts (5432 vs 5434)
+
 Check your `.env` file matches `docker-compose.yml`:
+
 ```env
 DATABASE_URL=postgresql://postgres:password@localhost:5432/study_tool
 ```
@@ -200,6 +227,7 @@ DATABASE_URL=postgresql://postgres:password@localhost:5432/study_tool
 ## How the Seeding System Works
 
 ### File Structure
+
 ```
 prisma/
 ├── data/                     # JSON data files
@@ -232,6 +260,7 @@ prisma/
 ### Data Relationships
 
 All data is carefully linked:
+
 - Cards belong to specific users
 - Reviews reference both cards and users
 - Statistics are calculated from review performance
@@ -242,12 +271,13 @@ All data is carefully linked:
 ### Adding New Users
 
 Edit `prisma/data/users.json`:
+
 ```json
 {
   "development": [
     {
       "email": "newuser@example.com",
-      "password": "hashed_password_here"
+      "password": "Pass@1234"
     }
   ]
 }
@@ -256,13 +286,14 @@ Edit `prisma/data/users.json`:
 ### Adding New Cards
 
 Edit `prisma/data/cards.json`:
+
 ```json
 {
   "development": [
     {
       "userEmail": "newuser@example.com",
       "frontContent": "Your question here",
-      "backContent": "Your answer here", 
+      "backContent": "Your answer here",
       "deck": "Subject",
       "aFactor": 2.5,
       "repetitionCount": 0,
@@ -276,6 +307,7 @@ Edit `prisma/data/cards.json`:
 ```
 
 ### Important Notes
+
 - Always link cards to existing users via `userEmail`
 - Reviews must reference existing cards via `cardFrontContent`
 - Keep `aFactor` between 1.1-2.5 (difficulty rating)
@@ -293,18 +325,21 @@ Edit `prisma/data/cards.json`:
 ### Seeding Strategies
 
 **Development**: Rich, diverse data
+
 - Multiple user types
 - Various subjects and difficulties
 - Long learning histories
 - Edge cases and corner cases
 
-**Testing**: Minimal, predictable data  
+**Testing**: Minimal, predictable data
+
 - Single user for consistency
 - Simple, known flashcards
 - Predictable review patterns
 - Easy to verify in tests
 
 **Production**: Essential data only
+
 - System accounts
 - Welcome content
 - Baseline algorithm settings
@@ -315,13 +350,13 @@ Edit `prisma/data/cards.json`:
 ```typescript
 // In your tests, reference seeded data
 const testUser = await prisma.user.findUnique({
-  where: { email: 'test@example.com' }
+  where: { email: 'test@example.com' },
 });
 
 const testCard = await prisma.card.findFirst({
-  where: { 
-    frontContent: 'Test question: 2 + 2 = ?' 
-  }
+  where: {
+    frontContent: 'Test question: 2 + 2 = ?',
+  },
 });
 ```
 
@@ -330,6 +365,7 @@ const testCard = await prisma.card.findFirst({
 ### Performance Considerations
 
 The seeding system is optimized for:
+
 - **Fast Development**: Seeds quickly for rapid iteration
 - **Relationship Integrity**: All foreign keys properly linked
 - **Realistic Data**: Actual learning progression patterns
@@ -338,6 +374,7 @@ The seeding system is optimized for:
 ### Data Patterns
 
 The seeded data follows realistic patterns:
+
 - **Learning Curves**: Cards get easier over time
 - **Forgetting Curves**: Some cards need more repetition
 - **Individual Differences**: Users have different learning speeds
@@ -346,8 +383,9 @@ The seeded data follows realistic patterns:
 ### Algorithm Testing
 
 Seeded data includes:
+
 - **Various A-Factors**: Different card difficulties
-- **Review Histories**: Realistic grade progressions  
+- **Review Histories**: Realistic grade progressions
 - **OF Matrix Entries**: Algorithm optimization data
 - **Statistical Trends**: Performance improvements over time
 
@@ -364,7 +402,8 @@ After seeding your database:
 ## Summary
 
 The database seeding system provides:
-- ✅ **Quick Setup**: One command gets you realistic data  
+
+- ✅ **Quick Setup**: One command gets you realistic data
 - ✅ **Multiple Environments**: Development, testing, production
 - ✅ **Realistic Data**: Actual learning progression patterns
 - ✅ **Proper Relationships**: All data properly linked
@@ -372,3 +411,10 @@ The database seeding system provides:
 - ✅ **Beginner Friendly**: Clear commands and documentation
 
 Now you're ready to develop and test Space Rep features with confidence! 🚀
+
+## Related Documentation
+
+- 📖 [Database Schema Documentation](./database-docs.md) - Complete database structure and relationships
+- 🧮 [SM-15 Algorithm Implementation](../algorithm/SM15_IMPLEMENTATION.md) - Complete algorithm documentation
+- 🔌 [Review API Endpoints](../api/sm15-review-endpoints.md) - API documentation for review system
+- 🏠 [Backend Overview](../../README.md) - Main backend documentation

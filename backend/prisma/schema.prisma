@@ -32,6 +32,7 @@ model User {
   cards                 Card[] // All flashcards owned by this user
   reviews               Review[] // Complete review history for analytics
   ofMatrixEntries       OFMatrix[] // Personalized optimal factors matrix
+  recallMatrixEntries   RecallMatrix[] // Retention rate tracking matrix
   statistics            UserStatistic[] // Daily/periodic performance metrics
   decks                 Deck[]
 
@@ -233,4 +234,27 @@ model UserStatistic {
   @@unique([userId, date])
   @@index([userId, date]) // Fast date range queries for charts
   @@map("user_statistics")
+}
+
+model RecallMatrix {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @map("user_id")
+  intervalDays       Int      @map("interval_days")       // Actual interval used
+  difficultyCategory Int      @map("difficulty_category") // A-Factor category (0-14)
+  totalReviews       Int      @default(0) @map("total_reviews")     // Total reviews at this combination
+  successfulReviews  Int      @default(0) @map("successful_reviews") // Grade >= 3 reviews
+  retentionRate      Float    @default(0.0) @map("retention_rate")  // Success ratio (0.0-1.0)
+  lastUpdated        DateTime @default(now()) @map("last_updated")
+  
+  // === RECALL MATRIX EXPLANATION ===
+  // Tracks actual user performance for interval/difficulty combinations
+  // Used to validate and improve OF Matrix predictions
+  // Example: intervalDays=14, difficultyCategory=7, retentionRate=0.87
+  // Means: 14-day intervals for medium difficulty cards have 87% success rate
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, intervalDays, difficultyCategory])
+  @@index([userId, intervalDays, difficultyCategory])
+  @@map("recall_matrix")
 }

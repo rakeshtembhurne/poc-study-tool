@@ -1,0 +1,119 @@
+{
+  "development": [
+    {
+      "userEmail": "niktia@example.com",
+      "intervalDays": 1,
+      "difficultyCategory": 5,
+      "totalReviews": 15,
+      "successfulReviews": 14,
+      "retentionRate": 0.93
+    },
+    {
+      "userEmail": "niktia@example.com",
+      "intervalDays": 1,
+      "difficultyCategory": 8,
+      "totalReviews": 12,
+      "successfulReviews": 11,
+      "retentionRate": 0.92
+    },
+    {
+      "userEmail": "niktia@example.com",
+      "intervalDays": 3,
+      "difficultyCategory": 5,
+      "totalReviews": 8,
+      "successfulReviews": 7,
+      "retentionRate": 0.88
+    },
+    {
+      "userEmail": "niktia@example.com",
+      "intervalDays": 3,
+      "difficultyCategory": 8,
+      "totalReviews": 10,
+      "successfulReviews": 9,
+      "retentionRate": 0.9
+    },
+    {
+      "userEmail": "niktia@example.com",
+      "intervalDays": 7,
+      "difficultyCategory": 5,
+      "totalReviews": 5,
+      "successfulReviews": 4,
+      "retentionRate": 0.8
+    },
+    {
+      "userEmail": "niktia@example.com",
+      "intervalDays": 7,
+      "difficultyCategory": 8,
+      "totalReviews": 6,
+      "successfulReviews": 5,
+      "retentionRate": 0.83
+    },
+    {
+      "userEmail": "rutvik@example.com",
+      "intervalDays": 1,
+      "difficultyCategory": 7,
+      "totalReviews": 20,
+      "successfulReviews": 18,
+      "retentionRate": 0.9
+    },
+    {
+      "userEmail": "rutvik@example.com",
+      "intervalDays": 3,
+      "difficultyCategory": 7,
+      "totalReviews": 12,
+      "successfulReviews": 10,
+      "retentionRate": 0.83
+    },
+    {
+      "userEmail": "rutvik@example.com",
+      "intervalDays": 7,
+      "difficultyCategory": 7,
+      "totalReviews": 8,
+      "successfulReviews": 7,
+      "retentionRate": 0.88
+    },
+    {
+      "userEmail": "diksha@example.com",
+      "intervalDays": 1,
+      "difficultyCategory": 6,
+      "totalReviews": 25,
+      "successfulReviews": 23,
+      "retentionRate": 0.92
+    },
+    {
+      "userEmail": "diksha@example.com",
+      "intervalDays": 3,
+      "difficultyCategory": 6,
+      "totalReviews": 15,
+      "successfulReviews": 14,
+      "retentionRate": 0.93
+    },
+    {
+      "userEmail": "diksha@example.com",
+      "intervalDays": 7,
+      "difficultyCategory": 6,
+      "totalReviews": 10,
+      "successfulReviews": 9,
+      "retentionRate": 0.9
+    }
+  ],
+  "test": [
+    {
+      "userEmail": "nikhil@example.com",
+      "intervalDays": 1,
+      "difficultyCategory": 7,
+      "totalReviews": 10,
+      "successfulReviews": 9,
+      "retentionRate": 0.9
+    },
+    {
+      "userEmail": "nikhil@example.com",
+      "intervalDays": 3,
+      "difficultyCategory": 7,
+      "totalReviews": 5,
+      "successfulReviews": 4,
+      "retentionRate": 0.8
+    }
+  ],
+  "production": []
+}

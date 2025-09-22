@@ -15,7 +15,7 @@ const decksServiceMock = {
 
 describe('DecksController', () => {
   let controller: DecksController;
-  let service: DecksService;
+  let _service: DecksService;
 
   const mockUser: AuthPayload = { id: '1', email: 'test@example.com' };
 
@@ -35,7 +35,7 @@ describe('DecksController', () => {
       .compile();
 
     controller = module.get<DecksController>(DecksController);
-    service = module.get<DecksService>(DecksService);
+    _service = module.get<DecksService>(DecksService);
     jest.clearAllMocks();
   });
 

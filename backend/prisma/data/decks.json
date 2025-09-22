@@ -1,59 +1,68 @@
-
 {
   "development": [
     {
-      "title": "Default Deck",
-      "description": "Main deck for admin01",
+      "title": "JavaScript Fundamentals",
+      "description": "Core JavaScript concepts and syntax",
       "isPublic": true,
-      "userEmail": "user2@example.com"
+      "userEmail": "niktia@example.com"
     },
     {
-      "title": "Default Deck",
-      "description": "Main deck for demo user",
+      "title": "Node.js Essentials",
+      "description": "Backend development with Node.js",
       "isPublic": true,
-      "userEmail": "user1@example.com"
+      "userEmail": "niktia@example.com"
     },
     {
-      "title": "Default Deck",
-      "description": "Main deck for user2",
+      "title": "React Basics",
+      "description": "Frontend development with React",
       "isPublic": true,
-      "userEmail": "user2@example.com"
+      "userEmail": "rutvik@example.com"
     },
     {
-      "title": "Advanced JavaScript",
-      "description": "deck 02",
+      "title": "SQL Queries",
+      "description": "Database operations and SQL syntax",
+      "isPublic": true,
+      "userEmail": "rutvik@example.com"
+    },
+    {
+      "title": "JavaScript Fundamentals",
+      "description": "Core JavaScript concepts and syntax",
       "isPublic": false,
-      "userEmail": "user1@example.com"
+      "userEmail": "diksha@example.com"
     },
     {
-      "title": "Default Deck",
-      "description": "Main deck for admin",
-      "isPublic": true,
-      "userEmail": "admin@example.com"
+      "title": "React Basics",
+      "description": "Frontend development with React",
+      "isPublic": false,
+      "userEmail": "diksha@example.com"
     },
     {
-      "title": "Default Deck",
-      "description": "Main deck for admin",
-      "isPublic": true,
-      "userEmail": "demo@example.com"
-
+      "title": "Node.js Essentials",
+      "description": "Backend development with Node.js",
+      "isPublic": false,
+      "userEmail": "arshad@example.com"
+    },
+    {
+      "title": "SQL Queries",
+      "description": "Database operations and SQL syntax",
+      "isPublic": false,
+      "userEmail": "arshad@example.com"
     }
- 
   ],
   "test": [
     {
-      "title": "Test Deck",
-      "description": "A deck for testing purposes.",
+      "title": "JavaScript Fundamentals",
+      "description": "Test deck for JavaScript concepts",
       "isPublic": false,
-      "userEmail": "test@example.com"
+      "userEmail": "nikhil@example.com"
     }
   ],
   "production": [
     {
-      "title": "Production Deck",
-      "description": "A deck for prodcution purposes.",
-      "isPublic": false,
-      "userEmail": "production@example.com"
+      "title": "Welcome Deck",
+      "description": "Introduction to spaced repetition learning",
+      "isPublic": true,
+      "userEmail": "falguni@example.com"
     }
   ]
 }
