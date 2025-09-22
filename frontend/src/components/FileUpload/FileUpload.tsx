@@ -21,7 +21,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Upload, ArrowLeft, Edit, FileText, ChevronDown } from 'lucide-react';
+import {
+  Upload,
+  ArrowLeft,
+  Edit,
+  FileText,
+  ChevronDown,
+  Sparkles,
+} from 'lucide-react';
 import {
   Card as CardType,
   FileValidationConfig,
@@ -34,6 +41,7 @@ import ViewCardsDialog from './ViewCardsDialog';
 import authStorage from '@/lib/auth-storage';
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+import PromptInput from './PromptInput';
 // import { log } from 'console';
 
 // Deck interface (for API response typing)
@@ -447,6 +455,14 @@ export default function FileUpload() {
                   <Upload className="h-4 w-4" />
                   File Upload
                 </Button>
+
+                <Button
+                  variant={creationMethod === 'prompt' ? 'default' : 'outline'}
+                  onClick={() => setCreationMethod('prompt')}
+                  className="flex items-center gap-2 px-6 py-3"
+                >
+                  <Sparkles className="h-4 w-4" /> Input Text{' '}
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -627,7 +643,10 @@ export default function FileUpload() {
                                 {data.cards[0].question.substring(0, 50)}...
                               </div>
                               <div className="flex justify-end">
-                                <ViewCardsDialog fileCardData={data} />
+                                <ViewCardsDialog
+                                  fileCardData={data}
+                                  deckName={selectedDeck}
+                                />
                               </div>
                             </div>
                           )}
@@ -640,6 +659,8 @@ export default function FileUpload() {
             </CardContent>
           </Card>
         )}
+
+        {creationMethod === 'prompt' && <PromptInput decks={decks} />}
 
         {/* Instructions */}
         <Card className="mt-6">

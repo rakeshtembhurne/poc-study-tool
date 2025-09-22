@@ -18,5 +18,9 @@ export const API_ENDPOINTS = {
       updatePassword: '/api/v1/users/password',
       updateApiKey: '/api/v1/users/:id',
     },
+
+    inputPrompt: {
+      generateCard: '/api/v1/prompt/generate',
+    },
   },
 };

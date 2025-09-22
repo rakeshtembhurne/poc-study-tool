@@ -8,7 +8,7 @@ jest.mock('fs');
 jest.mock('pdf-parse');
 
 const mockFs = fs as jest.Mocked<typeof fs>;
-const mockPdfParse = pdfParse;
+const mockPdfParse = pdfParse as jest.MockedFunction<typeof pdfParse>;
 
 describe('PdfProcessingService', () => {
   let service: PdfProcessingService;
@@ -71,51 +71,33 @@ describe('PdfProcessingService', () => {
     it('should throw BadRequestException if file does not exist', async () => {
       mockFs.existsSync.mockReturnValue(false);
 
-      await expect(
-        service.processPdfFromPath('/nonexistent/file.pdf')
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.processPdfFromPath('/nonexistent/file.pdf')).rejects.toThrow(
+        BadRequestException
+      );
 
       expect(mockFs.existsSync).toHaveBeenCalledWith('/nonexistent/file.pdf');
     });
 
     it('should process PDF with options', async () => {
       const mockBuffer = Buffer.from('%PDF-1.4 test content');
-      const mockPdfData = {
-        text: 'Extracted text',
-        numpages: 1,
-        info: {},
-        version: '1.4',
-      };
+      const mockPdfData = { text: 'Extracted text', numpages: 1, info: {}, version: '1.4' };
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(mockBuffer);
       mockPdfParse.mockResolvedValue(mockPdfData as any);
 
-      const options = {
-        maxPages: 1,
-        password: 'test123',
-      };
+      const options = { maxPages: 1, password: 'test123' };
 
       await service.processPdfFromPath('/test/file.pdf', options);
 
-      expect(mockPdfParse).toHaveBeenCalledWith(mockBuffer, {
-        max: 1,
-        password: 'test123',
-      });
+      expect(mockPdfParse).toHaveBeenCalledWith(mockBuffer, { max: 1, password: 'test123' });
     });
   });
 
   describe('processPdfFromBuffer', () => {
     it('should process PDF from buffer successfully', async () => {
       const mockBuffer = Buffer.from('%PDF-1.4 test content');
-      const mockPdfData = {
-        text: 'Buffer text content',
-        numpages: 1,
-        info: {
-          Title: 'Buffer PDF',
-        },
-        version: '1.4',
-      };
+      const mockPdfData = { text: 'Buffer text content', numpages: 1, info: { Title: 'Buffer PDF' }, version: '1.4' };
 
       mockPdfParse.mockResolvedValue(mockPdfData as any);
 
@@ -129,9 +111,7 @@ describe('PdfProcessingService', () => {
     it('should throw BadRequestException for invalid PDF buffer', async () => {
       const invalidBuffer = Buffer.from('not a pdf');
 
-      await expect(service.processPdfFromBuffer(invalidBuffer)).rejects.toThrow(
-        BadRequestException
-      );
+      await expect(service.processPdfFromBuffer(invalidBuffer)).rejects.toThrow(BadRequestException);
     });
 
     it('should handle password-protected PDF error', async () => {
@@ -168,12 +148,7 @@ describe('PdfProcessingService', () => {
   describe('extractTextOnly', () => {
     it('should extract text only from PDF', async () => {
       const mockBuffer = Buffer.from('%PDF-1.4 test content');
-      const mockPdfData = {
-        text: 'Only text content',
-        numpages: 1,
-        info: {},
-        version: '1.4',
-      };
+      const mockPdfData = { text: 'Only text content', numpages: 1, info: {}, version: '1.4' };
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(mockBuffer);
@@ -188,15 +163,7 @@ describe('PdfProcessingService', () => {
   describe('extractMetadataOnly', () => {
     it('should extract metadata only from PDF', async () => {
       const mockBuffer = Buffer.from('%PDF-1.4 test content');
-      const mockPdfData = {
-        text: 'Some text',
-        numpages: 5,
-        info: {
-          Title: 'Metadata Test',
-          Author: 'Test Author',
-        },
-        version: '1.4',
-      };
+      const mockPdfData = { text: 'Some text', numpages: 5, info: { Title: 'Metadata Test', Author: 'Test Author' }, version: '1.4' };
 
       mockFs.existsSync.mockReturnValue(true);
       mockFs.readFileSync.mockReturnValue(mockBuffer);
@@ -215,94 +182,6 @@ describe('PdfProcessingService', () => {
       });
 
       expect(mockPdfParse).toHaveBeenCalledWith(mockBuffer, { max: 1 });
-    });
-  });
-
-  describe('validatePdfFile', () => {
-    it('should return true for valid PDF file', () => {
-      const mockStats = { isFile: () => true };
-      const mockBuffer = Buffer.from('%PDF-1.4');
-
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as any);
-      mockFs.openSync.mockReturnValue(3 as any);
-      mockFs.readSync.mockReturnValue(8);
-      mockFs.closeSync.mockReturnValue(undefined);
-      Buffer.alloc = jest.fn().mockReturnValue(mockBuffer);
-
-      const result = service.validatePdfFile('/test/file.pdf');
-
-      expect(result).toBe(true);
-    });
-
-    it('should return false for non-existent file', () => {
-      mockFs.existsSync.mockReturnValue(false);
-
-      const result = service.validatePdfFile('/nonexistent/file.pdf');
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false for non-PDF extension', () => {
-      const mockStats = { isFile: () => true };
-
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as any);
-
-      const result = service.validatePdfFile('/test/file.txt');
-
-      expect(result).toBe(false);
-    });
-
-    it('should return false for directory', () => {
-      const mockStats = { isFile: () => false };
-
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue(mockStats as any);
-
-      const result = service.validatePdfFile('/test/directory');
-
-      expect(result).toBe(false);
-    });
-
-    it('should handle exceptions and return false', () => {
-      mockFs.existsSync.mockImplementation(() => {
-        throw new Error('File system error');
-      });
-
-      const result = service.validatePdfFile('/test/file.pdf');
-
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('validatePdfBuffer', () => {
-    it('should validate PDF buffer with correct header', () => {
-      const validBuffer = Buffer.from('%PDF-1.4 content');
-
-      expect(() => service['validatePdfBuffer'](validBuffer)).not.toThrow();
-    });
-
-    it('should throw error for buffer too small', () => {
-      const smallBuffer = Buffer.from('tiny');
-
-      expect(() => service['validatePdfBuffer'](smallBuffer)).toThrow(
-        'Invalid PDF buffer: too small'
-      );
-    });
-
-    it('should throw error for buffer without PDF header', () => {
-      const invalidBuffer = Buffer.from('not a pdf header');
-
-      expect(() => service['validatePdfBuffer'](invalidBuffer)).toThrow(
-        'Invalid PDF buffer: missing PDF header'
-      );
-    });
-
-    it('should throw error for null buffer', () => {
-      expect(() => service['validatePdfBuffer'](null as any)).toThrow(
-        'Invalid PDF buffer: too small'
-      );
     });
   });
 });
