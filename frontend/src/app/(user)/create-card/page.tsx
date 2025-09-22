@@ -113,185 +113,190 @@ export default function CreateNewCard() {
   };
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="max-w-3xl mx-auto rounded-lg shadow-xl border bg-white/45 dark:bg-black/40 p-8">
-        <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
-          Create New Card
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Add flashcards to your collection
-        </p>
+    <>
+      <div className="min-h-screen py-8">
+        <div className="max-w-3xl mx-auto rounded-lg shadow-xl border bg-white/45 dark:bg-black/40 p-8">
+          <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            Create New Card
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Add flashcards to your collection
+          </p>
 
-        <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8 shadow-sm">
-          <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
-            Choose Creation Method
-          </h2>
-          <div className="flex gap-4">
-            <Button
-              variant={creationMethod === 'Manual Form' ? 'default' : 'outline'}
-              onClick={() => {
-                setCreationMethod('Manual Form');
-              }}
-              className="flex-1 py-4 px-4"
-            >
-              Manual Form
-            </Button>
-            <Button
-              variant={creationMethod === 'File Upload' ? 'default' : 'outline'}
-              onClick={() => {
-                setCreationMethod('File Upload');
-              }}
-              className="flex-1 py-4 px-4"
-            >
-              File Upload
-            </Button>
-          </div>
-        </div>
-
-        {creationMethod === 'Manual Form' && (
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8 shadow-sm">
             <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
-              Manual Card Creation
+              Choose Creation Method
             </h2>
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 mb-8 shadow-sm">
-              <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
-                Select Deck
-              </h2>
-              <div className="space-y-2">
-                <Label className="text-gray-700 dark:text-gray-300">
-                  Choose an existing deck
-                </Label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="w-full justify-between text-left font-normal"
-                      disabled={loading}
-                    >
-                      {selectedDeckId
-                        ? decks.find((d) => d.id === selectedDeckId)?.title
-                        : 'Choose a deck...'}
-                      <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-full min-w-[var(--radix-dropdown-menu-trigger-width)] max-w-none z-50"
-                    align="start"
-                    sideOffset={4}
-                  >
-                    {loading ? (
-                      <DropdownMenuItem disabled className="w-full">
-                        Loading...
-                      </DropdownMenuItem>
-                    ) : decks.length > 0 ? (
-                      decks.map((deck) => (
-                        <DropdownMenuItem
-                          key={deck.id}
-                          className="w-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
-                          onClick={() => {
-                            setSelectedDeckId(deck.id);
-                          }}
-                        >
-                          <span className="truncate">{deck.title}</span>
-                        </DropdownMenuItem>
-                      ))
-                    ) : (
-                      <DropdownMenuItem disabled className="w-full">
-                        No decks found.
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                {error && <p className="text-sm text-red-500 mt-2">{error}</p>}
-              </div>
-            </div>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label
-                  htmlFor="question"
-                  className="text-gray-700 dark:text-gray-300"
-                >
-                  Question
-                </Label>
-                <Input
-                  id="question"
-                  placeholder="Enter your question..."
-                  value={question}
-                  onChange={(e) =>
-                    setQuestion(e.target.value.slice(0, MAX_QUESTION_LENGTH))
-                  }
-                />
-                <span className="text-xs text-gray-500 dark:text-gray-500 float-right">
-                  {question.length}/{MAX_QUESTION_LENGTH}
-                </span>
-              </div>
-              <div className="space-y-2">
-                <Label
-                  htmlFor="answer"
-                  className="text-gray-700 dark:text-gray-300"
-                >
-                  Answer
-                </Label>
-                <Textarea
-                  id="answer"
-                  placeholder="Enter the answer..."
-                  value={answer}
-                  onChange={(e) =>
-                    setAnswer(e.target.value.slice(0, MAX_ANSWER_LENGTH))
-                  }
-                  className="resize-none"
-                />
-                <span className="text-xs text-gray-500 dark:text-gray-500 float-right">
-                  {answer.length}/{MAX_ANSWER_LENGTH}
-                </span>
-              </div>
-              <div className="flex justify-end pt-4">
-                <Button
-                  onClick={handleManualSave}
-                  disabled={selectedDeckId === null || loading}
-                >
-                  Save Card
-                </Button>
-              </div>
+            <div className="flex gap-4">
+              <Button
+                variant={
+                  creationMethod === 'Manual Form' ? 'default' : 'outline'
+                }
+                onClick={() => {
+                  setCreationMethod('Manual Form');
+                }}
+                className="flex-1 py-4 px-4"
+              >
+                Manual Form
+              </Button>
+              <Button
+                variant={
+                  creationMethod === 'File Upload' ? 'default' : 'outline'
+                }
+                onClick={() => {
+                  setCreationMethod('File Upload');
+                }}
+                className="flex-1 py-4 px-4"
+              >
+                File Upload
+              </Button>
             </div>
           </div>
-        )}
 
-        {creationMethod === 'File Upload' && <FileUpload />}
+          {creationMethod === 'Manual Form' && (
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+              <h2 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-4">
+                Manual Card Creation
+              </h2>
+              <div className="mb-8">
+                <div className="space-y-2">
+                  <Label className="text-gray-700 dark:text-gray-300">
+                    Choose an existing deck
+                  </Label>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-between text-left font-normal"
+                        disabled={loading}
+                      >
+                        {selectedDeckId
+                          ? decks.find((d) => d.id === selectedDeckId)?.title
+                          : 'Choose a deck...'}
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      className="w-full min-w-[var(--radix-dropdown-menu-trigger-width)] max-w-none z-50"
+                      align="start"
+                      sideOffset={4}
+                    >
+                      {loading ? (
+                        <DropdownMenuItem disabled className="w-full">
+                          Loading...
+                        </DropdownMenuItem>
+                      ) : decks.length > 0 ? (
+                        decks.map((deck) => (
+                          <DropdownMenuItem
+                            key={deck.id}
+                            className="w-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
+                            onClick={() => {
+                              setSelectedDeckId(deck.id);
+                            }}
+                          >
+                            <span className="truncate">{deck.title}</span>
+                          </DropdownMenuItem>
+                        ))
+                      ) : (
+                        <DropdownMenuItem disabled className="w-full">
+                          No decks found.
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {error && (
+                    <p className="text-sm text-red-500 mt-2">{error}</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="question"
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    Question
+                  </Label>
+                  <Input
+                    id="question"
+                    placeholder="Enter your question..."
+                    value={question}
+                    onChange={(e) =>
+                      setQuestion(e.target.value.slice(0, MAX_QUESTION_LENGTH))
+                    }
+                  />
+                  <span className="text-xs text-gray-500 dark:text-gray-500 float-right">
+                    {question.length}/{MAX_QUESTION_LENGTH}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  <Label
+                    htmlFor="answer"
+                    className="text-gray-700 dark:text-gray-300"
+                  >
+                    Answer
+                  </Label>
+                  <Textarea
+                    id="answer"
+                    placeholder="Enter the answer..."
+                    value={answer}
+                    onChange={(e) =>
+                      setAnswer(e.target.value.slice(0, MAX_ANSWER_LENGTH))
+                    }
+                    className="resize-none"
+                  />
+                  <span className="text-xs text-gray-500 dark:text-gray-500 float-right">
+                    {answer.length}/{MAX_ANSWER_LENGTH}
+                  </span>
+                </div>
+                <div className="flex justify-end pt-4">
+                  <Button
+                    onClick={handleManualSave}
+                    disabled={selectedDeckId === null || loading}
+                  >
+                    Save Card
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
 
-        <div className="mt-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
-            <span className="text-yellow-500 mr-2">💡</span>Instructions
-          </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            <strong className="text-gray-800 dark:text-gray-200">
-              Manual Form:
-            </strong>{' '}
-            Create cards one by one using the form above.
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            <strong className="text-gray-800 dark:text-gray-200">
-              File Upload:
-            </strong>{' '}
-            Upload a .txt file with multiple cards at once.
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            <strong className="text-gray-800 dark:text-gray-200">
-              File Format:
-            </strong>{' '}
-            Each line should contain: Question|Answer
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
-            <strong className="text-gray-800 dark:text-gray-200">
-              Example file contents:
-            </strong>
-          </p>
-          <pre className="mt-2 text-xs border border-gray-200 dark:border-gray-700 p-3 rounded-md text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-            What is the capital of France?|Paris How do you say hello in
-            Spanish?|Hola What is 15 x 12?|180
-          </pre>
+          {creationMethod === 'File Upload' && <FileUpload />}
+
+          <div className="mt-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">
+              <span className="text-yellow-500 mr-2">💡</span>Instructions
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <strong className="text-gray-800 dark:text-gray-200">
+                Manual Form:
+              </strong>{' '}
+              Create cards one by one using the form above.
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <strong className="text-gray-800 dark:text-gray-200">
+                File Upload:
+              </strong>{' '}
+              Upload a .txt file with multiple cards at once.
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              <strong className="text-gray-800 dark:text-gray-200">
+                File Format:
+              </strong>{' '}
+              Each line should contain: Question|Answer
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
+              <strong className="text-gray-800 dark:text-gray-200">
+                Example file contents:
+              </strong>
+            </p>
+            <pre className="mt-2 text-xs border border-gray-200 dark:border-gray-700 p-3 rounded-md text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+              What is the capital of France?|Paris How do you say hello in
+              Spanish?|Hola What is 15 x 12?|180
+            </pre>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
