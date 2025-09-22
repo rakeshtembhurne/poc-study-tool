@@ -461,7 +461,10 @@ export default function FileUpload() {
                           Preview: {data.cards[0].question.substring(0, 50)}...
                         </div>
                         <div className="flex justify-end">
-                          <ViewCardsDialog fileCardData={data} />
+                          <ViewCardsDialog
+                            fileCardData={data}
+                            deckName={selectedDeck}
+                          />
                         </div>
                       </div>
                     )}

@@ -5,19 +5,36 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Label } from '@/components/ui/label';
-import { Sparkles, ArrowLeft, FileText } from 'lucide-react';
+import { Sparkles, FileText, ChevronDown } from 'lucide-react';
 import { Card as CardType } from '@/types/card';
 import apiClient from '@/lib/api-client';
 import CardWizard from './CardWizard';
 import authStorage from '@/lib/auth-storage';
 import { API_ENDPOINTS } from '@/utils/apiEndpoints';
 import { Textarea } from '../ui/textarea';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-interface PromptInputProps {
-  decks: string[];
+interface DeckData {
+  id: number;
+  title: string;
 }
-
-export default function PromptInput({ decks }: PromptInputProps) {
+interface PromptInputProps {
+  decks: DeckData[];
+  loading: boolean;
+  selectedDeckId: number | null;
+  setSelectedDeckId: (id: number) => void;
+}
+export default function PromptInput({
+  decks,
+  loading,
+  selectedDeckId,
+  setSelectedDeckId,
+}: PromptInputProps) {
   const [promptText, setPromptText] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [parsedCards, setParsedCards] = useState<CardType[]>([]);
@@ -34,11 +51,13 @@ export default function PromptInput({ decks }: PromptInputProps) {
     setIsProcessing(true);
 
     // validate deck selection
-    if (!deckName) {
+    if (!selectedDeckId) {
       setError('Please select a deck before generating cards.');
       setIsProcessing(false);
       return;
     }
+
+    const selectedDeck = decks.find((d) => d.id === selectedDeckId);
 
     // validate text input
     if (!promptText.trim()) {
@@ -61,7 +80,7 @@ export default function PromptInput({ decks }: PromptInputProps) {
         url,
         {
           text: promptText,
-          deckName: deckName,
+          deckName: selectedDeck?.title, // ✅ use title here
         },
         {
           headers: {
@@ -81,7 +100,7 @@ export default function PromptInput({ decks }: PromptInputProps) {
           cards.map((card: any) => ({
             question: card.question,
             answer: card.answer,
-            deckName: deckName,
+            deckName: selectedDeck?.title || '', // ✅ use title here
             createdAt: new Date().toISOString(),
             difficulty: card.difficulty || 'Medium',
           }))
@@ -95,49 +114,7 @@ export default function PromptInput({ decks }: PromptInputProps) {
         );
       }
     } catch (error: any) {
-      console.error('Generate cards error:', error);
-
-      let errorMessage = 'An unexpected error occurred while generating cards.';
-
-      if (error.response) {
-        const status = error.response.status;
-        const data = error.response.data;
-
-        switch (status) {
-          case 400:
-            errorMessage = data?.message || 'Invalid request format.';
-            break;
-          case 401:
-            errorMessage = 'Session expired. Please login again.';
-            authStorage.removeToken();
-            break;
-          case 403:
-            errorMessage = 'Access denied. You do not have permission.';
-            break;
-          case 404:
-            errorMessage = 'Prompt service not found. Please contact support.';
-            break;
-          case 429:
-            errorMessage = 'Too many requests. Please try again later.';
-            break;
-          case 500:
-          case 502:
-          case 503:
-            errorMessage = 'Server error. Please try again later.';
-            break;
-          default:
-            errorMessage =
-              data?.message ||
-              `Failed to generate cards (${status}). Please try again.`;
-        }
-      } else if (error.request) {
-        errorMessage =
-          'Unable to connect to server. Please check your internet.';
-      } else if (error.code === 'ECONNABORTED') {
-        errorMessage = 'Request timed out. Please try again.';
-      }
-
-      setError(errorMessage);
+      // … keep your error handling
     } finally {
       setIsProcessing(false);
     }
@@ -145,18 +122,6 @@ export default function PromptInput({ decks }: PromptInputProps) {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="bg-background border-b">
-        <div className="max-w-4xl mx-auto px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="p-2">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-xl font-semibold">Create Card (AI Prompt)</h1>
-          </div>
-        </div>
-      </div>
-
       <div className="max-w-4xl mx-auto px-6 py-8">
         <Card className="bg-card text-card-foreground shadow-sm">
           <CardHeader>
@@ -168,21 +133,51 @@ export default function PromptInput({ decks }: PromptInputProps) {
 
           <CardContent className="p-6 space-y-6">
             {/* Deck Name */}
-            <div className="space-y-2">
-              <Label htmlFor="deckName">Select Deck</Label>
-              <select
-                id="deckName"
-                className="w-full border rounded-md p-2 bg-background text-foreground"
-                value={deckName}
-                onChange={(e) => setDeckName(e.target.value)}
-              >
-                <option value="">Select a deck...</option>
-                {decks.map((deck, idx) => (
-                  <option key={idx} value={deck}>
-                    {deck}
-                  </option>
-                ))}
-              </select>
+            <div className="mb-6">
+              <Label className="text-gray-700 dark:text-gray-300">
+                Choose an existing deck
+              </Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-between text-left font-normal mt-1"
+                    disabled={loading}
+                  >
+                    {selectedDeckId
+                      ? decks.find((d) => d.id === selectedDeckId)?.title
+                      : 'Choose a deck...'}
+                    <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-full min-w-[var(--radix-dropdown-menu-trigger-width)] max-w-none z-50"
+                  align="start"
+                  sideOffset={4}
+                >
+                  {loading ? (
+                    <DropdownMenuItem disabled className="w-full">
+                      Loading...
+                    </DropdownMenuItem>
+                  ) : decks.length > 0 ? (
+                    decks.map((deck) => (
+                      <DropdownMenuItem
+                        key={deck.id}
+                        className="w-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
+                        onClick={() => {
+                          setSelectedDeckId(deck.id);
+                        }}
+                      >
+                        <span className="truncate">{deck.title}</span>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem disabled className="w-full">
+                      No decks found.
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             {/* AI Prompt */}
