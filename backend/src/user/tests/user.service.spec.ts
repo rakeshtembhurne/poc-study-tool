@@ -16,6 +16,7 @@ jest.mock('bcrypt', () => ({
 describe('UserService', () => {
   let service: UserService;
   let prisma: PrismaService;
+  // let authService: AuthService;
 
   const mockUser = {
     id: 1,
@@ -60,6 +61,7 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
     prisma = module.get<PrismaService>(PrismaService);
+    // authService = module.get<AuthService>(AuthService);
   });
 
   it('should be defined', () => {

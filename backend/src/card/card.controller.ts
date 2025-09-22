@@ -26,8 +26,11 @@ export class CardController {
   ) {}
 
   @Post()
-  async createCard(@Body() createCardDto: CreateCardDto) {
-    return this.cardService.createCard(createCardDto);
+  async createCard(
+    @Body() createCardDto: CreateCardDto,
+    @User('id') userId: number
+  ) {
+    return this.cardService.createCard(createCardDto, userId);
   }
 
   @Put(':id')
@@ -39,20 +42,24 @@ export class CardController {
     return this.cardService.updateCard(id, updateCardDto, userId);
   }
 
-  @Get(':deckId')
-  async getByDeckId(
-    @Param('deckId') deckId: number,
+  @Get()
+  async getCardsByUserId(
     @User('id') userId: number,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
-    @Query('search') search?: string
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('deckId') deckId?: string
   ) {
-    return this.cardService.getByDeckId(
-      deckId,
-      Number(userId),
-      page,
-      limit,
-      search
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    const deckIdNum = deckId ? parseInt(deckId, 10) : undefined;
+
+    return this.cardService.getCardsByUserId(
+      userId,
+      pageNum,
+      limitNum,
+      search,
+      deckIdNum
     );
   }
 

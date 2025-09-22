@@ -1,4 +1,3 @@
-// utils/apiClient.ts
 import axios, {
   AxiosError,
   AxiosResponse,

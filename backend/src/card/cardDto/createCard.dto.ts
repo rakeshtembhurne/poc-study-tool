@@ -8,10 +8,6 @@ import {
 } from 'class-validator';
 
 export class CreateCardDto {
-  @IsInt()
-  @IsNotEmpty()
-  userId!: number;
-
   @IsString()
   @IsNotEmpty()
   frontContent!: string;
