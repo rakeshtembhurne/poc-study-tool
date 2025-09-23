@@ -4,19 +4,26 @@ import { Progress } from '@/components/ui/progress';
 
 interface UploadProgressProps {
   progress: number;
-  isUploading: boolean;
+  stage: 'idle' | 'uploading' | 'processing' | 'done';
 }
 
 export default function UploadProgress({
   progress,
-  isUploading,
+  stage,
 }: UploadProgressProps) {
-  if (progress === 0 && !isUploading) return null;
+  if (progress === 0 && stage === 'idle') return null;
+
+  const label =
+    stage === 'uploading'
+      ? 'Uploading file...'
+      : stage === 'processing'
+        ? 'Processing cards...'
+        : 'Completed';
 
   return (
     <div className="space-y-2">
       <div className="flex justify-between text-sm">
-        <span>{isUploading ? 'Uploading file...' : 'Processing cards...'}</span>
+        <span>{label}</span>
         <span>{progress}%</span>
       </div>
 

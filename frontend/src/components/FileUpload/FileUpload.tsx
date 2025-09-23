@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -56,12 +56,33 @@ export default function FileUpload() {
   const [fetchDecksError, setFetchDecksError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);
+  // Smoothed visual progress to avoid sudden jumps in UI
+  const [displayProgress, setDisplayProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [fileCardData, setFileCardData] = useState<FileCardData[]>([]);
   const [totalCardCount, setTotalCardCount] = useState<number>(0);
   const [decks, setDecks] = useState<string[]>([]);
   const [isLoadingDecks, setIsLoadingDecks] = useState<boolean>(false);
   const [selectedDeck, setSelectedDeck] = useState<string>('');
+  const [stage, setStage] = useState<
+    'idle' | 'uploading' | 'processing' | 'done'
+  >('idle');
+  // lightweight toast state for top-right notifications
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'error' | 'success' | null;
+  }>({ message: '', type: null });
+  const showToast = (
+    message: string,
+    type: 'error' | 'success' = 'error',
+    duration = 4000
+  ) => {
+    setToast({ message, type });
+    window.clearTimeout((showToast as any)._tid);
+    (showToast as any)._tid = window.setTimeout(() => {
+      setToast({ message: '', type: null });
+    }, duration);
+  };
 
   const form = useForm<DeckFormData>({
     resolver: yupResolver(deckFormSchema),
@@ -71,6 +92,33 @@ export default function FileUpload() {
   });
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [showCards, setShowCards] = useState<boolean>(false);
+  const lastDisplayRef = useRef<number>(0);
+  // Quick-fail timer to show AI failure toast if backend is slow; cleared on response
+  const quickFailTimerRef = useRef<number | null>(null);
+  const responseReceivedRef = useRef<boolean>(false);
+
+  // Animate displayProgress towards progress for smoother UI
+  useEffect(() => {
+    if (lastDisplayRef.current === progress) return;
+    let raf = 0;
+    const duration = 1200; // ms - slower, smoother
+    const start = performance.now();
+    const from = lastDisplayRef.current;
+    const to = progress;
+
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      // Smoothstep easing for a less abrupt animation
+      const eased = t * t * (3 - 2 * t);
+      const next = Math.round(from + (to - from) * eased);
+      setDisplayProgress(next);
+      lastDisplayRef.current = next;
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [progress]);
 
   const fetchDecks = async () => {
     setIsLoadingDecks(true);
@@ -90,6 +138,12 @@ export default function FileUpload() {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 
+      // mark response received and clear quick-fail
+      responseReceivedRef.current = true;
+      if (quickFailTimerRef.current) {
+        window.clearTimeout(quickFailTimerRef.current);
+        quickFailTimerRef.current = null;
+      }
       const result = response.data;
       if (result.success) {
         const decksArray = result.data?.deck || [];
@@ -143,7 +197,25 @@ export default function FileUpload() {
     setTotalCardCount(0);
     setShowCards(false);
     setProgress(0);
+    setDisplayProgress(0);
+    lastDisplayRef.current = 0;
     setIsUploading(false);
+    setStage('idle');
+    setUploadError(null);
+  };
+
+  // Clear all state and hide progress instantly
+  const handleClearAll = () => {
+    setError(null);
+    setFiles([]);
+    setFileCardData([]);
+    setTotalCardCount(0);
+    setShowCards(false);
+    setProgress(0);
+    setDisplayProgress(0);
+    lastDisplayRef.current = 0;
+    setIsUploading(false);
+    setStage('idle');
     setUploadError(null);
   };
 
@@ -152,13 +224,17 @@ export default function FileUpload() {
     setFiles(updatedFiles);
 
     if (updatedFiles.length === 0) {
+      // Reset instantly so the progress bar disappears without animating backward
+      setProgress(0);
+      setDisplayProgress(0);
+      lastDisplayRef.current = 0;
+      setIsUploading(false);
+      setStage('idle');
       setError(null);
       setFileCardData([]);
       setTotalCardCount(0);
       setShowCards(false);
-      setProgress(0);
       setUploadError(null);
-      setIsUploading(false);
     }
   };
 
@@ -182,6 +258,31 @@ export default function FileUpload() {
     setIsUploading(true);
     setUploadError(null);
     setProgress(0);
+    setDisplayProgress(0);
+    lastDisplayRef.current = 0;
+    // Do not show progress UI yet; wait for first progress event
+    setStage('idle');
+    // Start quick-fail timer right away; if server hasn't responded quickly, show toast
+    if (quickFailTimerRef.current) {
+      window.clearTimeout(quickFailTimerRef.current);
+      quickFailTimerRef.current = null;
+    }
+    responseReceivedRef.current = false;
+    quickFailTimerRef.current = window.setTimeout(() => {
+      if (!responseReceivedRef.current) {
+        showToast(
+          'Unable to generate flashcards. All available AI models failed to respond.',
+          'error'
+        );
+        setIsUploading(false);
+        setStage('idle');
+        setProgress(0);
+        setDisplayProgress(0);
+        lastDisplayRef.current = 0;
+        setFiles([]);
+        setShowCards(false);
+      }
+    }, 800); // show within ~0.8s of clicking Upload
 
     try {
       const authToken = authStorage.getToken();
@@ -198,6 +299,8 @@ export default function FileUpload() {
         formData.append('files', file);
       });
 
+      const totalBytes = files.reduce((sum, f) => sum + (f?.size || 0), 0);
+
       const url = API_ENDPOINTS.v1.fileUpload.upload;
       const response = await apiClient.post(url, formData, {
         headers: {
@@ -205,11 +308,42 @@ export default function FileUpload() {
           Authorization: `Bearer ${authToken}`,
         },
         onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
+          // Suppress progress updates while quick-fail timer is active to avoid flicker
+          if (quickFailTimerRef.current) {
+            return;
+          }
+          // Prefer native total when available
+          if (progressEvent.total && progressEvent.total > 0) {
             const percent = Math.round(
               (progressEvent.loaded * 100) / progressEvent.total
             );
-            setProgress(percent);
+            // Avoid regressions, clamp to 100 to handle rounding
+            setProgress((prev) => Math.max(prev, Math.min(100, percent)));
+            if (percent > 0 && stage === 'idle') {
+              setStage('uploading');
+            }
+            if (percent >= 100) {
+              setStage('processing');
+            }
+            return;
+          }
+
+          if (totalBytes > 0) {
+            const estimatedTotal = Math.max(
+              totalBytes * 1.05,
+              totalBytes + 1024
+            );
+            const percent = Math.round(
+              (progressEvent.loaded * 100) / estimatedTotal
+            );
+            // Avoid regressions, clamp to 100 to handle rounding
+            setProgress((prev) => Math.max(prev, Math.min(100, percent)));
+            if (percent > 0 && stage === 'idle') {
+              setStage('uploading');
+            }
+            if (percent >= 100) {
+              setStage('processing');
+            }
           }
         },
       });
@@ -217,6 +351,66 @@ export default function FileUpload() {
       const result = response.data;
       if (result.success) {
         const backendFiles = result.data || [];
+        const missingKeyMsg =
+          'OpenAI API key not found in user profile. Please add your API key in settings.';
+        const extractionErrorMsg = 'No text could be extracted from file';
+        const aiModelsFailedMsg =
+          'Unable to generate flashcards. All available AI models failed to respond.';
+        const showMissingKeyError = Array.isArray(backendFiles)
+          ? backendFiles.some(
+              (f: any) =>
+                f?.flashcardGenerationStatus === 'failed' &&
+                typeof f?.flashcardError === 'string' &&
+                f.flashcardError.includes(missingKeyMsg)
+            )
+          : false;
+        if (showMissingKeyError) {
+          showToast(missingKeyMsg, 'error');
+        }
+        const showExtractionError = Array.isArray(backendFiles)
+          ? backendFiles.some(
+              (f: any) =>
+                f?.flashcardGenerationStatus === 'failed' &&
+                typeof f?.flashcardError === 'string' &&
+                f.flashcardError.includes(extractionErrorMsg)
+            )
+          : false;
+        if (showExtractionError) {
+          showToast(extractionErrorMsg, 'error');
+        }
+        const showAIModelsFailedError = Array.isArray(backendFiles)
+          ? backendFiles.some(
+              (f: any) =>
+                f?.flashcardGenerationStatus === 'failed' &&
+                typeof f?.flashcardError === 'string' &&
+                f.flashcardError.includes(aiModelsFailedMsg)
+            )
+          : false;
+        if (showAIModelsFailedError) {
+          showToast(aiModelsFailedMsg, 'error');
+        }
+
+        // If we showed any of the above error toasts, hide the progress bar immediately
+        if (
+          showAIModelsFailedError ||
+          showMissingKeyError ||
+          showExtractionError
+        ) {
+          setIsUploading(false);
+          setStage('idle');
+          setProgress(0);
+          setDisplayProgress(0);
+          lastDisplayRef.current = 0;
+          // Clear files so the conditional render guard (files.length > 0) also hides UploadProgress
+          setFiles([]);
+          setShowCards(false);
+          if (quickFailTimerRef.current) {
+            window.clearTimeout(quickFailTimerRef.current);
+            quickFailTimerRef.current = null;
+          }
+          return;
+        }
+
         const newFileCardData: FileCardData[] = [];
         const allCards: CardType[] = [];
 
@@ -256,14 +450,23 @@ export default function FileUpload() {
 
         setFileCardData(newFileCardData);
         setTotalCardCount(allCards.length);
+        // Server confirmed completion; finalize to 100% and mark done
         setProgress(100);
-        setTimeout(() => {
-          setIsUploading(false);
-          setShowCards(true);
-        }, 500);
+        setIsUploading(false);
+        setStage('done');
+        setShowCards(true);
+        if (quickFailTimerRef.current) {
+          window.clearTimeout(quickFailTimerRef.current);
+          quickFailTimerRef.current = null;
+        }
       } else {
         setUploadError(result.message || 'Upload failed. Please try again.');
         setIsUploading(false);
+        setStage('idle');
+        if (quickFailTimerRef.current) {
+          window.clearTimeout(quickFailTimerRef.current);
+          quickFailTimerRef.current = null;
+        }
       }
     } catch (error: any) {
       let errorMessage = 'An unexpected error occurred during upload.';
@@ -287,6 +490,11 @@ export default function FileUpload() {
       setUploadError(errorMessage);
       setIsUploading(false);
       setProgress(0);
+      setStage('idle');
+      if (quickFailTimerRef.current) {
+        window.clearTimeout(quickFailTimerRef.current);
+        quickFailTimerRef.current = null;
+      }
     }
   };
 
@@ -398,7 +606,7 @@ export default function FileUpload() {
           <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
-              onClick={() => setFiles([])}
+              onClick={handleClearAll}
               className="flex-1 text-base font-medium"
             >
               Cancel
@@ -417,7 +625,10 @@ export default function FileUpload() {
           </div>
         )}
 
-        <UploadProgress progress={progress} isUploading={isUploading} />
+        {(stage === 'uploading' || stage === 'processing') &&
+          files.length > 0 && (
+            <UploadProgress progress={displayProgress} stage={stage} />
+          )}
 
         {uploadError && (
           <Alert variant="destructive" className="mt-4">
@@ -472,6 +683,21 @@ export default function FileUpload() {
           </div>
         )}
       </CardContent>
+      {toast.type && (
+        <div className="fixed top-20 right-6 z-[60] pointer-events-none">
+          <div
+            className={`pointer-events-auto min-w-[280px] max-w-sm rounded-md border p-4 shadow-lg transition-opacity ${
+              toast.type === 'error'
+                ? 'bg-destructive/10 border-destructive text-destructive'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-sm font-medium">{toast.message}</p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
