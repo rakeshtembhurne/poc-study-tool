@@ -112,7 +112,7 @@ export default function CardWizard({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl min-h-[40vh] flex flex-col bg-popover text-popover-foreground">
+      <DialogContent className="max-w-3xl h-[60vh] flex flex-col bg-popover text-popover-foreground">
         <DialogHeader>
           <DialogTitle>
             {step === 1 && `Step 1: Select Cards for ${deckName}`}
@@ -121,7 +121,8 @@ export default function CardWizard({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto pr-2">
           {/* STEP 1 → Select Cards */}
           {step === 1 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
