@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { createCard } from '@/lib/card-service';
-import FileUpload from '@/components/FileUpload';
+// import FileUpload from '@/components/FileUpload';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ import { ChevronDown } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/utils/apiEndpoints';
 import authStorage from '@/lib/auth-storage';
+import FileUpload from '@/components/FileUpload/FileUpload';
 
 interface DeckData {
   id: number;
