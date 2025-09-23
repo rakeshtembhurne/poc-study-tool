@@ -237,19 +237,24 @@ export default function PromptInput({
           </CardContent>
         </Card>
 
-        {/* Card Preview Popup */}
         <CardWizard
           isOpen={isDialogOpen}
           onClose={() => setIsDialogOpen(false)}
           file={null}
           parsedCards={parsedCards}
-          deckName={deckName}
-          onConfirmUpload={async () => setIsDialogOpen(false)}
+          deckName={decks.find((d) => d.id === selectedDeckId)?.title || ''}
+          selectedDeckId={selectedDeckId}
+          onConfirmUpload={async (cards) => {
+            setIsDialogOpen(false);
+            setParsedCards([]);
+            setPromptText('');
+            setCardCount(0);
+            setSelectedDeckId(0);
+          }}
           progress={100}
           isUploading={false}
           cardCount={parsedCards.length}
         />
-
         {/* Error Display */}
         {error && (
           <Alert variant="destructive" className="mt-4">

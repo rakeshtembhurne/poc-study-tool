@@ -4,6 +4,7 @@ export interface Card {
   difficulty?: string;
   deckName?: string;
   createdAt?: string;
+  tags?: string[];
 }
 
 export interface FileUploadState {

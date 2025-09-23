@@ -26,5 +26,9 @@ export const API_ENDPOINTS = {
         submit: '/api/v1/review/submit',
       },
     },
+
+    flashcards: {
+      cardbulk: '/api/v1/flashcards/bulk', // ✅ your backend URL
+    },
   },
 };
