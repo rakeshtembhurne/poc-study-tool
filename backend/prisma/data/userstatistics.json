@@ -1,7 +1,7 @@
 {
   "development": [
     {
-      "userEmail": "niktia@example.com",
+      "userEmail": "admin@example.com",
       "date": "2025-09-01",
       "reviewsCompleted": 3,
       "newCardsLearned": 2,
@@ -18,7 +18,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "niktia@example.com",
+      "userEmail": "admin@example.com",
       "date": "2025-09-02",
       "reviewsCompleted": 1,
       "newCardsLearned": 1,
@@ -35,7 +35,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "niktia@example.com",
+      "userEmail": "admin@example.com",
       "date": "2025-09-03",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -52,7 +52,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "niktia@example.com",
+      "userEmail": "admin@example.com",
       "date": "2025-09-04",
       "reviewsCompleted": 2,
       "newCardsLearned": 0,
@@ -69,7 +69,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "niktia@example.com",
+      "userEmail": "admin@example.com",
       "date": "2025-09-06",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -86,7 +86,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-15",
       "reviewsCompleted": 1,
       "newCardsLearned": 1,
@@ -103,7 +103,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-17",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -120,7 +120,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-20",
       "reviewsCompleted": 2,
       "newCardsLearned": 1,
@@ -137,7 +137,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-22",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -154,7 +154,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-23",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -171,7 +171,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-25",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -188,7 +188,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-26",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -205,7 +205,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-08-28",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -222,7 +222,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-09-04",
       "reviewsCompleted": 1,
       "newCardsLearned": 1,
@@ -239,7 +239,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "rutvik@example.com",
+      "userEmail": "user1@example.com",
       "date": "2025-09-06",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,
@@ -256,7 +256,7 @@
       "grade5Count": 1
     },
     {
-      "userEmail": "diksha@example.com",
+      "userEmail": "user2@example.com",
       "date": "2025-09-05",
       "reviewsCompleted": 1,
       "newCardsLearned": 1,
@@ -273,7 +273,7 @@
       "grade5Count": 0
     },
     {
-      "userEmail": "arshad@example.com",
+      "userEmail": "demo@example.com",
       "date": "2025-09-06",
       "reviewsCompleted": 1,
       "newCardsLearned": 1,
@@ -292,7 +292,7 @@
   ],
   "test": [
     {
-      "userEmail": "nikhil@example.com",
+      "userEmail": "test@example.com",
       "date": "2025-09-06",
       "reviewsCompleted": 1,
       "newCardsLearned": 0,

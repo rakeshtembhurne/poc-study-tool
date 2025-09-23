@@ -1,32 +1,32 @@
 {
-  "development": [
-    {
-      "email": "niktia@example.com",
-      "password": "$2b$12$cVojD8zRo81rjYADf/F/XuAgVZorEVdl.JMyoYDFyzReIBbtMU2dO"
-    },
-    {
-      "email": "rutvik@example.com",
-      "password": "$2b$12$cVojD8zRo81rjYADf/F/XuAgVZorEVdl.JMyoYDFyzReIBbtMU2dO"
-    },
-    {
-      "email": "diksha@example.com",
-      "password": "$2b$12$cVojD8zRo81rjYADf/F/XuAgVZorEVdl.JMyoYDFyzReIBbtMU2dO"
-    },
-    {
-      "email": "arshad@example.com",
-      "password": "$2b$12$cVojD8zRo81rjYADf/F/XuAgVZorEVdl.JMyoYDFyzReIBbtMU2dO"
-    }
-  ],
-  "test": [
-    {
-      "email": "nikhil@example.com",
-      "password": "$2b$12$cVojD8zRo81rjYADf/F/XuAgVZorEVdl.JMyoYDFyzReIBbtMU2dO"
-    }
-  ],
-  "production": [
-    {
-      "email": "falguni@example.com",
-      "password": "$2b$12$cVojD8zRo81rjYADf/F/XuAgVZorEVdl.JMyoYDFyzReIBbtMU2dO"
-    }
-  ]
-}
+    "development": [
+      {
+        "email": "admin@example.com",
+        "password": "hashed_admin_password_123"
+      },
+      {
+        "email": "user1@example.com",
+        "password": "hashed_user1_password_123"
+      },
+      {
+        "email": "user2@example.com",
+        "password": "hashed_user2_password_123"
+      },
+      {
+        "email": "demo@example.com",
+        "password": "hashed_demo_password_123"
+      }
+    ],
+    "test": [
+      {
+        "email": "test@example.com",
+        "password": "hashed_test_password_123"
+      }
+    ],
+    "production": [
+      {
+        "email": "system@company.com",
+        "password": "hashed_system_password_123"
+      }
+    ]
+  }

@@ -60,13 +60,13 @@ Space Rep helps users learn and retain information efficiently through scientifi
 - OpenRouter API integration
 - Usage tracking and cost estimation
 
-### 6. Review System ✅ **IMPLEMENTED**
+### 6. Review System
 
-- **SM-15 Algorithm**: ✅ Advanced algorithm with OF Matrix and Recall Matrix
-- **Authentication Integration**: ✅ JWT-protected review endpoints
-- **Personalized Scheduling**: ✅ User-specific algorithm optimization
-- **Advanced Analytics**: ✅ Retention tracking, study streaks, learning metrics
-- **Multi-user Support**: ✅ Concurrent review sessions with data isolation
+- **SM-2 Algorithm**: Basic spaced repetition
+- **SM-15 Algorithm**: Advanced algorithm with OF Matrix
+- Card scheduling based on performance
+- Review queue generation
+- Progress tracking and statistics
 
 ### 7. Advanced Features
 
@@ -83,39 +83,24 @@ Space Rep helps users learn and retain information efficiently through scientifi
 - Easiness factor adjustments
 - Interval multiplier based on performance
 
-### SM-15 (Advanced) ✅ **FULLY IMPLEMENTED**
+### SM-15 (Advanced)
 
-- **A-Factor System**: Dynamic difficulty tracking (1.2-6.9 range, higher = easier)
-- **Grade Scale**: 0-5 scale (0=blackout, 1-2=fail, 3=pass, 4-5=good/excellent)
-- **OF Matrix**: Personalized interval multipliers (20×20 matrix = 400 entries per user)
-- **Recall Matrix**: Tracks actual retention rates for algorithm validation
-- **Memory Model**: Tracks stability and retrievability
-- **Adaptive Scheduling**: 90% retention rate targeting
-- **Performance Analytics**: Comprehensive learning metrics
+- Optimum Factor (OF) Matrix
+- Memory stability calculations
+- A-Factor for difficulty assessment
+- Forgetting curves visualization
 
-## Development Status
+## Development Phases
 
-### ✅ **Completed Phases**
-1. ✅ **Phase 1**: Project setup, database configuration, authentication system
-2. ✅ **Phase 2**: Core backend infrastructure and user management  
-3. ✅ **Phase 3**: Deck and card CRUD operations
-4. ✅ **Phase 4**: File processing and content extraction
-5. ✅ **Phase 5**: AI integration for card generation
-6. ✅ **Phase 7**: **SM-15 algorithm implementation** (skipped SM-2, went directly to advanced)
-
-### 🚧 **Current Phase**
-7. **Phase 6**: Frontend React components for review system
-
-### 📋 **Remaining Phases**
-8. **Phase 8**: Testing, UI polish, and documentation refinement
+1. **Phase 1**: Project setup, database configuration, authentication system
+2. **Phase 2**: Core backend infrastructure and user management
+3. **Phase 3**: Deck and card CRUD operations
+4. **Phase 4**: File processing and content extraction
+5. **Phase 5**: AI integration for card generation
+6. **Phase 6**: Review system with SM-2 algorithm
+7. **Phase 7**: Advanced SM-15 algorithm implementation
+8. **Phase 8**: Testing, UI polish, and documentation
 9. **Phase 9**: Deployment and production setup
-
-### 🎯 **Backend Status**: Production Ready
-- Complete SM-15 spaced repetition algorithm
-- JWT authentication with user isolation
-- Advanced analytics and performance tracking
-- Comprehensive error handling and validation
-- Full API documentation and testing ready
 
 ## Getting Started
 
