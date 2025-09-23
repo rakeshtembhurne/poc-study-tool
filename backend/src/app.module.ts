@@ -12,6 +12,7 @@ import { DeckModule } from '@/deck/deck.module';
 import { AlgorithmModule } from './algorithm/algorithm.module';
 import { ReviewModule } from './review/review.module';
 import { FlashcardsModule } from '@/flashCard/flashcards.module';
+import { PromptProcessingModule } from './prompt-processing/prompt-processing.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { FlashcardsModule } from '@/flashCard/flashcards.module';
     AlgorithmModule,
     ReviewModule,
     FlashcardsModule,
+    PromptProcessingModule
   ],
   controllers: [AppController],
   providers: [AppService],

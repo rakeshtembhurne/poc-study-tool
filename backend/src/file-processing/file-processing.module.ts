@@ -34,6 +34,6 @@ import {
     FileValidationPipe,
     MultipleFilesValidationPipe,
   ],
-  exports: [FileProcessingService, PdfProcessingService, TextProcessingService],
+  exports: [FileProcessingService, PdfProcessingService, TextProcessingService,'IUserRepository', ],
 })
 export class FileProcessingModule {}

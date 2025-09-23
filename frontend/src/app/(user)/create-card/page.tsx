@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { createCard } from '@/lib/card-service';
-import FileUpload from '@/components/FileUpload';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +18,8 @@ import { ChevronDown } from 'lucide-react';
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/utils/apiEndpoints';
 import authStorage from '@/lib/auth-storage';
+import PromptInput from '@/components/FileUpload/PromptInput';
+import FileUpload from '@/components/FileUpload/FileUpload';
 
 interface DeckData {
   id: number;
@@ -150,6 +151,18 @@ export default function CreateNewCard() {
               >
                 File Upload
               </Button>
+
+              <Button
+                variant={
+                  creationMethod === 'Input Prompt' ? 'default' : 'outline'
+                }
+                onClick={() => {
+                  setCreationMethod('Input Prompt');
+                }}
+                className="flex-1 py-4 px-4"
+              >
+                Input Prompt
+              </Button>
             </div>
           </div>
 
@@ -262,6 +275,15 @@ export default function CreateNewCard() {
           )}
 
           {creationMethod === 'File Upload' && <FileUpload />}
+
+          {creationMethod === 'Input Prompt' && (
+            <PromptInput
+              decks={decks}
+              loading={loading}
+              selectedDeckId={selectedDeckId}
+              setSelectedDeckId={setSelectedDeckId}
+            />
+          )}
 
           <div className="mt-8 p-6 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-4">

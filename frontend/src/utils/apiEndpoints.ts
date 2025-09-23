@@ -18,9 +18,17 @@ export const API_ENDPOINTS = {
       updatePassword: '/api/v1/users/password',
       updateApiKey: '/api/v1/users/:id',
     },
-    review: {
-      due: '/api/v1/review/due',
-      submit: '/api/v1/review/submit',
+
+    inputPrompt: {
+      generateCard: '/api/v1/prompt/generate',
+      review: {
+        due: '/api/v1/review/due',
+        submit: '/api/v1/review/submit',
+      },
+    },
+
+    flashcards: {
+      cardbulk: '/api/v1/flashcards/bulk', // ✅ your backend URL
     },
   },
 };

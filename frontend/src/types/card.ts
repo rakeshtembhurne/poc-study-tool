@@ -4,6 +4,7 @@ export interface Card {
   difficulty?: string;
   deckName?: string;
   createdAt?: string;
+  tags?: string[];
 }
 
 export interface FileUploadState {
@@ -23,7 +24,7 @@ export interface FileCardData {
   error?: string;
 }
 
-export type CreationMethod = 'manual' | 'file';
+export type CreationMethod = 'manual' | 'file' | 'prompt';
 
 export interface FileValidationConfig {
   allowedTypes: string[];

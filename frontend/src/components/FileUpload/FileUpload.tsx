@@ -33,6 +33,7 @@ import ViewCardsDialog from './ViewCardsDialog';
 import authStorage from '@/lib/auth-storage';
 import apiClient from '@/lib/api-client';
 import { API_ENDPOINTS } from '@/utils/apiEndpoints';
+import { toast } from 'sonner';
 
 interface Deck {
   id: number;
@@ -59,9 +60,12 @@ export default function FileUpload() {
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [fileCardData, setFileCardData] = useState<FileCardData[]>([]);
   const [totalCardCount, setTotalCardCount] = useState<number>(0);
-  const [decks, setDecks] = useState<string[]>([]);
+  const [decks, setDecks] = useState<Deck[]>([]);
   const [isLoadingDecks, setIsLoadingDecks] = useState<boolean>(false);
   const [selectedDeck, setSelectedDeck] = useState<string>('');
+  const [selectedDeckId, setSelectedDeckId] = useState<number | undefined>(
+    undefined
+  );
 
   const form = useForm<DeckFormData>({
     resolver: yupResolver(deckFormSchema),
@@ -94,7 +98,7 @@ export default function FileUpload() {
       if (result.success) {
         const decksArray = result.data?.deck || [];
         if (Array.isArray(decksArray)) {
-          setDecks(decksArray.map((deck: Deck) => deck.title));
+          setDecks(decksArray); // store full deck objects, not just title
         } else {
           setDecks([]);
           setFetchDecksError(
@@ -290,6 +294,25 @@ export default function FileUpload() {
     }
   };
 
+  const handleConfirmUpload = async (uploadedCards: CardType[]) => {
+    // Clear file-related states
+    setFiles([]);
+    setFileCardData([]);
+    setTotalCardCount(0);
+    setShowCards(false);
+    setProgress(0);
+    setIsUploading(false);
+    setError(null);
+    setUploadError(null);
+
+    // Clear deck selection and reset form
+    setSelectedDeck('');
+    setSelectedDeckId(undefined);
+    form.reset({ deckName: '' });
+
+    // Show success toast
+    toast.success(`${uploadedCards.length} cards uploaded successfully!`);
+  };
   return (
     <Card>
       <CardHeader className="pb-4">
@@ -330,26 +353,25 @@ export default function FileUpload() {
                         align="start"
                         sideOffset={4}
                       >
-                        {Array.isArray(decks) && decks.length > 0 ? (
-                          decks.map((title, idx) => (
+                        {decks.length > 0 ? (
+                          decks.map((deck) => (
                             <DropdownMenuItem
-                              key={idx}
+                              key={deck.id}
                               className="w-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 focus:bg-gray-100 dark:focus:bg-gray-800"
                               onClick={() => {
-                                setSelectedDeck(title);
-                                field.onChange(title);
+                                setSelectedDeck(deck.title); // set name
+                                setSelectedDeckId(deck.id); // set ID
+                                form.setValue('deckName', deck.title); // update react-hook-form
                               }}
                             >
-                              <span className="truncate">{title}</span>
+                              <span className="truncate">{deck.title}</span>
                             </DropdownMenuItem>
                           ))
                         ) : (
                           <DropdownMenuItem disabled className="w-full">
                             {isLoadingDecks
                               ? 'Loading...'
-                              : fetchDecksError
-                                ? 'Failed to load decks'
-                                : 'No decks available'}
+                              : fetchDecksError || 'No decks available'}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
@@ -461,7 +483,12 @@ export default function FileUpload() {
                           Preview: {data.cards[0].question.substring(0, 50)}...
                         </div>
                         <div className="flex justify-end">
-                          <ViewCardsDialog fileCardData={data} />
+                          <ViewCardsDialog
+                            fileCardData={data}
+                            deckName={selectedDeck}
+                            deckId={selectedDeckId}
+                            onConfirmUpload={handleConfirmUpload} // <-- pass callback
+                          />
                         </div>
                       </div>
                     )}
