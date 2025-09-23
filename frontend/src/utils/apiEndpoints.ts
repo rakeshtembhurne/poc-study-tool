@@ -18,5 +18,9 @@ export const API_ENDPOINTS = {
       updatePassword: '/api/v1/users/password',
       updateApiKey: '/api/v1/users/:id',
     },
+    review: {
+      due: '/api/v1/review/due',
+      submit: '/api/v1/review/submit',
+    },
   },
 };

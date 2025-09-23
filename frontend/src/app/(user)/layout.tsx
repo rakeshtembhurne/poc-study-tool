@@ -22,7 +22,7 @@ import {
   FolderOpen,
   SquarePlus,
   BookOpen,
-  BarChart3,
+  // BarChart3,
   Settings,
   LogOut,
   Mail,
@@ -52,7 +52,7 @@ function TopNavigation() {
     { href: '/cards', label: 'Cards', icon: SquarePlus },
     { href: '/create-card', label: 'Create Card', icon: SquarePlus },
     { href: '/study', label: 'Study', icon: BookOpen },
-    { href: '/analytics', label: 'Analytics', icon: BarChart3 },
+    // { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     // { href: '/settings', label: 'Settings', icon: Settings },
   ];
 
