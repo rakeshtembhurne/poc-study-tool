@@ -21,6 +21,10 @@ export const API_ENDPOINTS = {
 
     inputPrompt: {
       generateCard: '/api/v1/prompt/generate',
+      review: {
+        due: '/api/v1/review/due',
+        submit: '/api/v1/review/submit',
+      },
     },
   },
 };
