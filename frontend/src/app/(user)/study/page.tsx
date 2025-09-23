@@ -6,6 +6,8 @@ import { IoBulbOutline } from 'react-icons/io5';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { getDueCards, submitReview } from '@/lib/review-service';
+import { DueCard } from '@/interfaces/review.interface';
 
 interface ConfettiPiece {
   id: number;
@@ -16,21 +18,7 @@ interface ConfettiPiece {
 }
 
 export default function StudyPage() {
-  const flashcards = [
-    { id: 1, question: 'What is the capital of France?', answer: 'Paris' },
-    {
-      id: 2,
-      question: 'Who painted the Mona Lisa?',
-      answer: 'Leonardo da Vinci',
-    },
-    { id: 3, question: 'What is the chemical symbol for gold?', answer: 'Au' },
-    {
-      id: 4,
-      question: 'How many planets are in our solar system?',
-      answer: 'Eight',
-    },
-  ];
-
+  const [dueCards, setDueCards] = useState<DueCard[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
   const [selectedDifficulty, setSelectedDifficulty] = useState<number | null>(
@@ -39,6 +27,28 @@ export default function StudyPage() {
   const [isComplete, setIsComplete] = useState(false);
   const [confetti, setConfetti] = useState<ConfettiPiece[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDueCards = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getDueCards();
+        if (response.success && response.data.cards.length > 0) {
+          setDueCards(response.data.cards);
+        } else {
+          setDueCards([]);
+        }
+      } catch (error) {
+        setErrorMessage('Failed to fetch due cards. Please try again later.');
+        console.error(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDueCards();
+  }, []);
 
   useEffect(() => {
     if (isComplete) {
@@ -64,26 +74,41 @@ export default function StudyPage() {
   const handleDifficultySelect = (level: number) =>
     setSelectedDifficulty(level);
 
-  const handleNextCard = () => {
-    if (!selectedDifficulty)
+  const handleSubmitReview = async () => {
+    if (!selectedDifficulty) {
       return setErrorMessage(
         'Please select a difficulty level before proceeding.'
       );
+    }
 
-    if (currentIndex + 1 < flashcards.length) {
-      setCurrentIndex((prev) => prev + 1);
-      setShowAnswer(false);
-      setSelectedDifficulty(null);
-      setErrorMessage(null);
-    } else setIsComplete(true);
+    try {
+      await submitReview({
+        cardId: currentCard.id,
+        grade: selectedDifficulty,
+      });
+
+      if (currentIndex + 1 < dueCards.length) {
+        setCurrentIndex((prev) => prev + 1);
+        setShowAnswer(false);
+        setSelectedDifficulty(null);
+        setErrorMessage(null);
+      } else {
+        setIsComplete(true);
+      }
+    } catch (error) {
+      setErrorMessage('Failed to submit review. Please try again.');
+      console.error(error);
+    }
   };
 
   const handleSkipCard = () => {
-    if (currentIndex + 1 < flashcards.length) {
+    if (currentIndex + 1 < dueCards.length) {
       setCurrentIndex((prev) => prev + 1);
       setShowAnswer(false);
       setSelectedDifficulty(null);
-    } else setIsComplete(true);
+    } else {
+      setIsComplete(true);
+    }
   };
 
   const handleRestart = () => {
@@ -91,10 +116,34 @@ export default function StudyPage() {
     setShowAnswer(false);
     setSelectedDifficulty(null);
     setIsComplete(false);
+    // Optionally re-fetch cards
   };
 
-  const currentCard = flashcards[currentIndex];
-  const progress = ((currentIndex + 1) / flashcards.length) * 100;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading study session...
+      </div>
+    );
+  }
+
+  if (dueCards.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <CardTitle>All Done!</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>You have no cards due for review today. Great job!</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const currentCard = dueCards[currentIndex];
+  const progress = ((currentIndex + 1) / dueCards.length) * 100;
 
   if (isComplete) {
     return (
@@ -148,13 +197,13 @@ export default function StudyPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">
-              You have completed {flashcards.length} cards. Great job!
+              You have completed {dueCards.length} cards. Great job!
             </p>
             <div className="flex flex-row justify-center gap-4">
               <Button onClick={handleRestart}>Study Again</Button>
               <Button
                 variant="secondary"
-                onClick={() => window.location.reload()}
+                onClick={() => (window.location.href = '/dashboard')}
               >
                 Back to Dashboard
               </Button>
@@ -170,11 +219,11 @@ export default function StudyPage() {
       {/* Progress */}
       <div className="w-full max-w-2xl mb-6">
         <h2 className="text-2xl font-semibold">
-          Card {currentIndex + 1} of {flashcards.length}
+          Card {currentIndex + 1} of {dueCards.length}
         </h2>
         <div className="flex justify-between items-center mb-2 text-sm">
           <span className="'text-lg font-semibold'">
-            {flashcards.length - (currentIndex + 1)} remaining
+            {dueCards.length - (currentIndex + 1)} remaining
           </span>
         </div>
         <Progress value={progress} className="h-2 rounded-full" />
@@ -202,7 +251,7 @@ export default function StudyPage() {
         {/* Main Card */}
         <Card className="absolute inset-0 flex flex-col items-center text-center z-10 shadow-xl">
           <div className="absolute top-4 right-4 bg-blue-100 dark:bg-blue-800 text-blue-600 dark:text-blue-200 px-3 py-1 rounded-full text-xs font-bold">
-            #{currentCard.id}
+            {currentCard.deck.title}
           </div>
           <CardHeader>
             <CardTitle className="text-3xl font-bold text-blue-500 mt-4">
@@ -211,7 +260,7 @@ export default function StudyPage() {
           </CardHeader>
           <CardContent className="flex flex-col items-center flex-grow w-full">
             <p className="mt-4 text-2xl font-semibold">
-              {currentCard.question}
+              {currentCard.frontContent}
             </p>
 
             {showAnswer && (
@@ -220,7 +269,7 @@ export default function StudyPage() {
                   <IoBulbOutline className="w-5 h-5 mr-2" />
                   <span className="text-2xl font-semibold">Answer</span>
                 </div>
-                <p className="text-2xl font-bold">{currentCard.answer}</p>
+                <p className="text-2xl font-bold">{currentCard.backContent}</p>
               </div>
             )}
 
@@ -266,7 +315,7 @@ export default function StudyPage() {
                       Skip
                     </Button>
                     <Button
-                      onClick={handleNextCard}
+                      onClick={handleSubmitReview}
                       disabled={!selectedDifficulty}
                       className={`flex-1 py-4 px-6 text-white dark:text-gray-900 
       ${
@@ -276,7 +325,7 @@ export default function StudyPage() {
       }
     `}
                     >
-                      Next
+                      Submit
                     </Button>
                   </div>
                 </div>
